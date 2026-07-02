@@ -1,0 +1,94 @@
+.cp-admin-body {
+    background: #f4f7fb;
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.cp-admin-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.cp-sidebar {
+    width: 280px;
+    background: #111827;
+    color: #f9fafb;
+    padding: 24px 18px;
+}
+
+.cp-sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.cp-brand-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.cp-sidebar .list-group-item {
+    color: #d1d5db;
+    background: transparent;
+}
+
+.cp-sidebar .list-group-item.active {
+    background: rgba(255,255,255,0.12);
+    color: #ffffff;
+}
+
+.cp-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.cp-topbar {
+    padding: 20px 28px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cp-content {
+    padding: 28px;
+}
+
+.cp-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 1.1rem;
+}
+
+.card {
+    border-radius: 16px;
+}
+
+.table th {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+@media (max-width: 992px) {
+    .cp-admin-shell {
+        flex-direction: column;
+    }
+
+    .cp-sidebar {
+        width: 100%;
+    }
+}

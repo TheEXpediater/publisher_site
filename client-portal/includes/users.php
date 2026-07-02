@@ -4,69 +4,69 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-add_shortcode('cp_users', 'cp_users_shortcode');
-
-function cp_users_shortcode()
+function cp_users_page()
 {
-    cp_require_login();
-
-    ob_start();
-
-    cp_render('users');
-
-    return ob_get_clean();
-}
-
-function cp_handle_create_user()
-{
-    if (!isset($_POST['cp_create_user'])) {
-        return;
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You do not have permission to access this page.', 'client-portal'));
     }
 
-    $name = sanitize_text_field($_POST['name']);
-    $username = sanitize_user($_POST['username']);
-    $email = sanitize_email($_POST['email']);
-    $password = $_POST['password'];
+    $notice = null;
+    if (isset($_POST['cp_users_submit']) && isset($_POST['cp_users_nonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['cp_users_nonce'])), 'cp_users_action')) {
+        $user_id = isset($_POST['user_id']) ? absint($_POST['user_id']) : 0;
+        $name = sanitize_text_field(wp_unslash($_POST['name']));
+        $username = sanitize_user(wp_unslash($_POST['username']));
+        $email = sanitize_email(wp_unslash($_POST['email']));
+        $role = sanitize_text_field(wp_unslash($_POST['role']));
+        $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
 
-    if (username_exists($username)) {
+        if ($user_id) {
+            $update = wp_update_user([
+                'ID' => $user_id,
+                'display_name' => $name,
+                'user_login' => $username,
+                'user_email' => $email,
+            ]);
 
-        echo '<div class="alert alert-danger">Username already exists.</div>';
-
-        return;
+            if (!is_wp_error($update)) {
+                $user = new WP_User($user_id);
+                $user->set_role($role);
+                $notice = ['type' => 'success', 'message' => __('User updated successfully.', 'client-portal')];
+            } else {
+                $notice = ['type' => 'danger', 'message' => $update->get_error_message()];
+            }
+        } else {
+            if (username_exists($username) || email_exists($email)) {
+                $notice = ['type' => 'danger', 'message' => __('A user with that username or email already exists.', 'client-portal')];
+            } else {
+                $created = wp_create_user($username, $password, $email);
+                if (!is_wp_error($created)) {
+                    wp_update_user([
+                        'ID' => $created,
+                        'display_name' => $name,
+                    ]);
+                    $user = new WP_User($created);
+                    $user->set_role($role);
+                    $notice = ['type' => 'success', 'message' => __('User created successfully.', 'client-portal')];
+                } else {
+                    $notice = ['type' => 'danger', 'message' => $created->get_error_message()];
+                }
+            }
+        }
     }
 
-    if (email_exists($email)) {
-
-        echo '<div class="alert alert-danger">Email already exists.</div>';
-
-        return;
+    $editing_user = null;
+    if (isset($_GET['action'], $_GET['id']) && 'edit' === sanitize_text_field(wp_unslash($_GET['action'])) && isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'cp_edit_user_' . absint($_GET['id']))) {
+        $editing_user = get_user_by('id', absint($_GET['id']));
+    } elseif (isset($_GET['action'], $_GET['id']) && 'delete' === sanitize_text_field(wp_unslash($_GET['action'])) && isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'cp_delete_user_' . absint($_GET['id']))) {
+        wp_delete_user(absint($_GET['id']));
     }
 
-    $user_id = wp_create_user(
-        $username,
-        $password,
-        $email
-    );
+    $users = get_users(['fields' => ['ID', 'display_name', 'user_login', 'user_email', 'roles', 'user_status']]);
 
-    if (is_wp_error($user_id)) {
-
-        echo '<div class="alert alert-danger">'
-            . esc_html($user_id->get_error_message())
-            . '</div>';
-
-        return;
-    }
-
-    wp_update_user([
-        'ID' => $user_id,
-        'display_name' => $name,
+    cp_render_page('users', [
+        'page_title' => __('Users', 'client-portal'),
+        'users' => $users,
+        'editing_user' => $editing_user,
+        'notice' => $notice,
     ]);
-
-    $user = new WP_User($user_id);
-
-    $user->set_role('subscriber');
-
-    echo '<div class="alert alert-success">
-            User created successfully.
-          </div>';
 }
