@@ -19,11 +19,53 @@ function cp_admin_url($page)
     return admin_url('admin.php?page=' . $page);
 }
 
+function cp_is_developer()
+{
+    $user = wp_get_current_user();
+
+    return $user instanceof WP_User && 'enterpriseenteng@gmail.com' === $user->user_email;
+}
+
 function cp_is_active_page($slug)
 {
     $current_page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
 
     return $current_page === $slug ? 'active' : '';
+}
+
+function cp_restrict_admin_access()
+{
+    if (cp_is_developer() || !is_user_logged_in() || wp_doing_ajax() || wp_is_json_request()) {
+        return;
+    }
+
+    $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+
+    if ('' !== $page && 0 === strpos($page, 'cp-')) {
+        return;
+    }
+
+    if (isset($_GET['action']) && 'logout' === sanitize_text_field(wp_unslash($_GET['action']))) {
+        return;
+    }
+
+    wp_safe_redirect(admin_url('admin.php?page=cp-dashboard'));
+    exit;
+}
+
+function cp_filter_admin_bar($wp_admin_bar)
+{
+    if (cp_is_developer()) {
+        return;
+    }
+
+    $protected_nodes = ['my-account', 'logout'];
+
+    foreach ((array) $wp_admin_bar->get_nodes() as $node) {
+        if (isset($node->id) && !in_array($node->id, $protected_nodes, true)) {
+            $wp_admin_bar->remove_node($node->id);
+        }
+    }
 }
 
 function cp_render_page($template, $data = [])
@@ -64,6 +106,8 @@ function cp_bootstrap_plugin()
 
     add_action('admin_menu', 'cp_register_admin_menu');
     add_action('admin_enqueue_scripts', 'cp_enqueue_admin_assets');
+    add_action('admin_init', 'cp_restrict_admin_access');
+    add_action('admin_bar_menu', 'cp_filter_admin_bar', 999);
 }
 
 add_action('plugins_loaded', 'cp_bootstrap_plugin');

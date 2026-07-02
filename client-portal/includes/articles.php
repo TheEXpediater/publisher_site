@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 
 function cp_articles_page()
 {
-    if (!current_user_can('edit_posts')) {
+    if (!cp_is_developer() && !current_user_can('read')) {
         wp_die(esc_html__('You do not have permission to access this page.', 'client-portal'));
     }
 

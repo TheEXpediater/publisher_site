@@ -6,10 +6,27 @@ if (!defined('ABSPATH')) {
 
 function cp_register_admin_menu()
 {
+    if (cp_is_developer()) {
+        return;
+    }
+
+    remove_menu_page('index.php');
+    remove_menu_page('edit.php');
+    remove_menu_page('upload.php');
+    remove_menu_page('edit.php?post_type=page');
+    remove_menu_page('edit-comments.php');
+    remove_menu_page('themes.php');
+    remove_menu_page('plugins.php');
+    remove_menu_page('users.php');
+    remove_menu_page('tools.php');
+    remove_menu_page('options-general.php');
+    remove_menu_page('profile.php');
+    remove_menu_page('update-core.php');
+
     add_menu_page(
         __('Enterprise1979 Publisher Portal', 'client-portal'),
         __('Enterprise1979 Publisher Portal', 'client-portal'),
-        'edit_posts',
+        'read',
         'cp-dashboard',
         'cp_dashboard_page',
         'dashicons-admin-site',
@@ -20,7 +37,7 @@ function cp_register_admin_menu()
         'cp-dashboard',
         __('Dashboard', 'client-portal'),
         __('Dashboard', 'client-portal'),
-        'edit_posts',
+        'read',
         'cp-dashboard',
         'cp_dashboard_page'
     );
@@ -29,7 +46,7 @@ function cp_register_admin_menu()
         'cp-dashboard',
         __('Articles', 'client-portal'),
         __('Articles', 'client-portal'),
-        'edit_posts',
+        'read',
         'cp-articles',
         'cp_articles_page'
     );
@@ -38,7 +55,7 @@ function cp_register_admin_menu()
         'cp-dashboard',
         __('Categories', 'client-portal'),
         __('Categories', 'client-portal'),
-        'edit_posts',
+        'read',
         'cp-categories',
         'cp_categories_page'
     );
@@ -47,7 +64,7 @@ function cp_register_admin_menu()
         'cp-dashboard',
         __('Users', 'client-portal'),
         __('Users', 'client-portal'),
-        'manage_options',
+        'read',
         'cp-users',
         'cp_users_page'
     );
@@ -56,7 +73,7 @@ function cp_register_admin_menu()
         'cp-dashboard',
         __('Analytics', 'client-portal'),
         __('Analytics', 'client-portal'),
-        'edit_posts',
+        'read',
         'cp-analytics',
         'cp_analytics_page'
     );
@@ -65,7 +82,7 @@ function cp_register_admin_menu()
         'cp-dashboard',
         __('Settings', 'client-portal'),
         __('Settings', 'client-portal'),
-        'manage_options',
+        'read',
         'cp-settings',
         'cp_settings_page'
     );
