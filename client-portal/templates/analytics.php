@@ -7,8 +7,8 @@ if (!defined('ABSPATH')) {
 $analytics = isset($analytics) ? $analytics : [];
 
 ?>
-<div class="mb-4">
-    <h2 class="h4 mb-1"><?php esc_html_e('Analytics', 'client-portal'); ?></h2>
+<div class="cp-page-header mb-4">
+    <h2 class="h3 mb-1"><?php esc_html_e('Analytics', 'client-portal'); ?></h2>
     <p class="text-muted mb-0">A dedicated analytics workspace for future reporting integrations.</p>
 </div>
 
@@ -55,7 +55,7 @@ $analytics = isset($analytics) ? $analytics : [];
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mt-4">
+<div class="card border-0 shadow-sm mt-4 cp-card">
     <div class="card-header bg-white border-0 py-3">
         <h3 class="h5 mb-0"><?php esc_html_e('Latest Articles', 'client-portal'); ?></h3>
     </div>

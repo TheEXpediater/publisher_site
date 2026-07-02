@@ -8,14 +8,14 @@ $categories = isset($categories) ? $categories : [];
 $editing_category = isset($editing_category) ? $editing_category : null;
 
 ?>
-<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div class="cp-page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
-        <h2 class="h4 mb-1"><?php esc_html_e('Categories', 'client-portal'); ?></h2>
+        <h2 class="h3 mb-1"><?php esc_html_e('Categories', 'client-portal'); ?></h2>
         <p class="text-muted mb-0">Organize content using WordPress categories.</p>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
+<div class="card border-0 shadow-sm mb-4 cp-card">
     <div class="card-body">
         <form method="post">
             <?php wp_nonce_field('cp_categories_action', 'cp_categories_nonce'); ?>
@@ -42,7 +42,7 @@ $editing_category = isset($editing_category) ? $editing_category : null;
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm cp-card">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table align-middle mb-0">

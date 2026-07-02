@@ -9,9 +9,9 @@ $editing_user = isset($editing_user) ? $editing_user : null;
 $available_roles = ['administrator' => 'Administrator', 'editor' => 'Editor', 'author' => 'Author'];
 
 ?>
-<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div class="cp-page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
-        <h2 class="h4 mb-1"><?php esc_html_e('User Management', 'client-portal'); ?></h2>
+        <h2 class="h3 mb-1"><?php esc_html_e('User Management', 'client-portal'); ?></h2>
         <p class="text-muted mb-0">Create, update, and remove portal users without leaving WordPress admin.</p>
     </div>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#cpUserModal">
@@ -24,7 +24,7 @@ $available_roles = ['administrator' => 'Administrator', 'editor' => 'Editor', 'a
     <div class="alert alert-<?php echo esc_attr($notice['type']); ?>"><?php echo esc_html($notice['message']); ?></div>
 <?php endif; ?>
 
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm cp-card">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table align-middle mb-0">

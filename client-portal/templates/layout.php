@@ -20,14 +20,16 @@ $page_title = isset($page_title) ? $page_title : __('Publisher Portal', 'client-
     <aside class="cp-sidebar">
         <?php include CP_PATH . 'templates/sidebar.php'; ?>
     </aside>
-    <main class="cp-main">
+    <div class="cp-page-wrap">
         <header class="cp-topbar">
             <?php include CP_PATH . 'templates/topbar.php'; ?>
         </header>
-        <section class="cp-content">
-            <?php echo $content; ?>
-        </section>
-    </main>
+        <main class="cp-main">
+            <section class="cp-content">
+                <?php echo $content; ?>
+            </section>
+        </main>
+    </div>
 </div>
 <?php wp_footer(); ?>
 </body>

@@ -42,16 +42,16 @@ $pages = [
     <div class="cp-brand-mark">E</div>
     <div>
         <h4 class="mb-0">Enterprise1979</h4>
-        <p class="small text-muted mb-0">Publisher Portal</p>
+        <p class="small mb-0">Publisher Portal</p>
     </div>
 </div>
 
-<div class="list-group list-group-flush mt-4">
+<nav class="cp-sidebar-nav">
     <?php foreach ($pages as $slug => $item) : ?>
-        <a class="list-group-item list-group-item-action border-0 rounded-3 mb-2 <?php echo cp_is_active_page($slug) ? 'active' : ''; ?>"
+        <a class="cp-nav-link <?php echo cp_is_active_page($slug) ? 'active' : ''; ?>"
            href="<?php echo esc_url($item['url']); ?>">
-            <i class="bi <?php echo esc_attr($item['icon']); ?> me-2"></i>
-            <?php echo esc_html($item['label']); ?>
+            <i class="bi <?php echo esc_attr($item['icon']); ?>"></i>
+            <span><?php echo esc_html($item['label']); ?></span>
         </a>
     <?php endforeach; ?>
-</div>
+</nav>

@@ -7,9 +7,11 @@ if (!defined('ABSPATH')) {
 $stats = isset($stats) ? $stats : [];
 
 ?>
-<div class="mb-4">
-    <h2 class="h4 mb-1"><?php esc_html_e('Publishing Overview', 'client-portal'); ?></h2>
-    <p class="text-muted mb-0">Monitor article volume, drafts, readers, and categories in one place.</p>
+<div class="cp-page-header mb-4">
+    <div>
+        <h2 class="h3 mb-1"><?php esc_html_e('Publishing Overview', 'client-portal'); ?></h2>
+        <p class="text-muted mb-0">Monitor article volume, drafts, readers, and categories in one place.</p>
+    </div>
 </div>
 
 <div class="row g-4 mb-4">

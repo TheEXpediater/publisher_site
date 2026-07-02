@@ -7,12 +7,12 @@ if (!defined('ABSPATH')) {
 $options = get_option('cp_portal_settings', []);
 
 ?>
-<div class="mb-4">
-    <h2 class="h4 mb-1"><?php esc_html_e('Portal Settings', 'client-portal'); ?></h2>
+<div class="cp-page-header mb-4">
+    <h2 class="h3 mb-1"><?php esc_html_e('Portal Settings', 'client-portal'); ?></h2>
     <p class="text-muted mb-0">Configure the portal branding and publishing defaults.</p>
 </div>
 
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm cp-card">
     <div class="card-body">
         <form method="post">
             <?php wp_nonce_field('cp_settings_action', 'cp_settings_nonce'); ?>

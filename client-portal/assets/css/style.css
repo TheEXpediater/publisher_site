@@ -1,69 +1,165 @@
 .cp-admin-body {
-    background: #f4f7fb;
+    background: #f3f5f9;
     margin: 0;
     font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    color: #111827;
 }
 
 .cp-admin-shell {
     display: flex;
     min-height: 100vh;
+    background: #f3f5f9;
 }
 
 .cp-sidebar {
-    width: 280px;
-    background: #111827;
+    width: 260px;
+    min-width: 260px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    left: 0;
+    background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
     color: #f9fafb;
-    padding: 24px 18px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
 }
 
 .cp-sidebar-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 24px;
+    padding: 6px 6px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 20px;
 }
 
 .cp-brand-mark {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
 }
 
-.cp-sidebar .list-group-item {
+.cp-sidebar-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.cp-sidebar-header p {
+    color: #9ca3af;
+}
+
+.cp-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cp-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
     color: #d1d5db;
-    background: transparent;
+    text-decoration: none;
+    transition: all 0.2s ease;
 }
 
-.cp-sidebar .list-group-item.active {
+.cp-nav-link:hover,
+.cp-nav-link.active {
     background: rgba(255,255,255,0.12);
     color: #ffffff;
+    text-decoration: none;
+}
+
+.cp-page-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cp-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 24px;
+}
+
+.cp-topbar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.cp-topbar-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 10px 14px;
+    min-width: 260px;
+}
+
+.cp-topbar-search input {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    width: 100%;
+}
+
+.cp-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cp-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #f8fafc;
 }
 
 .cp-main {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.cp-topbar {
-    padding: 20px 28px;
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 24px;
 }
 
 .cp-content {
-    padding: 28px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.cp-page-header {
+    margin-bottom: 1.25rem;
+}
+
+.cp-card {
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
 }
 
 .cp-stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -77,10 +173,21 @@
 }
 
 .table th {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     color: #6b7280;
+}
+
+.form-control,
+.form-select,
+.form-check-input {
+    border-radius: 10px;
+    border-color: #d1d5db;
+}
+
+.btn {
+    border-radius: 10px;
 }
 
 @media (max-width: 992px) {
@@ -90,5 +197,16 @@
 
     .cp-sidebar {
         width: 100%;
+        height: auto;
+        position: relative;
+        min-width: 100%;
+    }
+
+    .cp-topbar-inner {
+        flex-wrap: wrap;
+    }
+
+    .cp-topbar-search {
+        min-width: 100%;
     }
 }
