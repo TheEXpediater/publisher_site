@@ -36,9 +36,8 @@ function cp_login()
 
     if (!is_wp_error($user)) {
 
-        wp_safe_redirect(cp_dashboard_url());
-
-        exit;
+  echo '<script>window.location.href="' . esc_url(cp_dashboard_url()) . '";</script>';
+exit;
 
     }
 
@@ -48,9 +47,8 @@ function cp_login()
         10
     );
 
-    wp_safe_redirect(cp_login_url());
-
-    exit;
+echo '<script>window.location.href="' . esc_url(cp_login_url()) . '";</script>';
+exit;
 }
 
 /*
@@ -63,7 +61,7 @@ function cp_login_shortcode()
 {
     if (is_user_logged_in()) {
 
-        wp_safe_redirect(cp_dashboard_url());
+        echo '<script>window.location.href="' . esc_url(cp_dashboard_url()) . '";</script>';
 
         exit;
 
@@ -86,13 +84,12 @@ function cp_require_login()
 {
     if (!is_user_logged_in()) {
 
-        wp_safe_redirect(cp_login_url());
+        echo '<script>window.location.href="' . esc_url(cp_login_url()) . '";</script>';
 
         exit;
 
     }
 }
-
 function cp_current_user()
 {
     return wp_get_current_user();

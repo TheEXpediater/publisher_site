@@ -1,5 +1,5 @@
-<?php
+<div class="container-fluid">
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+    <h2>Articles</h2>
+
+</div>

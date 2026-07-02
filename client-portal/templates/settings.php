@@ -1,5 +1,5 @@
 <div class="container-fluid">
 
-    <h2>Categories</h2>
+    <h2>Settings</h2>
 
 </div>

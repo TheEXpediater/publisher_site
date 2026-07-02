@@ -4,16 +4,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Render Layout
-|--------------------------------------------------------------------------
-*/
-
 function cp_render($template, $data = [])
 {
-    cp_require_login();
-
     if (!empty($data)) {
         extract($data);
     }

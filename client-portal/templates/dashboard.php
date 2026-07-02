@@ -1,11 +1,47 @@
-<?php
+<div class="container-fluid">
 
-if (!is_user_logged_in()) {
+    <h2>Dashboard</h2>
 
-    wp_redirect(site_url('/portal/login'));
+    <hr>
 
-    exit;
+    <div class="row">
 
-}
+        <div class="col-md-3">
 
-echo "<h1>Dashboard</h1>";
+            <div class="card p-3">
+
+                <h5>Articles</h5>
+
+                <h2>0</h2>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card p-3">
+
+                <h5>Users</h5>
+
+                <h2>0</h2>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card p-3">
+
+                <h5>Drafts</h5>
+
+                <h2>0</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
