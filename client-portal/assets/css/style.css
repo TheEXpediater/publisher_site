@@ -1,11 +1,12 @@
 .cp-admin-body {
     background: #f3f5f9;
     margin: 0;
+    min-height: 100vh;
     font-family: "Segoe UI", Roboto, Arial, sans-serif;
     color: #111827;
 }
 
-.cp-admin-shell {
+.cp-app {
     display: flex;
     min-height: 100vh;
     background: #f3f5f9;
@@ -30,7 +31,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 6px 6px 20px;
+    padding-bottom: 20px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     margin-bottom: 20px;
 }
@@ -50,10 +51,12 @@
 .cp-sidebar-header h4 {
     font-size: 1rem;
     font-weight: 600;
+    margin: 0;
 }
 
 .cp-sidebar-header p {
     color: #9ca3af;
+    margin: 0;
 }
 
 .cp-sidebar-nav {
@@ -80,7 +83,7 @@
     text-decoration: none;
 }
 
-.cp-page-wrap {
+.cp-main {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -93,7 +96,7 @@
     z-index: 15;
     background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
-    padding: 16px 24px;
+    padding: 20px 28px;
 }
 
 .cp-topbar-inner {
@@ -103,47 +106,58 @@
     gap: 16px;
 }
 
-.cp-topbar-search {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 999px;
-    padding: 10px 14px;
-    min-width: 260px;
-}
-
-.cp-topbar-search input {
-    border: 0;
-    outline: 0;
-    background: transparent;
-    width: 100%;
+.cp-topbar-title h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
 }
 
 .cp-topbar-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 }
 
-.cp-user-chip {
+.cp-user-meta {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #f8fafc;
+    flex-direction: column;
+    text-align: right;
 }
 
-.cp-main {
-    flex: 1;
-    padding: 24px;
+.cp-user-name {
+    font-weight: 600;
+    color: #111827;
+}
+
+.cp-user-email {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.cp-logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: #1f2937;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background 0.2s ease;
+}
+
+.cp-logout-button:hover {
+    background: #111827;
 }
 
 .cp-content {
+    flex: 1;
+    padding: 24px 28px;
     max-width: 1600px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .cp-page-header {
@@ -191,7 +205,7 @@
 }
 
 @media (max-width: 992px) {
-    .cp-admin-shell {
+    .cp-app {
         flex-direction: column;
     }
 
@@ -204,9 +218,11 @@
 
     .cp-topbar-inner {
         flex-wrap: wrap;
+        align-items: flex-start;
     }
 
-    .cp-topbar-search {
-        min-width: 100%;
+    .cp-content {
+        padding: 20px;
     }
 }
+
