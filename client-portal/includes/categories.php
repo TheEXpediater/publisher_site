@@ -28,7 +28,26 @@ function cp_handle_category_save()
         return ['type' => 'danger', 'message' => $result->get_error_message()];
     }
 
-    cp_redirect('cp-categories', ['cp_notice' => $category_id ? 'category-updated' : 'category-created']);
+    cp_redirect('cp-categories', ['cp_notice' => $category_id ? 'category_updated' : 'category_created']);
+}
+
+function cp_process_category_admin_actions()
+{
+    if ('cp-categories' !== cp_current_page()) {
+        return;
+    }
+
+    if ('save' === sanitize_key(cp_post_value('cp_category_action'))) {
+        $notice = cp_handle_category_save();
+        if (is_array($notice) && !empty($notice['message'])) {
+            cp_set_temporary_notice(isset($notice['type']) ? $notice['type'] : 'danger', $notice['message']);
+            cp_redirect('cp-categories');
+        }
+    }
+
+    if ('delete' === sanitize_key(cp_get_value('action'))) {
+        cp_handle_category_request();
+    }
 }
 
 function cp_handle_category_request()
@@ -49,19 +68,24 @@ function cp_handle_category_request()
     }
 
     $result = wp_delete_term($category_id, 'category');
-    cp_redirect('cp-categories', !is_wp_error($result) && $result ? ['cp_notice' => 'category-deleted'] : []);
+    if (is_wp_error($result) || !$result) {
+        $message = is_wp_error($result) ? $result->get_error_message() : __('The category could not be deleted.', 'client-portal');
+        cp_set_temporary_notice('danger', $message);
+        cp_redirect('cp-categories');
+    }
+
+    cp_redirect('cp-categories', ['cp_notice' => 'category_deleted']);
 }
 
 function cp_categories_page()
 {
     cp_require_capability('manage_categories');
-    $notice = cp_handle_category_save();
     $editing_category = cp_handle_category_request();
 
     cp_render_page('categories', [
         'page_title' => __('Categories', 'client-portal'),
         'categories' => get_categories(['hide_empty' => false, 'orderby' => 'name']),
         'editing_category' => $editing_category,
-        'notice' => $notice ?: cp_request_notice(),
+        'notice' => cp_request_notice(),
     ]);
 }

@@ -132,7 +132,7 @@ function cp_render_page($template, $data = [])
     cp_render_template('layout', $data);
 }
 
-function cp_render_notice($notice)
+function cp_render_admin_notice($notice)
 {
     if (empty($notice['message'])) {
         return;
@@ -148,15 +148,21 @@ function cp_render_notice($notice)
     <?php
 }
 
-function cp_notice($code)
+function cp_render_notice($notice)
+{
+    cp_render_admin_notice($notice);
+}
+
+function cp_get_notice_message($code)
 {
     $notices = [
-        'article-created' => ['type' => 'success', 'message' => __('Article created successfully.', 'client-portal')],
-        'article-updated' => ['type' => 'success', 'message' => __('Article updated successfully.', 'client-portal')],
-        'article-deleted' => ['type' => 'success', 'message' => __('Article deleted successfully.', 'client-portal')],
-        'category-created' => ['type' => 'success', 'message' => __('Category created successfully.', 'client-portal')],
-        'category-updated' => ['type' => 'success', 'message' => __('Category updated successfully.', 'client-portal')],
-        'category-deleted' => ['type' => 'success', 'message' => __('Category deleted successfully.', 'client-portal')],
+        'article_created' => ['type' => 'success', 'message' => __('Article created successfully.', 'client-portal')],
+        'article_updated' => ['type' => 'success', 'message' => __('Article updated successfully.', 'client-portal')],
+        'article_deleted' => ['type' => 'success', 'message' => __('Article deleted successfully.', 'client-portal')],
+        'category_created' => ['type' => 'success', 'message' => __('Category created successfully.', 'client-portal')],
+        'category_updated' => ['type' => 'success', 'message' => __('Category updated successfully.', 'client-portal')],
+        'category_deleted' => ['type' => 'success', 'message' => __('Category deleted successfully.', 'client-portal')],
+        'settings_saved' => ['type' => 'success', 'message' => __('Settings saved successfully.', 'client-portal')],
         'user-created' => ['type' => 'success', 'message' => __('User created successfully.', 'client-portal')],
         'user-updated' => ['type' => 'success', 'message' => __('User updated successfully.', 'client-portal')],
         'user-deleted' => ['type' => 'success', 'message' => __('User deleted successfully.', 'client-portal')],
@@ -165,10 +171,43 @@ function cp_notice($code)
     return isset($notices[$code]) ? $notices[$code] : null;
 }
 
+function cp_notice($code)
+{
+    return cp_get_notice_message($code);
+}
+
+function cp_set_temporary_notice($type, $message)
+{
+    if (!is_user_logged_in()) {
+        return;
+    }
+
+    $allowed_types = ['success', 'danger', 'warning', 'info'];
+    $notice = [
+        'type' => in_array($type, $allowed_types, true) ? $type : 'info',
+        'message' => sanitize_text_field($message),
+    ];
+    set_transient('cp_portal_notice_' . get_current_user_id(), $notice, MINUTE_IN_SECONDS);
+}
+
+function cp_pull_temporary_notice()
+{
+    if (!is_user_logged_in()) {
+        return null;
+    }
+
+    $key = 'cp_portal_notice_' . get_current_user_id();
+    $notice = get_transient($key);
+    delete_transient($key);
+
+    return is_array($notice) ? $notice : null;
+}
+
 function cp_request_notice()
 {
     $code = sanitize_key(cp_get_value('cp_notice'));
-    return cp_notice($code);
+    $temporary_notice = cp_pull_temporary_notice();
+    return cp_get_notice_message($code) ?: $temporary_notice;
 }
 
 function cp_redirect($page, $args = [])

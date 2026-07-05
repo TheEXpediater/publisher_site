@@ -1,3 +1,4 @@
+.cp-app { --cp-builder-dark: rgb(0, 0, 41); }
 .cp-app .cp-builder-page-heading { align-items: flex-start; }
 .cp-app .cp-back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 22px; color: #475467; font-size: 13px; font-weight: 650; }
 .cp-app .cp-back-link:hover { color: var(--cp-primary); }
@@ -30,10 +31,10 @@
 .cp-app .cp-builder-empty i { margin-bottom: 10px; color: #98a2b3; font-size: 30px; }
 .cp-app .cp-builder-empty strong { margin-bottom: 4px; color: #344054; font-size: 14px; }
 .cp-app .cp-builder-empty span { font-size: 12px; }
-.cp-app .cp-add-block { margin-top: 18px; overflow: hidden; border: 2px dashed #344054; border-radius: 14px; background: #fcfcfd; transition: border-color .2s, background .2s; }
+.cp-app .cp-add-block { margin-top: 18px; overflow: hidden; border: 2px dashed var(--cp-builder-dark); border-radius: 14px; background: #fcfcfd; transition: border-color .2s, background .2s; }
 .cp-app .cp-add-block:hover, .cp-app .cp-add-block-open { border-color: var(--cp-primary); background: #f9f9ff; }
 .cp-app .cp-add-block-trigger { width: 100%; display: flex; align-items: center; flex-direction: column; padding: 22px; border: 0; color: #344054; background: transparent; cursor: pointer; }
-.cp-app .cp-add-block-plus { width: 34px; height: 34px; display: grid; place-items: center; margin-bottom: 7px; border-radius: 50%; color: #fff; background: #344054; transition: transform .2s, background .2s; }
+.cp-app .cp-add-block-plus { width: 34px; height: 34px; display: grid; place-items: center; margin-bottom: 7px; border-radius: 50%; color: #fff; background: var(--cp-builder-dark); transition: transform .2s, background .2s; }
 .cp-app .cp-add-block-open .cp-add-block-plus { background: var(--cp-primary); transform: rotate(45deg); }
 .cp-app .cp-add-block-trigger strong { font-size: 14px; }
 .cp-app .cp-add-block-trigger small { margin-top: 3px; color: #98a2b3; }

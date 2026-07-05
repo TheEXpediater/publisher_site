@@ -21,7 +21,42 @@ function cp_handle_article_delete()
     cp_require_capability('delete_post', $article_id);
     check_admin_referer('cp_delete_article_' . $article_id);
     $deleted = wp_delete_post($article_id, true);
-    cp_redirect('cp-articles', $deleted ? ['cp_notice' => 'article-deleted'] : []);
+    if (!$deleted) {
+        cp_set_temporary_notice('danger', __('The article could not be deleted.', 'client-portal'));
+        cp_redirect('cp-articles');
+    }
+
+    cp_redirect('cp-articles', ['cp_notice' => 'article_deleted']);
+}
+
+function cp_process_article_admin_actions()
+{
+    $page = cp_current_page();
+
+    if ('cp-articles' === $page) {
+        cp_handle_article_delete();
+        return;
+    }
+
+    if (!in_array($page, ['cp-article-create', 'cp-article-edit'], true) || 'save' !== sanitize_key(cp_post_value('cp_article_builder_action'))) {
+        return;
+    }
+
+    $post = null;
+    if ('cp-article-edit' === $page) {
+        $article_id = absint(cp_get_value('id'));
+        $post = $article_id ? get_post($article_id) : null;
+        if (!$post || 'post' !== $post->post_type) {
+            cp_set_temporary_notice('danger', __('The article could not be found.', 'client-portal'));
+            cp_redirect('cp-articles');
+        }
+    }
+
+    $result = cp_save_article_builder_post($post);
+    if (is_wp_error($result)) {
+        cp_set_temporary_notice('danger', $result->get_error_message());
+        cp_redirect($page, $post ? ['id' => $post->ID] : []);
+    }
 }
 
 function cp_article_list_filters()
@@ -38,7 +73,6 @@ function cp_article_list_filters()
 function cp_articles_page()
 {
     cp_require_capability('edit_posts');
-    cp_handle_article_delete();
 
     $settings = cp_settings();
     $filters = cp_article_list_filters();
@@ -91,21 +125,7 @@ function cp_render_article_builder_page($mode)
         cp_require_capability('edit_post', $post->ID);
     }
 
-    $notice = null;
-    if ('save' === sanitize_key(cp_post_value('cp_article_builder_action'))) {
-        $result = cp_save_article_builder_post($post);
-        if (is_wp_error($result)) {
-            $notice = ['type' => 'danger', 'message' => $result->get_error_message()];
-        }
-    }
-
     $blocks = cp_get_article_blocks_for_editor($post);
-    if ($notice && '' !== cp_post_value('cp_article_blocks')) {
-        $posted_blocks = cp_decode_article_blocks(cp_post_value('cp_article_blocks'), false);
-        if (!is_wp_error($posted_blocks)) {
-            $blocks = $posted_blocks;
-        }
-    }
 
     $selected_categories = $post ? wp_get_post_categories($post->ID) : [];
     $settings = cp_settings();
@@ -116,15 +136,6 @@ function cp_render_article_builder_page($mode)
         'category' => !empty($selected_categories) ? (int) $selected_categories[0] : 0,
     ];
 
-    if ($notice) {
-        $article_data = [
-            'title' => sanitize_text_field(cp_post_value('title')),
-            'excerpt' => sanitize_textarea_field(cp_post_value('excerpt')),
-            'status' => cp_sanitize_status(cp_post_value('status'), 'draft'),
-            'category' => absint(cp_post_value('category')),
-        ];
-    }
-
     $template = $is_edit ? 'article-edit' : 'article-create';
     cp_render_page($template, [
         'page_title' => $is_edit ? __('Edit Article', 'client-portal') : __('Create Article', 'client-portal'),
@@ -133,7 +144,7 @@ function cp_render_article_builder_page($mode)
         'article_data' => $article_data,
         'blocks' => $blocks,
         'categories' => get_categories(['hide_empty' => false]),
-        'notice' => $notice,
+        'notice' => cp_request_notice(),
     ]);
 }
 
@@ -173,15 +184,17 @@ function cp_save_article_builder_post($post = null)
     if ($post) {
         $post_data['ID'] = $post->ID;
         $saved_id = wp_update_post(wp_slash($post_data), true);
-        $notice_code = 'article-updated';
+        $notice_code = 'article_updated';
     } else {
         $post_data['post_author'] = get_current_user_id();
         $saved_id = wp_insert_post(wp_slash($post_data), true);
-        $notice_code = 'article-created';
+        $notice_code = 'article_created';
     }
 
-    if (is_wp_error($saved_id)) {
-        return $saved_id;
+    if (is_wp_error($saved_id) || !$saved_id) {
+        return is_wp_error($saved_id)
+            ? $saved_id
+            : new WP_Error('cp_article_save_failed', __('WordPress could not save the article.', 'client-portal'));
     }
 
     $category_id = absint(cp_post_value('category'));

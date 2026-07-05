@@ -7,6 +7,11 @@
             return;
         }
 
+        var logoutModal = document.getElementById('cp-logout-modal');
+        if (logoutModal && logoutModal.parentNode !== app) {
+            app.appendChild(logoutModal);
+        }
+
         document.querySelectorAll('[data-cp-sidebar-open]').forEach(function (button) {
             button.addEventListener('click', function () {
                 app.classList.add('cp-sidebar-open');

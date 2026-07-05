@@ -63,6 +63,25 @@ function cp_handle_user_save()
     cp_redirect('cp-users', ['cp_notice' => $notice_code]);
 }
 
+function cp_process_user_admin_actions()
+{
+    if ('cp-users' !== cp_current_page()) {
+        return;
+    }
+
+    if ('save' === sanitize_key(cp_post_value('cp_user_action'))) {
+        $notice = cp_handle_user_save();
+        if (is_array($notice) && !empty($notice['message'])) {
+            cp_set_temporary_notice(isset($notice['type']) ? $notice['type'] : 'danger', $notice['message']);
+            cp_redirect('cp-users');
+        }
+    }
+
+    if ('delete' === sanitize_key(cp_get_value('action'))) {
+        cp_handle_user_request();
+    }
+}
+
 function cp_handle_user_request()
 {
     $action = sanitize_key(cp_get_value('action'));
@@ -110,7 +129,6 @@ function cp_user_request_error()
 function cp_users_page()
 {
     cp_require_capability('list_users');
-    $notice = cp_handle_user_save();
     $editing_user = cp_handle_user_request();
 
     cp_render_page('users', [
@@ -118,6 +136,6 @@ function cp_users_page()
         'users' => get_users(['orderby' => 'display_name', 'order' => 'ASC']),
         'editing_user' => $editing_user,
         'available_roles' => cp_allowed_roles(),
-        'notice' => $notice ?: (cp_user_request_error() ?: cp_request_notice()),
+        'notice' => cp_user_request_error() ?: cp_request_notice(),
     ]);
 }

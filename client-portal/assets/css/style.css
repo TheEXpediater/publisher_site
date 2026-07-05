@@ -1,8 +1,11 @@
 :root {
+    --cp-brand-dark: rgb(0, 0, 41);
+    --cp-sidebar-bg: rgb(0, 0, 41);
+    --cp-topbar-dark: rgb(0, 0, 41);
     --cp-bg: #f3f6fb;
     --cp-surface: #fff;
-    --cp-sidebar: #101828;
-    --cp-sidebar-soft: #1d2939;
+    --cp-sidebar: #000029;
+    --cp-sidebar-soft: #0b0b3b;
     --cp-primary: #5b5ce2;
     --cp-primary-dark: #4446c8;
     --cp-text: #101828;
@@ -23,7 +26,7 @@
 
 .cp-app *, .cp-app *::before, .cp-app *::after { box-sizing: border-box; }
 .cp-app a { text-decoration: none; }
-.cp-app .cp-sidebar { position: sticky; top: 32px; width: 272px; height: calc(100vh - 32px); flex: 0 0 272px; display: flex; flex-direction: column; padding: 28px 20px; color: #fff; background: linear-gradient(180deg, var(--cp-sidebar), #17223a); z-index: 1050; }
+.cp-app .cp-sidebar { position: sticky; top: 32px; width: 272px; height: calc(100vh - 32px); flex: 0 0 272px; display: flex; flex-direction: column; padding: 28px 20px; color: #fff; background: linear-gradient(180deg, var(--cp-sidebar-bg), var(--cp-sidebar-soft)); z-index: 1050; }
 .cp-app .cp-sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 28px; border-bottom: 1px solid rgba(255,255,255,.1); }
 .cp-app .cp-sidebar-brand strong, .cp-app .cp-sidebar-brand small { display: block; }
 .cp-app .cp-sidebar-brand strong { color: #fff; font-size: 16px; line-height: 1.2; }
@@ -49,7 +52,7 @@
 .cp-app .cp-user-meta strong { font-size: 13px; }
 .cp-app .cp-user-meta small { color: var(--cp-muted); font-size: 11px; }
 .cp-app .cp-user-avatar img, .cp-app .cp-table-avatar img { display: block; border-radius: 50%; }
-.cp-app .cp-logout-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid var(--cp-border); border-radius: 10px; color: #344054; background: #fff; font-size: 13px; font-weight: 600; }
+.cp-app .cp-logout-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid var(--cp-border); border-radius: 10px; color: #344054; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
 .cp-app .cp-logout-button:hover { color: #b42318; border-color: #fecdca; background: #fef3f2; }
 .cp-app .cp-menu-toggle { display: none; padding: 7px 9px; border: 1px solid var(--cp-border); border-radius: 9px; color: var(--cp-text); background: #fff; font-size: 21px; }
 .cp-app .cp-content { width: 100%; max-width: 1600px; margin: 0 auto; padding: 34px; }

@@ -4,11 +4,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
+<?php cp_render_admin_notice($notice); ?>
 <div class="cp-page-heading">
     <div><p class="cp-eyebrow"><?php esc_html_e('Content', 'client-portal'); ?></p><h2><?php esc_html_e('Articles', 'client-portal'); ?></h2><p><?php esc_html_e('Search, review, and manage articles from one workspace.', 'client-portal'); ?></p></div>
     <a class="btn btn-primary" href="<?php echo esc_url(cp_admin_url('cp-article-create')); ?>"><i class="bi bi-plus-lg" aria-hidden="true"></i> <?php esc_html_e('Create Article', 'client-portal'); ?></a>
 </div>
-<?php cp_render_notice($notice); ?>
 <section class="cp-card cp-filter-card">
     <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>">
         <input type="hidden" name="page" value="cp-articles">
@@ -27,7 +27,7 @@ if (!defined('ABSPATH')) {
         <tr><td><strong><?php echo esc_html($article->post_title ?: __('Untitled', 'client-portal')); ?></strong></td><td><span class="cp-badge cp-badge-<?php echo esc_attr(cp_status_badge_class($article->post_status)); ?>"><?php echo esc_html(ucfirst($article->post_status)); ?></span></td><td><?php echo esc_html(get_the_author_meta('display_name', $article->post_author)); ?></td><td><?php echo esc_html($article_categories ? $article_categories[0]->name : __('Uncategorized', 'client-portal')); ?></td><td><?php echo esc_html(get_the_date('', $article)); ?></td><td><div class="cp-actions">
             <?php if (current_user_can('edit_post', $article->ID)) : ?><a class="btn btn-sm btn-outline-primary" href="<?php echo esc_url(cp_admin_url('cp-article-edit', ['id' => $article->ID])); ?>"><i class="bi bi-pencil"></i><span><?php esc_html_e('Edit', 'client-portal'); ?></span></a><?php endif; ?>
             <?php if ('publish' === $article->post_status) : ?><a class="btn btn-sm btn-outline-secondary" href="<?php echo esc_url(get_permalink($article)); ?>" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right"></i><span><?php esc_html_e('View', 'client-portal'); ?></span></a><?php endif; ?>
-            <?php if (current_user_can('delete_post', $article->ID)) : ?><a class="btn btn-sm btn-outline-danger" data-cp-confirm="<?php echo esc_attr__('Delete this article permanently?', 'client-portal'); ?>" href="<?php echo esc_url(wp_nonce_url(cp_admin_url('cp-articles', ['action' => 'delete', 'id' => $article->ID]), 'cp_delete_article_' . $article->ID)); ?>"><i class="bi bi-trash"></i><span><?php esc_html_e('Delete', 'client-portal'); ?></span></a><?php endif; ?>
+            <?php if (current_user_can('delete_post', $article->ID)) : ?><a class="btn btn-sm btn-outline-danger" data-cp-confirm="<?php echo esc_attr__('Are you sure you want to delete this article?', 'client-portal'); ?>" href="<?php echo esc_url(wp_nonce_url(cp_admin_url('cp-articles', ['action' => 'delete', 'id' => $article->ID]), 'cp_delete_article_' . $article->ID)); ?>"><i class="bi bi-trash"></i><span><?php esc_html_e('Delete', 'client-portal'); ?></span></a><?php endif; ?>
         </div></td></tr>
     <?php endforeach; else : ?><tr><td colspan="6" class="cp-empty-state"><i class="bi bi-file-earmark-text"></i><strong><?php esc_html_e('No articles found', 'client-portal'); ?></strong><span><?php esc_html_e('Try adjusting the filters or create your first article.', 'client-portal'); ?></span></td></tr><?php endif; ?>
     </tbody></table></div>
