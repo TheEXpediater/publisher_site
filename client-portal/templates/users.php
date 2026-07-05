@@ -4,111 +4,28 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$users = isset($users) ? $users : [];
 $editing_user = isset($editing_user) ? $editing_user : null;
-$available_roles = ['administrator' => 'Administrator', 'editor' => 'Editor', 'author' => 'Author'];
-
+$can_create = current_user_can('create_users');
 ?>
-<div class="cp-page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-        <h2 class="h3 mb-1"><?php esc_html_e('User Management', 'client-portal'); ?></h2>
-        <p class="text-muted mb-0">Create, update, and remove portal users without leaving WordPress admin.</p>
-    </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#cpUserModal">
-        <i class="bi bi-person-plus me-1"></i>
-        <?php esc_html_e('Add User', 'client-portal'); ?>
-    </button>
-</div>
-
-<?php if (!empty($notice)) : ?>
-    <div class="alert alert-<?php echo esc_attr($notice['type']); ?>"><?php echo esc_html($notice['message']); ?></div>
+<div class="cp-page-heading"><div><p class="cp-eyebrow"><?php esc_html_e('Team', 'client-portal'); ?></p><h2><?php esc_html_e('User Manager', 'client-portal'); ?></h2><p><?php esc_html_e('Manage administrators, editors, and authors with WordPress roles.', 'client-portal'); ?></p></div><?php if ($can_create) : ?><button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#cp-user-modal"><i class="bi bi-person-plus" aria-hidden="true"></i> <?php esc_html_e('Add User', 'client-portal'); ?></button><?php endif; ?></div>
+<?php cp_render_notice($notice); ?>
+<section class="cp-card cp-table-card"><div class="cp-card-header"><div><h3><?php esc_html_e('Portal Users', 'client-portal'); ?></h3><p><?php echo esc_html(sprintf(_n('%s WordPress user', '%s WordPress users', count($users), 'client-portal'), number_format_i18n(count($users)))); ?></p></div></div><div class="table-responsive"><table class="cp-table table"><thead><tr><th><?php esc_html_e('Avatar', 'client-portal'); ?></th><th><?php esc_html_e('Username', 'client-portal'); ?></th><th><?php esc_html_e('Email', 'client-portal'); ?></th><th><?php esc_html_e('Role', 'client-portal'); ?></th><th><?php esc_html_e('Status', 'client-portal'); ?></th><th><?php esc_html_e('Actions', 'client-portal'); ?></th></tr></thead><tbody>
+<?php if ($users) : foreach ($users as $user) : $primary_role = isset($user->roles[0]) ? $user->roles[0] : ''; ?>
+    <tr><td><span class="cp-table-avatar"><?php echo wp_kses_post(get_avatar($user->ID, 42, '', $user->display_name)); ?></span></td><td><strong><?php echo esc_html($user->user_login); ?></strong><small class="cp-table-subtitle"><?php echo esc_html($user->display_name); ?></small></td><td><?php echo esc_html($user->user_email); ?></td><td><span class="cp-role-badge"><?php echo esc_html(isset(wp_roles()->role_names[$primary_role]) ? translate_user_role(wp_roles()->role_names[$primary_role]) : __('No role', 'client-portal')); ?></span></td><td><span class="cp-badge cp-badge-<?php echo 0 === (int) $user->user_status ? 'success' : 'warning'; ?>"><?php echo 0 === (int) $user->user_status ? esc_html__('Active', 'client-portal') : esc_html__('Pending', 'client-portal'); ?></span></td><td><div class="cp-actions">
+        <?php if (current_user_can('edit_user', $user->ID)) : ?><a class="btn btn-sm btn-outline-primary" href="<?php echo esc_url(wp_nonce_url(cp_admin_url('cp-users', ['action' => 'edit', 'id' => $user->ID]), 'cp_edit_user_' . $user->ID)); ?>"><i class="bi bi-pencil"></i><span><?php esc_html_e('Edit', 'client-portal'); ?></span></a><?php endif; ?>
+        <?php if ($user->ID !== get_current_user_id() && current_user_can('delete_user', $user->ID)) : ?><a class="btn btn-sm btn-outline-danger" data-cp-confirm="<?php echo esc_attr__('Delete this user permanently?', 'client-portal'); ?>" href="<?php echo esc_url(wp_nonce_url(cp_admin_url('cp-users', ['action' => 'delete', 'id' => $user->ID]), 'cp_delete_user_' . $user->ID)); ?>"><i class="bi bi-trash"></i><span><?php esc_html_e('Delete', 'client-portal'); ?></span></a><?php endif; ?>
+    </div></td></tr>
+<?php endforeach; else : ?><tr><td colspan="6" class="cp-empty-state"><?php esc_html_e('No users found.', 'client-portal'); ?></td></tr><?php endif; ?>
+</tbody></table></div></section>
+<?php if ($can_create || $editing_user) : ?>
+<div class="modal fade cp-modal" id="cp-user-modal" tabindex="-1" aria-labelledby="cp-user-modal-title" aria-hidden="true" data-cp-open="<?php echo esc_attr($editing_user ? '1' : '0'); ?>"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" action="<?php echo esc_url(cp_admin_url('cp-users')); ?>">
+    <?php wp_nonce_field('cp_save_user', 'cp_user_nonce'); ?><input type="hidden" name="cp_user_action" value="save"><input type="hidden" name="user_id" value="<?php echo esc_attr($editing_user ? $editing_user->ID : 0); ?>">
+    <div class="modal-header"><div><p class="cp-eyebrow mb-1"><?php esc_html_e('Account', 'client-portal'); ?></p><h2 class="modal-title" id="cp-user-modal-title"><?php echo $editing_user ? esc_html__('Edit User', 'client-portal') : esc_html__('Add User', 'client-portal'); ?></h2></div><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="<?php esc_attr_e('Close', 'client-portal'); ?>"></button></div>
+    <div class="modal-body"><div class="mb-3"><label class="form-label" for="cp-display-name"><?php esc_html_e('Display name', 'client-portal'); ?></label><input class="form-control" id="cp-display-name" name="display_name" value="<?php echo esc_attr($editing_user ? $editing_user->display_name : ''); ?>" required></div>
+    <?php if (!$editing_user) : ?><div class="mb-3"><label class="form-label" for="cp-username"><?php esc_html_e('Username', 'client-portal'); ?></label><input class="form-control" id="cp-username" name="username" autocomplete="off" required></div><?php else : ?><div class="mb-3"><label class="form-label"><?php esc_html_e('Username', 'client-portal'); ?></label><input class="form-control" value="<?php echo esc_attr($editing_user->user_login); ?>" disabled><div class="form-text"><?php esc_html_e('WordPress usernames cannot be changed.', 'client-portal'); ?></div></div><?php endif; ?>
+    <div class="mb-3"><label class="form-label" for="cp-user-email"><?php esc_html_e('Email', 'client-portal'); ?></label><input class="form-control" id="cp-user-email" name="email" type="email" value="<?php echo esc_attr($editing_user ? $editing_user->user_email : ''); ?>" required></div>
+    <div class="mb-3"><label class="form-label" for="cp-user-role"><?php esc_html_e('Role', 'client-portal'); ?></label><select class="form-select" id="cp-user-role" name="role"><?php foreach ($available_roles as $role => $label) : ?><option value="<?php echo esc_attr($role); ?>" <?php selected($editing_user ? ($editing_user->roles[0] ?? 'author') : 'author', $role); ?>><?php echo esc_html($label); ?></option><?php endforeach; ?></select></div>
+    <div><label class="form-label" for="cp-user-password"><?php echo $editing_user ? esc_html__('New password (optional)', 'client-portal') : esc_html__('Password', 'client-portal'); ?></label><input class="form-control" id="cp-user-password" name="password" type="password" autocomplete="new-password"<?php if (!$editing_user) : ?> required<?php endif; ?>></div></div>
+    <div class="modal-footer"><a class="btn btn-outline-secondary" href="<?php echo esc_url(cp_admin_url('cp-users')); ?>"><?php esc_html_e('Cancel', 'client-portal'); ?></a><button class="btn btn-primary" type="submit"><?php echo $editing_user ? esc_html__('Update User', 'client-portal') : esc_html__('Create User', 'client-portal'); ?></button></div>
+</form></div></div></div>
 <?php endif; ?>
-
-<div class="card border-0 shadow-sm cp-card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('Avatar', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Username', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Email', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Role', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Status', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Actions', 'client-portal'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($users)) : ?>
-                        <?php foreach ($users as $user) : ?>
-                            <tr>
-                                <td><?php echo get_avatar($user->ID, 40, '', '', ['class' => 'rounded-circle']); ?></td>
-                                <td><?php echo esc_html($user->user_login); ?></td>
-                                <td><?php echo esc_html($user->user_email); ?></td>
-                                <td><?php echo esc_html(ucfirst($user->roles[0] ?? 'subscriber')); ?></td>
-                                <td><span class="badge bg-success-subtle text-success"><?php echo esc_html($user->user_status === 0 ? __('Active', 'client-portal') : __('Pending', 'client-portal')); ?></span></td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <a class="btn btn-sm btn-outline-primary" href="<?php echo esc_url(wp_nonce_url(add_query_arg(['page' => 'cp-users', 'action' => 'edit', 'id' => $user->ID], admin_url('admin.php')), 'cp_edit_user_' . $user->ID)); ?>"><?php esc_html_e('Edit', 'client-portal'); ?></a>
-                                        <a class="btn btn-sm btn-outline-danger" href="<?php echo esc_url(wp_nonce_url(add_query_arg(['page' => 'cp-users', 'action' => 'delete', 'id' => $user->ID], admin_url('admin.php')), 'cp_delete_user_' . $user->ID)); ?>"><?php esc_html_e('Delete', 'client-portal'); ?></a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <tr>
-                            <td colspan="6" class="text-muted py-4 text-center"><?php esc_html_e('No users found.', 'client-portal'); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="cpUserModal" tabindex="-1" aria-labelledby="cpUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post">
-                <?php wp_nonce_field('cp_users_action', 'cp_users_nonce'); ?>
-                <input type="hidden" name="user_id" value="<?php echo esc_attr($editing_user ? $editing_user->ID : ''); ?>" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="cpUserModalLabel"><?php echo $editing_user ? esc_html__('Edit User', 'client-portal') : esc_html__('Add User', 'client-portal'); ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label" for="cp-user-name"><?php esc_html_e('Full Name', 'client-portal'); ?></label>
-                        <input type="text" class="form-control" id="cp-user-name" name="name" value="<?php echo esc_attr($editing_user ? $editing_user->display_name : ''); ?>" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="cp-user-username"><?php esc_html_e('Username', 'client-portal'); ?></label>
-                        <input type="text" class="form-control" id="cp-user-username" name="username" value="<?php echo esc_attr($editing_user ? $editing_user->user_login : ''); ?>" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="cp-user-email"><?php esc_html_e('Email', 'client-portal'); ?></label>
-                        <input type="email" class="form-control" id="cp-user-email" name="email" value="<?php echo esc_attr($editing_user ? $editing_user->user_email : ''); ?>" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="cp-user-role"><?php esc_html_e('Role', 'client-portal'); ?></label>
-                        <select class="form-select" id="cp-user-role" name="role">
-                            <?php foreach ($available_roles as $value => $label) : ?>
-                                <option value="<?php echo esc_attr($value); ?>" <?php selected($editing_user ? ($editing_user->roles[0] ?? 'subscriber') : 'author', $value); ?>><?php echo esc_html($label); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <?php if (!$editing_user) : ?>
-                        <div class="mb-3">
-                            <label class="form-label" for="cp-user-password"><?php esc_html_e('Password', 'client-portal'); ?></label>
-                            <input type="password" class="form-control" id="cp-user-password" name="password" required />
-                        </div>
-                    <?php endif; ?>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php esc_html_e('Cancel', 'client-portal'); ?></button>
-                    <button type="submit" class="btn btn-primary" name="cp_users_submit" value="1"><?php echo $editing_user ? esc_html__('Update User', 'client-portal') : esc_html__('Create User', 'client-portal'); ?></button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>

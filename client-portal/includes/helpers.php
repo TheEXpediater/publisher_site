@@ -4,110 +4,287 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-function cp_url($path = '')
-{
-    return plugin_dir_url(dirname(__FILE__)) . ltrim($path, '/');
-}
-
 function cp_path($path = '')
 {
-    return plugin_dir_path(dirname(__FILE__)) . ltrim($path, '/');
+    return CP_PATH . ltrim($path, '/\\');
 }
 
-function cp_admin_url($page)
+function cp_url($path = '')
 {
-    return admin_url('admin.php?page=' . $page);
+    return CP_URL . ltrim($path, '/\\');
+}
+
+function cp_admin_url($page, $args = [])
+{
+    return add_query_arg(array_merge(['page' => sanitize_key($page)], $args), admin_url('admin.php'));
+}
+
+function cp_get_value($key, $default = '')
+{
+    return isset($_GET[$key]) && is_scalar($_GET[$key]) ? wp_unslash((string) $_GET[$key]) : $default;
+}
+
+function cp_post_value($key, $default = '')
+{
+    return isset($_POST[$key]) && is_scalar($_POST[$key]) ? wp_unslash((string) $_POST[$key]) : $default;
+}
+
+function cp_current_page()
+{
+    return sanitize_key(cp_get_value('page'));
+}
+
+function cp_is_portal_page($page = '')
+{
+    $current_page = cp_current_page();
+
+    if ('' !== $page) {
+        return sanitize_key($page) === $current_page;
+    }
+
+    return in_array($current_page, cp_portal_pages(), true);
+}
+
+function cp_is_active_page($slug)
+{
+    if ('cp-articles' === $slug && in_array(cp_current_page(), ['cp-article-create', 'cp-article-edit'], true)) {
+        return 'active';
+    }
+
+    return cp_is_portal_page($slug) ? 'active' : '';
+}
+
+function cp_portal_pages()
+{
+    return ['cp-dashboard', 'cp-articles', 'cp-article-create', 'cp-article-edit', 'cp-categories', 'cp-users', 'cp-analytics', 'cp-settings'];
 }
 
 function cp_is_developer()
 {
     $user = wp_get_current_user();
 
-    return $user instanceof WP_User && 'enterpriseenteng@gmail.com' === $user->user_email;
+    return $user instanceof WP_User
+        && 'enterpriseenteng@gmail.com' === strtolower(trim($user->user_email));
 }
 
-function cp_is_active_page($slug)
+function cp_is_portal_only_user()
 {
-    $current_page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
-
-    return $current_page === $slug ? 'active' : '';
+    return is_user_logged_in() && !cp_is_developer();
 }
 
-function cp_restrict_admin_access()
+function cp_restrict_portal_admin_access()
 {
-    if (cp_is_developer() || !is_user_logged_in() || wp_doing_ajax() || wp_is_json_request()) {
+    if (!cp_is_portal_only_user() || wp_doing_ajax() || wp_doing_cron()) {
         return;
     }
 
-    $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+    global $pagenow;
 
-    if ('' !== $page && 0 === strpos($page, 'cp-')) {
+    $allowed_endpoints = ['admin-ajax.php', 'async-upload.php', 'media-upload.php', 'options.php', 'admin-post.php'];
+    if (in_array($pagenow, $allowed_endpoints, true)) {
         return;
     }
 
-    if (isset($_GET['action']) && 'logout' === sanitize_text_field(wp_unslash($_GET['action']))) {
+    if ('admin.php' === $pagenow && cp_is_portal_page()) {
         return;
     }
 
-    wp_safe_redirect(admin_url('admin.php?page=cp-dashboard'));
+    wp_safe_redirect(cp_admin_url('cp-dashboard'));
     exit;
 }
 
-function cp_filter_admin_bar($wp_admin_bar)
+function cp_restrict_portal_admin_bar($wp_admin_bar)
 {
-    if (cp_is_developer()) {
+    if (!cp_is_portal_only_user() || !is_object($wp_admin_bar)) {
         return;
     }
 
-    $protected_nodes = ['my-account', 'logout'];
-
+    $allowed_nodes = ['top-secondary', 'my-account', 'user-actions', 'user-info', 'edit-profile', 'logout'];
     foreach ((array) $wp_admin_bar->get_nodes() as $node) {
-        if (isset($node->id) && !in_array($node->id, $protected_nodes, true)) {
+        if (isset($node->id) && !in_array($node->id, $allowed_nodes, true)) {
             $wp_admin_bar->remove_node($node->id);
         }
     }
 }
 
-function cp_render_page($template, $data = [])
+function cp_render_template($template, $data = [])
 {
-    if (!empty($data)) {
-        extract($data);
+    $template = sanitize_file_name($template);
+    $file = cp_path('templates/' . $template . '.php');
+
+    if (!is_readable($file)) {
+        wp_die(esc_html__('The requested portal template is unavailable.', 'client-portal'));
     }
 
-    ob_start();
-    include CP_PATH . 'templates/' . $template . '.php';
-    $content = ob_get_clean();
+    if (!empty($data)) {
+        extract($data, EXTR_SKIP);
+    }
 
-    include CP_PATH . 'templates/layout.php';
+    include $file;
 }
 
-function cp_enqueue_admin_assets($hook)
+function cp_render_page($template, $data = [])
 {
-    if (strpos($hook, 'cp-') === false && 'toplevel_page_cp-dashboard' !== $hook) {
+    ob_start();
+    cp_render_template($template, $data);
+    $content = ob_get_clean();
+    $data['content'] = $content;
+    cp_render_template('layout', $data);
+}
+
+function cp_render_notice($notice)
+{
+    if (empty($notice['message'])) {
         return;
     }
 
-    wp_enqueue_style('bootstrap-css', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
-    wp_enqueue_style('bootstrap-icons', 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css');
-    wp_enqueue_style('cp-style', CP_URL . 'assets/css/style.css', [], '1.0');
-    wp_enqueue_script('bootstrap-js', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', [], null, true);
-    wp_enqueue_script('cp-app', CP_URL . 'assets/js/app.js', [], '1.0', true);
+    $allowed_types = ['success', 'danger', 'warning', 'info'];
+    $type = isset($notice['type']) && in_array($notice['type'], $allowed_types, true) ? $notice['type'] : 'info';
+    ?>
+    <div class="cp-notice alert alert-<?php echo esc_attr($type); ?> alert-dismissible fade show" role="alert">
+        <?php echo esc_html($notice['message']); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<?php esc_attr_e('Close', 'client-portal'); ?>"></button>
+    </div>
+    <?php
 }
 
-function cp_bootstrap_plugin()
+function cp_notice($code)
 {
-    require_once CP_PATH . 'includes/menu.php';
-    require_once CP_PATH . 'includes/dashboard.php';
-    require_once CP_PATH . 'includes/articles.php';
-    require_once CP_PATH . 'includes/categories.php';
-    require_once CP_PATH . 'includes/users.php';
-    require_once CP_PATH . 'includes/analytics.php';
-    require_once CP_PATH . 'includes/settings.php';
+    $notices = [
+        'article-created' => ['type' => 'success', 'message' => __('Article created successfully.', 'client-portal')],
+        'article-updated' => ['type' => 'success', 'message' => __('Article updated successfully.', 'client-portal')],
+        'article-deleted' => ['type' => 'success', 'message' => __('Article deleted successfully.', 'client-portal')],
+        'category-created' => ['type' => 'success', 'message' => __('Category created successfully.', 'client-portal')],
+        'category-updated' => ['type' => 'success', 'message' => __('Category updated successfully.', 'client-portal')],
+        'category-deleted' => ['type' => 'success', 'message' => __('Category deleted successfully.', 'client-portal')],
+        'user-created' => ['type' => 'success', 'message' => __('User created successfully.', 'client-portal')],
+        'user-updated' => ['type' => 'success', 'message' => __('User updated successfully.', 'client-portal')],
+        'user-deleted' => ['type' => 'success', 'message' => __('User deleted successfully.', 'client-portal')],
+    ];
 
-    add_action('admin_menu', 'cp_register_admin_menu');
-    add_action('admin_enqueue_scripts', 'cp_enqueue_admin_assets');
-    add_action('admin_init', 'cp_restrict_admin_access');
-    add_action('admin_bar_menu', 'cp_filter_admin_bar', 999);
+    return isset($notices[$code]) ? $notices[$code] : null;
 }
 
-add_action('plugins_loaded', 'cp_bootstrap_plugin');
+function cp_request_notice()
+{
+    $code = sanitize_key(cp_get_value('cp_notice'));
+    return cp_notice($code);
+}
+
+function cp_redirect($page, $args = [])
+{
+    wp_safe_redirect(cp_admin_url($page, $args));
+    exit;
+}
+
+function cp_article_counts()
+{
+    $counts = wp_count_posts('post');
+    $published = isset($counts->publish) ? (int) $counts->publish : 0;
+    $drafts = isset($counts->draft) ? (int) $counts->draft : 0;
+    $private = isset($counts->private) ? (int) $counts->private : 0;
+
+    return [
+        'total' => $published + $drafts + $private,
+        'published' => $published,
+        'drafts' => $drafts,
+        'private' => $private,
+    ];
+}
+
+function cp_dashboard_statistics()
+{
+    $counts = cp_article_counts();
+    $user_counts = count_users();
+    $category_count = wp_count_terms(['taxonomy' => 'category', 'hide_empty' => false]);
+
+    return [
+        'total_articles' => $counts['total'],
+        'published' => $counts['published'],
+        'drafts' => $counts['drafts'],
+        'users' => isset($user_counts['total_users']) ? (int) $user_counts['total_users'] : 0,
+        'categories' => is_wp_error($category_count) ? 0 : (int) $category_count,
+    ];
+}
+
+function cp_sanitize_status($status, $fallback = 'draft')
+{
+    $status = sanitize_key($status);
+    return in_array($status, ['draft', 'publish', 'private'], true) ? $status : $fallback;
+}
+
+function cp_allowed_roles()
+{
+    $roles = [
+        'administrator' => __('Administrator', 'client-portal'),
+        'editor' => __('Editor', 'client-portal'),
+        'author' => __('Author', 'client-portal'),
+    ];
+
+    if (!current_user_can('manage_options')) {
+        unset($roles['administrator']);
+    }
+
+    return $roles;
+}
+
+function cp_require_capability($capability, ...$args)
+{
+    if (!current_user_can($capability, ...$args)) {
+        wp_die(esc_html__('You do not have permission to access this page.', 'client-portal'), '', ['response' => 403]);
+    }
+}
+
+function cp_settings()
+{
+    return wp_parse_args(
+        get_option('cp_portal_settings', []),
+        [
+            'portal_title' => 'Enterprise1979 Publisher Portal',
+            'default_status' => 'draft',
+            'items_per_page' => 20,
+            'allow_authors_publish' => 0,
+        ]
+    );
+}
+
+function cp_can_publish_directly()
+{
+    if (!current_user_can('publish_posts')) {
+        return false;
+    }
+
+    $user = wp_get_current_user();
+    if (in_array('author', (array) $user->roles, true) && empty(cp_settings()['allow_authors_publish'])) {
+        return false;
+    }
+
+    return true;
+}
+
+function cp_status_badge_class($status)
+{
+    $classes = ['publish' => 'success', 'draft' => 'warning', 'private' => 'secondary'];
+    return isset($classes[$status]) ? $classes[$status] : 'secondary';
+}
+
+function cp_enqueue_admin_assets()
+{
+    if (!cp_is_portal_page()) {
+        return;
+    }
+
+    wp_enqueue_style('cp-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css', [], '5.3.3');
+    wp_enqueue_style('cp-bootstrap-icons', 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css', [], '1.11.3');
+    wp_enqueue_style('cp-style', cp_url('assets/css/style.css'), ['cp-bootstrap'], CP_VERSION);
+    wp_enqueue_style('cp-dashboard', cp_url('assets/css/dashboard.css'), ['cp-style'], CP_VERSION);
+    wp_enqueue_script('cp-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', [], '5.3.3', true);
+    wp_enqueue_script('cp-app', cp_url('assets/js/app.js'), ['cp-bootstrap'], CP_VERSION, true);
+    wp_enqueue_script('cp-dashboard', cp_url('assets/js/dashboard.js'), ['cp-app'], CP_VERSION, true);
+
+    if (in_array(cp_current_page(), ['cp-article-create', 'cp-article-edit'], true)) {
+        wp_enqueue_media();
+        wp_enqueue_style('cp-article-builder', cp_url('assets/css/article-builder.css'), ['cp-style'], CP_VERSION);
+        wp_enqueue_script('cp-article-builder', cp_url('assets/js/article-builder.js'), ['cp-app', 'media-editor'], CP_VERSION, true);
+    }
+}

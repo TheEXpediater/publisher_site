@@ -1,15 +1,36 @@
-document.addEventListener("DOMContentLoaded", () => {
+(function () {
+    'use strict';
 
-    const form = document.getElementById("cpLoginForm");
+    document.addEventListener('DOMContentLoaded', function () {
+        var app = document.querySelector('.cp-app');
+        if (!app) {
+            return;
+        }
 
-    if (!form) return;
+        document.querySelectorAll('[data-cp-sidebar-open]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                app.classList.add('cp-sidebar-open');
+            });
+        });
 
-    form.addEventListener("submit", () => {
+        document.querySelectorAll('[data-cp-sidebar-close]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                app.classList.remove('cp-sidebar-open');
+            });
+        });
 
-        document.getElementById("loginBtn").style.display = "none";
+        document.querySelectorAll('[data-cp-confirm]').forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                if (!window.confirm(link.getAttribute('data-cp-confirm'))) {
+                    event.preventDefault();
+                }
+            });
+        });
 
-        document.getElementById("loginLoading").style.display = "block";
-
+        document.addEventListener('keydown', function (event) {
+            if ('Escape' === event.key) {
+                app.classList.remove('cp-sidebar-open');
+            }
+        });
     });
-
-});
+}());

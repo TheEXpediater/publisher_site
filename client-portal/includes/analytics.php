@@ -4,30 +4,32 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-function cp_analytics_page()
+function cp_get_analytics_data()
 {
-    if (!cp_is_developer() && !current_user_can('read')) {
-        wp_die(esc_html__('You do not have permission to access this page.', 'client-portal'));
-    }
+    $stats = cp_dashboard_statistics();
 
-    $post_counts = wp_count_posts('post');
-    $analytics = [
-        'total_users' => count_users()['total_users'],
-        'total_posts' => (int) $post_counts->publish + (int) $post_counts->draft + (int) $post_counts->private,
-        'published' => (int) $post_counts->publish,
-        'drafts' => (int) $post_counts->draft,
-        'categories' => wp_count_terms('category'),
+    return [
+        'total_users' => $stats['users'],
+        'total_posts' => $stats['total_articles'],
+        'published' => $stats['published'],
+        'drafts' => $stats['drafts'],
+        'categories' => $stats['categories'],
         'latest_posts' => get_posts([
             'post_type' => 'post',
             'posts_per_page' => 5,
-            'post_status' => ['publish', 'draft', 'private'],
+            'post_status' => current_user_can('edit_posts') ? ['publish', 'draft', 'private'] : ['publish'],
             'orderby' => 'date',
             'order' => 'DESC',
         ]),
     ];
+}
+
+function cp_analytics_page()
+{
+    cp_require_capability('read');
 
     cp_render_page('analytics', [
         'page_title' => __('Analytics', 'client-portal'),
-        'analytics' => $analytics,
+        'analytics' => cp_get_analytics_data(),
     ]);
 }

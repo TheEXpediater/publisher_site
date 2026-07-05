@@ -1,0 +1,20 @@
+.cp-app .cp-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cp-app .cp-stat-card { display: flex; align-items: center; gap: 14px; min-height: 122px; padding: 20px; }
+.cp-app .cp-stat-card p { margin: 0 0 5px; color: var(--cp-muted); font-size: 12px; font-weight: 600; }
+.cp-app .cp-stat-card strong { font-size: 28px; font-weight: 760; letter-spacing: -.03em; }
+.cp-app .cp-stat-icon { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; border-radius: 12px; font-size: 19px; }
+.cp-app .cp-tone-primary { color: #4446c8; background: #eeeeff; }
+.cp-app .cp-tone-success { color: #027a48; background: #ecfdf3; }
+.cp-app .cp-tone-warning { color: #b54708; background: #fffaeb; }
+.cp-app .cp-tone-info { color: #026aa2; background: #f0f9ff; }
+.cp-app .cp-tone-purple { color: #6941c6; background: #f4f3ff; }
+
+@media (max-width: 1400px) { .cp-app .cp-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .cp-app .cp-stat-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 460px) { .cp-app .cp-stat-grid { grid-template-columns: 1fr; } }

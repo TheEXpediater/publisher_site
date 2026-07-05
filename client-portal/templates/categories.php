@@ -3,77 +3,18 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-
-$categories = isset($categories) ? $categories : [];
-$editing_category = isset($editing_category) ? $editing_category : null;
-
 ?>
-<div class="cp-page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-        <h2 class="h3 mb-1"><?php esc_html_e('Categories', 'client-portal'); ?></h2>
-        <p class="text-muted mb-0">Organize content using WordPress categories.</p>
-    </div>
-</div>
-
-<div class="card border-0 shadow-sm mb-4 cp-card">
-    <div class="card-body">
-        <form method="post">
-            <?php wp_nonce_field('cp_categories_action', 'cp_categories_nonce'); ?>
-            <input type="hidden" name="category_id" value="<?php echo esc_attr($editing_category ? $editing_category->term_id : ''); ?>" />
-            <div class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label class="form-label" for="cp-category-name"><?php esc_html_e('Name', 'client-portal'); ?></label>
-                    <input type="text" class="form-control" id="cp-category-name" name="name" value="<?php echo esc_attr($editing_category ? $editing_category->name : ''); ?>" required />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label" for="cp-category-slug"><?php esc_html_e('Slug', 'client-portal'); ?></label>
-                    <input type="text" class="form-control" id="cp-category-slug" name="slug" value="<?php echo esc_attr($editing_category ? $editing_category->slug : ''); ?>" />
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary" name="cp_categories_submit" value="1">
-                        <?php echo $editing_category ? esc_html__('Update Category', 'client-portal') : esc_html__('Add Category', 'client-portal'); ?>
-                    </button>
-                    <?php if ($editing_category) : ?>
-                        <a class="btn btn-outline-secondary" href="<?php echo esc_url(cp_admin_url('cp-categories')); ?>"><?php esc_html_e('Cancel', 'client-portal'); ?></a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card border-0 shadow-sm cp-card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('Name', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Slug', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Actions', 'client-portal'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($categories)) : ?>
-                        <?php foreach ($categories as $category) : ?>
-                            <tr>
-                                <td><?php echo esc_html($category->name); ?></td>
-                                <td><?php echo esc_html($category->slug); ?></td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <a class="btn btn-sm btn-outline-primary" href="<?php echo esc_url(wp_nonce_url(add_query_arg(['page' => 'cp-categories', 'action' => 'edit', 'id' => $category->term_id], admin_url('admin.php')), 'cp_edit_category_' . $category->term_id)); ?>"><?php esc_html_e('Edit', 'client-portal'); ?></a>
-                                        <a class="btn btn-sm btn-outline-danger" href="<?php echo esc_url(wp_nonce_url(add_query_arg(['page' => 'cp-categories', 'action' => 'delete', 'id' => $category->term_id], admin_url('admin.php')), 'cp_delete_category_' . $category->term_id)); ?>"><?php esc_html_e('Delete', 'client-portal'); ?></a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <tr>
-                            <td colspan="3" class="text-muted py-4 text-center"><?php esc_html_e('No categories found.', 'client-portal'); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="cp-page-heading"><div><p class="cp-eyebrow"><?php esc_html_e('Taxonomy', 'client-portal'); ?></p><h2><?php esc_html_e('Category Manager', 'client-portal'); ?></h2><p><?php esc_html_e('Build a clear structure for your publication.', 'client-portal'); ?></p></div></div>
+<?php cp_render_notice($notice); ?>
+<div class="row g-4">
+    <div class="col-xl-4"><section class="cp-card cp-form-card cp-sticky-card"><div class="cp-card-header"><div><h3><?php echo $editing_category ? esc_html__('Edit Category', 'client-portal') : esc_html__('Add Category', 'client-portal'); ?></h3><p><?php esc_html_e('Create a native WordPress category.', 'client-portal'); ?></p></div></div>
+        <form method="post" action="<?php echo esc_url(cp_admin_url('cp-categories')); ?>"><?php wp_nonce_field('cp_save_category', 'cp_category_nonce'); ?><input type="hidden" name="cp_category_action" value="save"><input type="hidden" name="category_id" value="<?php echo esc_attr($editing_category ? $editing_category->term_id : 0); ?>">
+            <div class="mb-3"><label class="form-label" for="cp-category-name"><?php esc_html_e('Name', 'client-portal'); ?></label><input class="form-control" id="cp-category-name" name="name" value="<?php echo esc_attr($editing_category ? $editing_category->name : ''); ?>" required></div>
+            <div class="mb-3"><label class="form-label" for="cp-category-slug"><?php esc_html_e('Slug', 'client-portal'); ?></label><input class="form-control" id="cp-category-slug" name="slug" value="<?php echo esc_attr($editing_category ? $editing_category->slug : ''); ?>"></div>
+            <div class="mb-3"><label class="form-label" for="cp-category-description"><?php esc_html_e('Description', 'client-portal'); ?></label><textarea class="form-control" id="cp-category-description" name="description" rows="4"><?php echo esc_textarea($editing_category ? $editing_category->description : ''); ?></textarea></div>
+            <div class="d-flex gap-2"><button class="btn btn-primary" type="submit"><?php echo $editing_category ? esc_html__('Update Category', 'client-portal') : esc_html__('Add Category', 'client-portal'); ?></button><?php if ($editing_category) : ?><a class="btn btn-outline-secondary" href="<?php echo esc_url(cp_admin_url('cp-categories')); ?>"><?php esc_html_e('Cancel', 'client-portal'); ?></a><?php endif; ?></div>
+        </form></section></div>
+    <div class="col-xl-8"><section class="cp-card cp-table-card"><div class="cp-card-header"><div><h3><?php esc_html_e('Categories', 'client-portal'); ?></h3><p><?php echo esc_html(sprintf(_n('%s category', '%s categories', count($categories), 'client-portal'), number_format_i18n(count($categories)))); ?></p></div></div><div class="table-responsive"><table class="cp-table table"><thead><tr><th><?php esc_html_e('Name', 'client-portal'); ?></th><th><?php esc_html_e('Slug', 'client-portal'); ?></th><th><?php esc_html_e('Articles', 'client-portal'); ?></th><th><?php esc_html_e('Actions', 'client-portal'); ?></th></tr></thead><tbody>
+    <?php if ($categories) : foreach ($categories as $category) : ?><tr><td><strong><?php echo esc_html($category->name); ?></strong><small class="cp-table-subtitle"><?php echo esc_html($category->description); ?></small></td><td><code><?php echo esc_html($category->slug); ?></code></td><td><?php echo esc_html(number_format_i18n($category->count)); ?></td><td><div class="cp-actions"><a class="btn btn-sm btn-outline-primary" href="<?php echo esc_url(wp_nonce_url(cp_admin_url('cp-categories', ['action' => 'edit', 'id' => $category->term_id]), 'cp_edit_category_' . $category->term_id)); ?>"><i class="bi bi-pencil"></i><span><?php esc_html_e('Edit', 'client-portal'); ?></span></a><a class="btn btn-sm btn-outline-danger" data-cp-confirm="<?php echo esc_attr__('Delete this category?', 'client-portal'); ?>" href="<?php echo esc_url(wp_nonce_url(cp_admin_url('cp-categories', ['action' => 'delete', 'id' => $category->term_id]), 'cp_delete_category_' . $category->term_id)); ?>"><i class="bi bi-trash"></i><span><?php esc_html_e('Delete', 'client-portal'); ?></span></a></div></td></tr><?php endforeach; else : ?><tr><td colspan="4" class="cp-empty-state"><?php esc_html_e('No categories found.', 'client-portal'); ?></td></tr><?php endif; ?>
+    </tbody></table></div></section></div>
 </div>

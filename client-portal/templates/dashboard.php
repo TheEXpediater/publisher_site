@@ -4,122 +4,45 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$stats = isset($stats) ? $stats : [];
-
+$cards = [
+    ['label' => __('Total Articles', 'client-portal'), 'value' => $stats['total_articles'], 'icon' => 'bi-files', 'tone' => 'primary'],
+    ['label' => __('Published Articles', 'client-portal'), 'value' => $stats['published'], 'icon' => 'bi-check2-circle', 'tone' => 'success'],
+    ['label' => __('Draft Articles', 'client-portal'), 'value' => $stats['drafts'], 'icon' => 'bi-pencil-square', 'tone' => 'warning'],
+    ['label' => __('Users', 'client-portal'), 'value' => $stats['users'], 'icon' => 'bi-people', 'tone' => 'info'],
+    ['label' => __('Categories', 'client-portal'), 'value' => $stats['categories'], 'icon' => 'bi-tags', 'tone' => 'purple'],
+];
 ?>
-<div class="cp-page-header mb-4">
+<div class="cp-page-heading">
     <div>
-        <h2 class="h3 mb-1"><?php esc_html_e('Publishing Overview', 'client-portal'); ?></h2>
-        <p class="text-muted mb-0">Monitor article volume, drafts, readers, and categories in one place.</p>
+        <p class="cp-eyebrow"><?php esc_html_e('Overview', 'client-portal'); ?></p>
+        <h2><?php esc_html_e('Publishing at a glance', 'client-portal'); ?></h2>
+        <p><?php esc_html_e('A live summary of your WordPress publishing workspace.', 'client-portal'); ?></p>
     </div>
+    <?php if (current_user_can('edit_posts')) : ?>
+        <a class="btn btn-primary" href="<?php echo esc_url(cp_admin_url('cp-article-create')); ?>"><i class="bi bi-plus-lg" aria-hidden="true"></i> <?php esc_html_e('Create Article', 'client-portal'); ?></a>
+    <?php endif; ?>
 </div>
-
-<div class="row g-4 mb-4">
-    <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1"><?php esc_html_e('Total Articles', 'client-portal'); ?></p>
-                        <h3 class="mb-0"><?php echo esc_html(number_format_i18n($stats['total_articles'])); ?></h3>
-                    </div>
-                    <span class="cp-stat-icon"><i class="bi bi-file-earmark-text"></i></span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1"><?php esc_html_e('Published', 'client-portal'); ?></p>
-                        <h3 class="mb-0"><?php echo esc_html(number_format_i18n($stats['published'])); ?></h3>
-                    </div>
-                    <span class="cp-stat-icon"><i class="bi bi-check-circle"></i></span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1"><?php esc_html_e('Drafts', 'client-portal'); ?></p>
-                        <h3 class="mb-0"><?php echo esc_html(number_format_i18n($stats['drafts'])); ?></h3>
-                    </div>
-                    <span class="cp-stat-icon"><i class="bi bi-pencil-square"></i></span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1"><?php esc_html_e('Users', 'client-portal'); ?></p>
-                        <h3 class="mb-0"><?php echo esc_html(number_format_i18n($stats['users'])); ?></h3>
-                    </div>
-                    <span class="cp-stat-icon"><i class="bi bi-people"></i></span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1"><?php esc_html_e('Categories', 'client-portal'); ?></p>
-                        <h3 class="mb-0"><?php echo esc_html(number_format_i18n($stats['categories'])); ?></h3>
-                    </div>
-                    <span class="cp-stat-icon"><i class="bi bi-tags"></i></span>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="cp-stat-grid">
+    <?php foreach ($cards as $card) : ?>
+        <article class="cp-card cp-stat-card">
+            <span class="cp-stat-icon cp-tone-<?php echo esc_attr($card['tone']); ?>"><i class="bi <?php echo esc_attr($card['icon']); ?>" aria-hidden="true"></i></span>
+            <div><p><?php echo esc_html($card['label']); ?></p><strong><?php echo esc_html(number_format_i18n($card['value'])); ?></strong></div>
+        </article>
+    <?php endforeach; ?>
 </div>
-
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0 py-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h3 class="h5 mb-0"><?php esc_html_e('Recent Articles', 'client-portal'); ?></h3>
-            <a class="btn btn-primary btn-sm" href="<?php echo esc_url(cp_admin_url('cp-articles')); ?>">
-                <i class="bi bi-plus-lg me-1"></i>
-                <?php esc_html_e('Manage Articles', 'client-portal'); ?>
-            </a>
-        </div>
+<section class="cp-card cp-table-card">
+    <div class="cp-card-header">
+        <div><h3><?php esc_html_e('Recent Articles', 'client-portal'); ?></h3><p><?php esc_html_e('The latest content across the portal.', 'client-portal'); ?></p></div>
+        <?php if (current_user_can('edit_posts')) : ?><a href="<?php echo esc_url(cp_admin_url('cp-articles')); ?>"><?php esc_html_e('View all', 'client-portal'); ?> <i class="bi bi-arrow-right"></i></a><?php endif; ?>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('Title', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Status', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Author', 'client-portal'); ?></th>
-                        <th><?php esc_html_e('Date', 'client-portal'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($stats['recent_articles'])) : ?>
-                        <?php foreach ($stats['recent_articles'] as $article) : ?>
-                            <tr>
-                                <td><?php echo esc_html($article->post_title); ?></td>
-                                <td><span class="badge bg-primary-subtle text-primary"><?php echo esc_html(ucfirst($article->post_status)); ?></span></td>
-                                <td><?php echo esc_html(get_the_author_meta('display_name', $article->post_author)); ?></td>
-                                <td><?php echo esc_html(date_i18n(get_option('date_format'), strtotime($article->post_date))); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <tr>
-                            <td colspan="4" class="text-muted py-4 text-center"><?php esc_html_e('No articles found yet.', 'client-portal'); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="cp-table table"><thead><tr><th><?php esc_html_e('Title', 'client-portal'); ?></th><th><?php esc_html_e('Status', 'client-portal'); ?></th><th><?php esc_html_e('Author', 'client-portal'); ?></th><th><?php esc_html_e('Date', 'client-portal'); ?></th></tr></thead>
+        <tbody>
+        <?php if ($stats['recent_articles']) : foreach ($stats['recent_articles'] as $article) : ?>
+            <tr><td><strong><?php echo esc_html($article->post_title ?: __('Untitled', 'client-portal')); ?></strong></td><td><span class="cp-badge cp-badge-<?php echo esc_attr(cp_status_badge_class($article->post_status)); ?>"><?php echo esc_html(ucfirst($article->post_status)); ?></span></td><td><?php echo esc_html(get_the_author_meta('display_name', $article->post_author)); ?></td><td><?php echo esc_html(get_the_date('', $article)); ?></td></tr>
+        <?php endforeach; else : ?>
+            <tr><td colspan="4" class="cp-empty-state"><?php esc_html_e('No articles have been created yet.', 'client-portal'); ?></td></tr>
+        <?php endif; ?>
+        </tbody></table>
     </div>
-</div>
+</section>
