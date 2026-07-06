@@ -131,6 +131,87 @@ function cp_get_article_blocks_for_editor($post = null)
     return [];
 }
 
+function cp_get_article_hero_image($post = null)
+{
+    $hero = [
+        'source' => 'none',
+        'attachment_id' => 0,
+        'url' => '',
+        'preview_url' => '',
+    ];
+
+    if (!$post instanceof WP_Post) {
+        return $hero;
+    }
+
+    $attachment_id = get_post_thumbnail_id($post->ID);
+    if ($attachment_id && wp_attachment_is_image($attachment_id)) {
+        $hero['source'] = 'media';
+        $hero['attachment_id'] = $attachment_id;
+        $hero['preview_url'] = (string) wp_get_attachment_image_url($attachment_id, 'medium_large');
+        return $hero;
+    }
+
+    $hero_url = esc_url_raw((string) get_post_meta($post->ID, '_cp_article_hero_image_url', true));
+    if ($hero_url && wp_http_validate_url($hero_url)) {
+        $hero['source'] = 'url';
+        $hero['url'] = $hero_url;
+        $hero['preview_url'] = $hero_url;
+    }
+
+    return $hero;
+}
+
+function cp_sanitize_article_hero_image()
+{
+    $source = sanitize_key(cp_post_value('hero_image_source', 'none'));
+    if (!in_array($source, ['media', 'url', 'none'], true)) {
+        $source = 'none';
+    }
+
+    $attachment_id = absint(cp_post_value('hero_attachment_id'));
+    $url = esc_url_raw(cp_post_value('hero_image_url'));
+
+    if ('media' === $source && (!$attachment_id || !wp_attachment_is_image($attachment_id))) {
+        $source = 'none';
+        $attachment_id = 0;
+    }
+
+    if ('url' === $source && (!$url || !wp_http_validate_url($url))) {
+        $source = 'none';
+        $url = '';
+    }
+
+    return [
+        'source' => $source,
+        'attachment_id' => $attachment_id,
+        'url' => $url,
+    ];
+}
+
+function cp_save_article_hero_image($post_id, $hero)
+{
+    $post_id = absint($post_id);
+    if (!$post_id || !is_array($hero)) {
+        return;
+    }
+
+    if ('media' === $hero['source']) {
+        set_post_thumbnail($post_id, absint($hero['attachment_id']));
+        delete_post_meta($post_id, '_cp_article_hero_image_url');
+        return;
+    }
+
+    if ('url' === $hero['source']) {
+        delete_post_thumbnail($post_id);
+        update_post_meta($post_id, '_cp_article_hero_image_url', esc_url_raw($hero['url']));
+        return;
+    }
+
+    delete_post_thumbnail($post_id);
+    delete_post_meta($post_id, '_cp_article_hero_image_url');
+}
+
 function cp_article_block_label($type)
 {
     $labels = [

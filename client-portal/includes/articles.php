@@ -126,6 +126,7 @@ function cp_render_article_builder_page($mode)
     }
 
     $blocks = cp_get_article_blocks_for_editor($post);
+    $hero_image = cp_get_article_hero_image($post);
 
     $selected_categories = $post ? wp_get_post_categories($post->ID) : [];
     $settings = cp_settings();
@@ -134,6 +135,7 @@ function cp_render_article_builder_page($mode)
         'excerpt' => $post ? $post->post_excerpt : '',
         'status' => $post ? $post->post_status : cp_sanitize_status($settings['default_status']),
         'category' => !empty($selected_categories) ? (int) $selected_categories[0] : 0,
+        'hero_image' => $hero_image,
     ];
 
     $template = $is_edit ? 'article-edit' : 'article-create';
@@ -167,6 +169,7 @@ function cp_save_article_builder_post($post = null)
     if (is_wp_error($blocks)) {
         return $blocks;
     }
+    $hero_image = cp_sanitize_article_hero_image();
 
     $status = cp_sanitize_status(cp_post_value('status'), 'draft');
     if ('publish' === $status && !cp_can_publish_directly()) {
@@ -200,5 +203,6 @@ function cp_save_article_builder_post($post = null)
     $category_id = absint(cp_post_value('category'));
     wp_set_post_categories($saved_id, $category_id ? [$category_id] : []);
     update_post_meta($saved_id, '_cp_article_blocks', wp_slash($blocks));
+    cp_save_article_hero_image($saved_id, $hero_image);
     cp_redirect('cp-articles', ['cp_notice' => $notice_code]);
 }

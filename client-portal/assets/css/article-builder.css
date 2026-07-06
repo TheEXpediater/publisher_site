@@ -9,6 +9,16 @@
 .cp-app .cp-builder-details .cp-card-header p, .cp-app .cp-builder-content-section .cp-card-header p { grid-column: 2; }
 .cp-app .cp-section-number { grid-row: 1 / span 2; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; color: var(--cp-primary); background: #eeeeff; font-size: 13px; font-weight: 800; }
 .cp-app .cp-builder-section-body { padding: 26px; }
+.cp-app .cp-hero-image-field { padding: 20px; border: 1px solid #dfe3e8; border-radius: 13px; background: #fafbfc; }
+.cp-app .cp-hero-image-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.cp-app .cp-hero-image-heading .form-label { margin-bottom: 3px; font-size: 14px; }
+.cp-app .cp-hero-image-heading p { margin: 0; color: #667085; font-size: 12px; }
+.cp-app .cp-hero-source-selector { max-width: 760px; }
+.cp-app .cp-hero-source-panel { margin-top: 16px; }
+.cp-app .cp-hero-source-panel[hidden] { display: none; }
+.cp-app .cp-hero-preview { width: min(100%, 520px); margin-top: 14px; overflow: hidden; border: 1px solid #e4e7ec; border-radius: 11px; background: #f2f4f7; }
+.cp-app .cp-hero-preview[hidden] { display: none; }
+.cp-app .cp-hero-preview img { width: 100%; max-height: 280px; display: block; object-fit: cover; }
 .cp-app .cp-block-count { padding: 7px 11px; border-radius: 999px; color: #475467; background: #f2f4f7; font-size: 11px; }
 .cp-app .cp-block-count strong { color: var(--cp-primary); }
 .cp-app .cp-builder-blocks { display: grid; gap: 16px; }
@@ -64,13 +74,18 @@
 .cp-app .cp-confirm-blocks li { padding: 5px 9px; border-radius: 999px; color: #475467; background: #f2f4f7; font-size: 11px; font-weight: 650; }
 .cp-app .cp-builder-client-notice { margin: 0; border: 0; border-radius: 11px; box-shadow: var(--cp-shadow); }
 .cp-app .cp-block-entering { opacity: 0; transform: translateY(12px) scale(.99); }
+.cp-app .cp-block-new { animation: cpBlockNew 1.25s ease both; }
 .cp-app .cp-block-moving-up { animation: cpBlockMoveUp .18s ease both; }
 .cp-app .cp-block-moving-down { animation: cpBlockMoveDown .18s ease both; }
 .cp-app .cp-block-just-moved { border-color: #888af0; box-shadow: 0 0 0 4px rgba(91,92,226,.12); }
+.cp-app .cp-hero-warning { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; padding: 12px 14px; border: 1px solid #fedf89; border-radius: 10px; color: #7a2e0e; background: #fffaeb; font-size: 12px; line-height: 1.55; }
+.cp-app .cp-hero-warning[hidden] { display: none; }
+.cp-app .cp-hero-warning i { margin-top: 1px; color: #dc6803; font-size: 16px; }
 
 @keyframes cpOptionsIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes cpBlockMoveUp { to { opacity: .72; transform: translateY(-12px) scale(.995); } }
 @keyframes cpBlockMoveDown { to { opacity: .72; transform: translateY(12px) scale(.995); } }
+@keyframes cpBlockNew { 0% { border-color: #888af0; box-shadow: 0 0 0 6px rgba(91,92,226,.18); } 65% { border-color: #888af0; box-shadow: 0 0 0 3px rgba(91,92,226,.08); } 100% { border-color: #dfe3e8; box-shadow: 0 4px 16px rgba(16,24,40,.05); } }
 
 @media (max-width: 700px) {
     .cp-app .cp-add-block-options { grid-template-columns: 1fr 1fr; }
@@ -78,6 +93,7 @@
     .cp-app .cp-builder-action-bar > div:last-child { display: grid; grid-template-columns: 1fr 1fr; }
     .cp-app .cp-builder-block-head { align-items: flex-start; flex-direction: column; }
     .cp-app .cp-builder-block-actions { width: 100%; justify-content: flex-end; }
+    .cp-app .cp-hero-source-selector { flex-direction: column; }
 }
 
 @media (max-width: 480px) {

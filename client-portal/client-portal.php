@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Enterprise1979 Publisher Portal
  * Description: A custom WordPress admin publishing portal for Enterprise1979.
- * Version: 3.0.2
+ * Version: 3.2.0
  * Author: Alvin
  * Text Domain: client-portal
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CP_VERSION', '3.0.2');
+define('CP_VERSION', '3.2.0');
 define('CP_PATH', plugin_dir_path(__FILE__));
 define('CP_URL', plugin_dir_url(__FILE__));
 
@@ -25,6 +25,7 @@ require_once CP_PATH . 'includes/categories.php';
 require_once CP_PATH . 'includes/users.php';
 require_once CP_PATH . 'includes/analytics.php';
 require_once CP_PATH . 'includes/settings.php';
+require_once CP_PATH . 'includes/frontend-shortcodes.php';
 
 function cp_initialize_plugin()
 {

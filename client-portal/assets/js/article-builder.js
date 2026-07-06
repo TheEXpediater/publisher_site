@@ -13,6 +13,8 @@
         var hiddenBlocks = document.getElementById('cp-article-blocks');
         var confirmElement = document.getElementById('cp-confirm-article-modal');
         var confirmModal = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(confirmElement) : null;
+        var heroField = form.querySelector('[data-cp-hero-image]');
+        var heroWarning = confirmElement.querySelector('[data-cp-hero-warning]');
         var confirmed = false;
         var nextId = Date.now();
         var labels = { heading: 'Heading', paragraph: 'Paragraph', image: 'Image', video: 'Video URL' };
@@ -254,6 +256,74 @@
             return true;
         }
 
+        function heroSource() {
+            var selected = heroField ? heroField.querySelector('[data-cp-hero-source]:checked') : null;
+            return selected ? selected.value : 'none';
+        }
+
+        function setHeroSource(source) {
+            if (!heroField) {
+                return;
+            }
+            heroField.querySelector('[data-cp-hero-media]').hidden = 'media' !== source;
+            heroField.querySelector('[data-cp-hero-url-panel]').hidden = 'url' !== source;
+            var urlInput = heroField.querySelector('[data-cp-hero-url]');
+            if (urlInput) {
+                urlInput.required = false;
+            }
+        }
+
+        function setHeroPreview(container, url) {
+            if (!container) {
+                return;
+            }
+            container.textContent = '';
+            if (!url) {
+                container.hidden = true;
+                return;
+            }
+            var image = element('img');
+            image.alt = '';
+            image.addEventListener('error', function () {
+                container.textContent = '';
+                container.hidden = true;
+            });
+            image.src = url;
+            container.appendChild(image);
+            container.hidden = false;
+        }
+
+        function heroImageExists() {
+            var source = heroSource();
+            if ('media' === source) {
+                return Number(heroField.querySelector('[data-cp-hero-attachment]').value || 0) > 0;
+            }
+            if ('url' === source) {
+                try {
+                    var heroUrl = new URL(heroField.querySelector('[data-cp-hero-url]').value.trim());
+                    return 'http:' === heroUrl.protocol || 'https:' === heroUrl.protocol;
+                } catch (error) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function openHeroMediaLibrary() {
+            if (!window.wp || !window.wp.media) {
+                showError('The WordPress Media Library is unavailable on this page.');
+                return;
+            }
+            var frame = window.wp.media({ title: 'Select Hero Image', button: { text: 'Use as hero image' }, library: { type: 'image' }, multiple: false });
+            frame.on('select', function () {
+                var attachment = frame.state().get('selection').first().toJSON();
+                heroField.querySelector('[data-cp-hero-attachment]').value = String(attachment.id);
+                var previewUrl = attachment.sizes && attachment.sizes.medium_large ? attachment.sizes.medium_large.url : attachment.url;
+                setHeroPreview(heroField.querySelector('[data-cp-hero-media-preview]'), previewUrl);
+            });
+            frame.open();
+        }
+
         form.querySelector('[data-cp-add-toggle]').addEventListener('click', function () {
             form.querySelector('[data-cp-add-block]').classList.toggle('cp-add-block-open');
         });
@@ -261,12 +331,40 @@
         form.querySelectorAll('[data-cp-add-type]').forEach(function (button) {
             button.addEventListener('click', function () {
                 var card = createCard(button.getAttribute('data-cp-add-type'));
+                card.classList.add('cp-block-new');
                 blockList.appendChild(card);
                 form.querySelector('[data-cp-add-block]').classList.remove('cp-add-block-open');
                 refreshBlocks();
                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                window.setTimeout(function () {
+                    var firstField = card.querySelector('input:not([type="hidden"]), textarea, select');
+                    if (firstField) {
+                        firstField.focus({ preventScroll: true });
+                    }
+                }, 450);
+                window.setTimeout(function () { card.classList.remove('cp-block-new'); }, 1400);
             });
         });
+
+        if (heroField) {
+            heroField.addEventListener('change', function (event) {
+                if (event.target.matches('[data-cp-hero-source]')) {
+                    setHeroSource(event.target.value);
+                }
+                if (event.target.matches('[data-cp-hero-url]')) {
+                    var value = event.target.value.trim();
+                    setHeroPreview(heroField.querySelector('[data-cp-hero-url-preview]'), /^https?:\/\//i.test(value) ? value : '');
+                }
+            });
+            heroField.querySelector('[data-cp-hero-select]').addEventListener('click', openHeroMediaLibrary);
+            heroField.querySelectorAll('.cp-hero-preview img').forEach(function (image) {
+                image.addEventListener('error', function () {
+                    image.parentNode.hidden = true;
+                    image.remove();
+                });
+            });
+            setHeroSource(heroSource());
+        }
 
         blockList.addEventListener('change', function (event) {
             if (event.target.matches('[data-cp-image-source]')) {
@@ -359,6 +457,7 @@
             confirmElement.querySelector('[data-cp-summary-status]').textContent = form.querySelector('[name="status"] option:checked').textContent;
             confirmElement.querySelector('[data-cp-summary-category]').textContent = form.querySelector('[name="category"] option:checked').textContent;
             confirmElement.querySelector('[data-cp-summary-count]').textContent = String(blocks.length);
+            heroWarning.hidden = heroImageExists();
             var summary = confirmElement.querySelector('[data-cp-summary-blocks]');
             summary.textContent = '';
             blocks.forEach(function (block) { summary.appendChild(element('li', '', labels[block.type] || 'Content Block')); });

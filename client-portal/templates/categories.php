@@ -5,9 +5,9 @@ if (!defined('ABSPATH')) {
 }
 ?>
 <?php cp_render_admin_notice($notice); ?>
-<div class="cp-page-heading"><div><p class="cp-eyebrow"><?php esc_html_e('Taxonomy', 'client-portal'); ?></p><h2><?php esc_html_e('Category Manager', 'client-portal'); ?></h2><p><?php esc_html_e('Build a clear structure for your publication.', 'client-portal'); ?></p></div></div>
+<div class="cp-page-heading"><div><p class="cp-eyebrow"><?php esc_html_e('Publication Sections', 'client-portal'); ?></p><h2><?php esc_html_e('Category Manager', 'client-portal'); ?></h2><p><?php esc_html_e('Build a clear structure for your publication.', 'client-portal'); ?></p></div></div>
 <div class="row g-4">
-    <div class="col-xl-4"><section class="cp-card cp-form-card cp-sticky-card"><div class="cp-card-header"><div><h3><?php echo $editing_category ? esc_html__('Edit Category', 'client-portal') : esc_html__('Add Category', 'client-portal'); ?></h3><p><?php esc_html_e('Create a native WordPress category.', 'client-portal'); ?></p></div></div>
+    <div class="col-xl-4"><section class="cp-card cp-form-card cp-sticky-card"><div class="cp-card-header"><div><h3><?php echo $editing_category ? esc_html__('Edit Category', 'client-portal') : esc_html__('Add Category', 'client-portal'); ?></h3><p><?php esc_html_e('Create a section for organizing published stories.', 'client-portal'); ?></p></div></div>
         <form method="post" action="<?php echo esc_url(cp_admin_url('cp-categories')); ?>"><?php wp_nonce_field('cp_save_category', 'cp_category_nonce'); ?><input type="hidden" name="cp_category_action" value="save"><input type="hidden" name="category_id" value="<?php echo esc_attr($editing_category ? $editing_category->term_id : 0); ?>">
             <div class="mb-3"><label class="form-label" for="cp-category-name"><?php esc_html_e('Name', 'client-portal'); ?></label><input class="form-control" id="cp-category-name" name="name" value="<?php echo esc_attr($editing_category ? $editing_category->name : ''); ?>" required></div>
             <div class="mb-3"><label class="form-label" for="cp-category-slug"><?php esc_html_e('Slug', 'client-portal'); ?></label><input class="form-control" id="cp-category-slug" name="slug" value="<?php echo esc_attr($editing_category ? $editing_category->slug : ''); ?>"></div>
