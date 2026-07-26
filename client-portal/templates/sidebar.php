@@ -36,5 +36,5 @@ $pages = [
 </nav>
 <div class="cp-sidebar-foot">
     <i class="bi bi-shield-check" aria-hidden="true"></i>
-    <span><?php esc_html_e('Secured by WordPress', 'client-portal'); ?></span>
+    <span><?php esc_html_e('Publication portal', 'client-portal'); ?></span>
 </div>

@@ -42,7 +42,7 @@ $portal_settings = cp_settings();
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php esc_html_e('Cancel', 'client-portal'); ?></button>
-                <a class="btn btn-primary" href="<?php echo esc_url(wp_logout_url(admin_url())); ?>"><?php esc_html_e('Logout', 'client-portal'); ?></a>
+                <a class="btn btn-primary" href="<?php echo esc_url(wp_logout_url(cp_login_url())); ?>"><?php esc_html_e('Logout', 'client-portal'); ?></a>
             </div>
         </div>
     </div>

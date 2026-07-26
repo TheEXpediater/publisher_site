@@ -14,6 +14,53 @@ function cp_url($path = '')
     return CP_URL . ltrim($path, '/\\');
 }
 
+function cp_get_publication_name()
+{
+    $site_name = trim(wp_strip_all_tags((string) get_bloginfo('name')));
+    if ('' !== $site_name) {
+        return $site_name;
+    }
+
+    $settings = function_exists('cp_settings') ? cp_settings() : [];
+    $portal_title = isset($settings['portal_title']) ? trim(wp_strip_all_tags((string) $settings['portal_title'])) : '';
+
+    return '' !== $portal_title ? $portal_title : __('Enterprise1979', 'client-portal');
+}
+
+function cp_debug_log($message, $context = [])
+{
+    if (!defined('WP_DEBUG') || !WP_DEBUG) {
+        return;
+    }
+
+    $scrub = static function ($value, $key = '') use (&$scrub) {
+        if (preg_match('/pass(word)?|pwd|nonce/i', (string) $key)) {
+            return '[redacted]';
+        }
+        if (is_array($value)) {
+            $clean = [];
+            foreach ($value as $item_key => $item_value) {
+                $clean[$item_key] = $scrub($item_value, $item_key);
+            }
+            return $clean;
+        }
+        if (is_object($value)) {
+            return get_class($value);
+        }
+        return is_scalar($value) || null === $value ? $value : gettype($value);
+    };
+
+    $entry = '[Client Portal] ' . sanitize_text_field((string) $message);
+    if (!empty($context) && is_array($context)) {
+        $encoded = wp_json_encode($scrub($context));
+        if ($encoded) {
+            $entry .= ' ' . $encoded;
+        }
+    }
+
+    error_log($entry); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+}
+
 function cp_admin_url($page, $args = [])
 {
     return add_query_arg(array_merge(['page' => sanitize_key($page)], $args), admin_url('admin.php'));
@@ -107,6 +154,40 @@ function cp_restrict_portal_admin_bar($wp_admin_bar)
     }
 }
 
+function cp_white_label_admin_bar($wp_admin_bar)
+{
+    if (is_object($wp_admin_bar)) {
+        $wp_admin_bar->remove_node('wp-logo');
+    }
+}
+
+function cp_white_label_admin_footer_text($footer_text)
+{
+    if (!cp_is_portal_page() && !cp_is_portal_only_user()) {
+        return $footer_text;
+    }
+
+    return sprintf(
+        /* translators: %s: Publication name. */
+        esc_html__('%s editorial dashboard', 'client-portal'),
+        esc_html(cp_get_publication_name())
+    );
+}
+
+function cp_white_label_admin_footer_version($version_text)
+{
+    if (!cp_is_portal_page() && !cp_is_portal_only_user()) {
+        return $version_text;
+    }
+
+    return '';
+}
+
+function cp_remove_wordpress_dashboard_news_widget()
+{
+    remove_meta_box('dashboard_primary', 'dashboard', 'side');
+}
+
 function cp_render_template($template, $data = [])
 {
     $template = sanitize_file_name($template);
@@ -134,16 +215,24 @@ function cp_render_page($template, $data = [])
 
 function cp_render_admin_notice($notice)
 {
-    if (empty($notice['message'])) {
+    $notices = cp_normalize_notices($notice);
+    if (empty($notices)) {
         return;
     }
-
-    $allowed_types = ['success', 'danger', 'warning', 'info'];
-    $type = isset($notice['type']) && in_array($notice['type'], $allowed_types, true) ? $notice['type'] : 'info';
     ?>
-    <div class="cp-notice alert alert-<?php echo esc_attr($type); ?> alert-dismissible fade show" role="alert">
-        <?php echo esc_html($notice['message']); ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<?php esc_attr_e('Close', 'client-portal'); ?>"></button>
+    <div class="cp-toast-region" aria-label="<?php esc_attr_e('Portal notifications', 'client-portal'); ?>"<?php if ('' !== cp_get_value('cp_notice')) : ?> data-cp-clean-url-param="cp_notice"<?php endif; ?>>
+        <?php foreach ($notices as $notice_item) : ?>
+            <?php
+            $type = cp_notice_type($notice_item);
+            $is_error = 'danger' === $type;
+            $delay = cp_notice_delay($type);
+            ?>
+            <div class="cp-toast cp-toast-<?php echo esc_attr($type); ?>" role="<?php echo esc_attr($is_error ? 'alert' : 'status'); ?>" aria-live="<?php echo esc_attr($is_error ? 'assertive' : 'polite'); ?>" aria-atomic="true" data-cp-toast data-cp-toast-delay="<?php echo esc_attr($delay); ?>">
+                <span class="cp-toast-icon" aria-hidden="true"><i class="<?php echo esc_attr(cp_notice_icon($type)); ?>"></i></span>
+                <div class="cp-toast-message"><?php echo esc_html($notice_item['message']); ?></div>
+                <button type="button" class="cp-toast-close" data-cp-toast-close aria-label="<?php esc_attr_e('Dismiss notification', 'client-portal'); ?>"><i class="bi bi-x" aria-hidden="true"></i></button>
+            </div>
+        <?php endforeach; ?>
     </div>
     <?php
 }
@@ -153,12 +242,112 @@ function cp_render_notice($notice)
     cp_render_admin_notice($notice);
 }
 
+function cp_normalize_notices($notice)
+{
+    if (empty($notice)) {
+        return [];
+    }
+
+    $notices = isset($notice['message']) ? [$notice] : (array) $notice;
+    $normalized = [];
+
+    foreach ($notices as $notice_item) {
+        if (!is_array($notice_item) || empty($notice_item['message']) || !is_scalar($notice_item['message'])) {
+            continue;
+        }
+
+        $normalized[] = [
+            'type' => cp_notice_type($notice_item),
+            'message' => sanitize_text_field($notice_item['message']),
+        ];
+    }
+
+    return $normalized;
+}
+
+function cp_notice_type($notice)
+{
+    $allowed_types = ['success', 'danger', 'warning', 'info'];
+    $type = isset($notice['type']) && is_scalar($notice['type']) ? sanitize_key($notice['type']) : 'info';
+
+    return in_array($type, $allowed_types, true) ? $type : 'info';
+}
+
+function cp_notice_delay($type)
+{
+    $delays = [
+        'success' => 4000,
+        'danger' => 7000,
+        'warning' => 6000,
+        'info' => 5000,
+    ];
+
+    return isset($delays[$type]) ? $delays[$type] : 5000;
+}
+
+function cp_notice_icon($type)
+{
+    $icons = [
+        'success' => 'bi bi-check-circle-fill',
+        'danger' => 'bi bi-exclamation-triangle-fill',
+        'warning' => 'bi bi-exclamation-circle-fill',
+        'info' => 'bi bi-info-circle-fill',
+    ];
+
+    return isset($icons[$type]) ? $icons[$type] : $icons['info'];
+}
+
+function cp_settings_errors_as_notices($setting)
+{
+    $errors = get_settings_errors($setting);
+    foreach (get_settings_errors('general') as $general_error) {
+        if (isset($general_error['code']) && 'settings_updated' === $general_error['code']) {
+            $errors[] = $general_error;
+        }
+    }
+
+    $notices = [];
+    $seen_codes = [];
+
+    foreach ($errors as $error) {
+        if (empty($error['message']) || !is_scalar($error['message'])) {
+            continue;
+        }
+
+        $code = isset($error['code']) ? sanitize_key($error['code']) : md5((string) $error['message']);
+        if (isset($seen_codes[$code])) {
+            continue;
+        }
+        $seen_codes[$code] = true;
+
+        $type = isset($error['type']) && 'updated' === $error['type'] ? 'success' : 'danger';
+        if (isset($error['type']) && in_array($error['type'], ['success', 'danger', 'warning', 'info'], true)) {
+            $type = $error['type'];
+        }
+
+        $notices[] = [
+            'type' => $type,
+            'message' => sanitize_text_field($error['message']),
+        ];
+    }
+
+    return $notices;
+}
+
 function cp_get_notice_message($code)
 {
     $notices = [
         'article_created' => ['type' => 'success', 'message' => __('Article created successfully.', 'client-portal')],
         'article_updated' => ['type' => 'success', 'message' => __('Article updated successfully.', 'client-portal')],
         'article_deleted' => ['type' => 'success', 'message' => __('Article deleted successfully.', 'client-portal')],
+        'article_published' => ['type' => 'success', 'message' => __('Article published successfully.', 'client-portal')],
+        'publish_not_allowed' => ['type' => 'danger', 'message' => __('You are not allowed to publish articles directly. Please contact an administrator or save the article as draft.', 'client-portal')],
+        'article_publish_failed' => ['type' => 'danger', 'message' => __('The article could not be published. Please try again.', 'client-portal')],
+        'homepage_feature_updated' => ['type' => 'success', 'message' => __('Homepage Featured Article updated successfully.', 'client-portal')],
+        'homepage_feature_cleared' => ['type' => 'success', 'message' => __('Homepage Featured Article cleared successfully.', 'client-portal')],
+        'homepage_feature_not_allowed' => ['type' => 'danger', 'message' => __('Only editors and administrators may select the homepage featured article.', 'client-portal')],
+        'homepage_feature_requires_publish' => ['type' => 'warning', 'message' => __('The article was saved, but only published articles may appear as the homepage feature.', 'client-portal')],
+        'homepage_feature_invalid_article' => ['type' => 'danger', 'message' => __('The selected homepage feature must be a published Enterprise article.', 'client-portal')],
         'category_created' => ['type' => 'success', 'message' => __('Category created successfully.', 'client-portal')],
         'category_updated' => ['type' => 'success', 'message' => __('Category updated successfully.', 'client-portal')],
         'category_deleted' => ['type' => 'success', 'message' => __('Category deleted successfully.', 'client-portal')],
@@ -212,7 +401,9 @@ function cp_request_notice()
 
 function cp_redirect($page, $args = [])
 {
-    wp_safe_redirect(cp_admin_url($page, $args));
+    $target = cp_admin_url($page, $args);
+    cp_debug_log('Portal redirect', ['target' => $target]);
+    wp_safe_redirect($target);
     exit;
 }
 
@@ -294,11 +485,137 @@ function cp_can_publish_directly()
     }
 
     $user = wp_get_current_user();
-    if (in_array('author', (array) $user->roles, true) && empty(cp_settings()['allow_authors_publish'])) {
+    $roles = (array) $user->roles;
+    if (array_intersect(['administrator', 'editor'], $roles)) {
+        return true;
+    }
+
+    if (in_array('author', $roles, true) && empty(cp_settings()['allow_authors_publish'])) {
         return false;
     }
 
     return true;
+}
+
+function cp_can_manage_homepage_feature()
+{
+    if (!is_user_logged_in() || !current_user_can('publish_posts') || !current_user_can('edit_others_posts')) {
+        return false;
+    }
+
+    $user = wp_get_current_user();
+    $roles = $user instanceof WP_User ? (array) $user->roles : [];
+
+    return (bool) array_intersect(['administrator', 'editor'], $roles);
+}
+
+function cp_homepage_feature_option_key()
+{
+    return defined('CP_HOMEPAGE_FEATURED_ARTICLE_OPTION')
+        ? CP_HOMEPAGE_FEATURED_ARTICLE_OPTION
+        : 'cp_homepage_featured_article_id';
+}
+
+function cp_is_valid_homepage_feature_article($post_id)
+{
+    $post_id = absint($post_id);
+    if (!$post_id || !function_exists('cp_is_enterprise_article')) {
+        return false;
+    }
+
+    $post = get_post($post_id);
+    if (!$post instanceof WP_Post || 'post' !== $post->post_type || 'publish' !== $post->post_status) {
+        return false;
+    }
+
+    return cp_is_enterprise_article($post);
+}
+
+function cp_get_homepage_featured_article_id()
+{
+    $post_id = absint(get_option(cp_homepage_feature_option_key(), 0));
+    if (!$post_id) {
+        return 0;
+    }
+
+    if (!function_exists('cp_is_enterprise_article')) {
+        return 0;
+    }
+
+    if (!cp_is_valid_homepage_feature_article($post_id)) {
+        delete_option(cp_homepage_feature_option_key());
+        return 0;
+    }
+
+    return $post_id;
+}
+
+function cp_get_homepage_featured_article()
+{
+    $post_id = cp_get_homepage_featured_article_id();
+    if (!$post_id) {
+        return null;
+    }
+
+    $post = get_post($post_id);
+    return $post instanceof WP_Post ? $post : null;
+}
+
+function cp_set_homepage_featured_article($post_id)
+{
+    $post_id = absint($post_id);
+    if (!cp_is_valid_homepage_feature_article($post_id)) {
+        return false;
+    }
+
+    update_option(cp_homepage_feature_option_key(), $post_id, false);
+
+    return absint(get_option(cp_homepage_feature_option_key(), 0)) === $post_id;
+}
+
+function cp_clear_homepage_featured_article()
+{
+    delete_option(cp_homepage_feature_option_key());
+}
+
+function cp_is_homepage_featured_article($post_id)
+{
+    $post_id = absint($post_id);
+    return $post_id && $post_id === cp_get_homepage_featured_article_id();
+}
+
+function cp_clear_homepage_feature_on_status_change($new_status, $old_status, $post)
+{
+    if (!$post instanceof WP_Post || 'post' !== $post->post_type || 'publish' === $new_status) {
+        return;
+    }
+
+    if (!function_exists('cp_is_enterprise_article') || !cp_is_enterprise_article($post)) {
+        return;
+    }
+
+    if (absint(get_option(cp_homepage_feature_option_key(), 0)) === absint($post->ID)) {
+        cp_clear_homepage_featured_article();
+    }
+}
+
+function cp_clear_homepage_feature_on_post_removed($post_id)
+{
+    $post_id = absint($post_id);
+    if (!$post_id || absint(get_option(cp_homepage_feature_option_key(), 0)) !== $post_id) {
+        return;
+    }
+
+    $post = get_post($post_id);
+    if (!$post instanceof WP_Post || 'post' !== $post->post_type) {
+        return;
+    }
+
+    if (function_exists('cp_is_enterprise_article') && !cp_is_enterprise_article($post)) {
+        return;
+    }
+
+    cp_clear_homepage_featured_article();
 }
 
 function cp_status_badge_class($status)
@@ -320,6 +637,37 @@ function cp_enqueue_admin_assets()
     wp_enqueue_script('cp-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', [], '5.3.3', true);
     wp_enqueue_script('cp-app', cp_url('assets/js/app.js'), ['cp-bootstrap'], CP_VERSION, true);
     wp_enqueue_script('cp-dashboard', cp_url('assets/js/dashboard.js'), ['cp-app'], CP_VERSION, true);
+
+    if ('cp-dashboard' === cp_current_page()) {
+        wp_localize_script(
+            'cp-dashboard',
+            'cpDashboardFeaturePicker',
+            [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('cp_homepage_feature_picker'),
+                'canManage' => cp_can_manage_homepage_feature(),
+                'perPage' => 20,
+                'publicationName' => cp_get_publication_name(),
+                'strings' => [
+                    'loading' => __('Loading articles...', 'client-portal'),
+                    'empty' => __('No published Enterprise articles match your filters.', 'client-portal'),
+                    'error' => __('Articles could not be loaded. Please try again.', 'client-portal'),
+                    'selectArticle' => __('Select article', 'client-portal'),
+                    'currentFeatured' => __('Current Featured', 'client-portal'),
+                    'noImage' => __('No Image', 'client-portal'),
+                    'showing' => __('Showing %1$s to %2$s of %3$s articles', 'client-portal'),
+                    'featureConfirm' => __('Feature "%s" on the homepage?', 'client-portal'),
+                    'replaceCurrent' => __('This will replace "%s" as the homepage featured article.', 'client-portal'),
+                    'clearConfirm' => __('Remove "%s" from the homepage featured position?', 'client-portal'),
+                    'fallback' => __('The newest published Enterprise article will appear until another article is selected.', 'client-portal'),
+                    'choose' => __('Choose Featured Article', 'client-portal'),
+                    'change' => __('Change Featured Article', 'client-portal'),
+                    'viewArticle' => __('View Article', 'client-portal'),
+                    'editArticle' => __('Edit Article', 'client-portal'),
+                ],
+            ]
+        );
+    }
 
     if (in_array(cp_current_page(), ['cp-article-create', 'cp-article-edit'], true)) {
         wp_enqueue_media();

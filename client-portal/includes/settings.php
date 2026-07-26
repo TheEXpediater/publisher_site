@@ -68,6 +68,7 @@ function cp_items_per_page_field()
     $settings = cp_settings();
     ?>
     <input class="form-control" type="number" id="cp-items-per-page" name="cp_portal_settings[items_per_page]" value="<?php echo esc_attr($settings['items_per_page']); ?>" min="5" max="100" step="1">
+    <p class="cp-settings-description mt-2 mb-0"><?php esc_html_e('The Article Library is fixed at 10 articles per page; this setting remains available for other portal lists.', 'client-portal'); ?></p>
     <?php
 }
 

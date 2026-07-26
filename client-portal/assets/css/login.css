@@ -1,0 +1,61 @@
+:root {
+    color-scheme: dark;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body.cp-login-page {
+    min-height: 100vh;
+    margin: 0;
+    color: #15152b;
+    background: rgb(0, 0, 41);
+}
+
+.cp-login-shell {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 32px 20px;
+    background: radial-gradient(circle at top, rgba(89, 91, 230, .25), transparent 44%);
+}
+
+.cp-login-card {
+    width: min(100%, 430px);
+    padding: 42px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, .42);
+}
+
+.cp-login-brand {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 24px;
+    border-radius: 13px;
+    color: #fff;
+    background: #3435a9;
+    font-weight: 800;
+    letter-spacing: -.04em;
+    place-items: center;
+}
+
+.cp-login-eyebrow { margin: 0 0 7px; color: #5557d9; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.cp-login-card h1 { margin: 0; color: #111127; font-size: 30px; line-height: 1.15; }
+.cp-login-intro { margin: 12px 0 28px; color: #667085; font-size: 14px; line-height: 1.55; }
+.cp-login-field { margin-bottom: 18px; }
+.cp-login-field label { display: block; margin-bottom: 7px; color: #344054; font-size: 13px; font-weight: 700; }
+.cp-login-field input { width: 100%; min-height: 46px; padding: 10px 13px; border: 1px solid #d0d5dd; border-radius: 9px; color: #101828; background: #fff; font: inherit; outline: none; }
+.cp-login-field input:focus { border-color: #6869df; box-shadow: 0 0 0 4px rgba(85, 87, 217, .13); }
+.cp-login-remember { display: flex; align-items: center; gap: 9px; margin: 2px 0 22px; color: #475467; font-size: 13px; }
+.cp-login-remember input { width: 16px; height: 16px; accent-color: #4547bf; }
+.cp-login-submit { width: 100%; min-height: 48px; border: 0; border-radius: 9px; color: #fff; background: #3435a9; font: inherit; font-weight: 750; cursor: pointer; }
+.cp-login-submit:hover, .cp-login-submit:focus { background: #24258a; }
+.cp-login-error { margin: 0 0 20px; padding: 12px 14px; border: 1px solid #fecdca; border-radius: 9px; color: #b42318; background: #fef3f2; font-size: 13px; line-height: 1.45; }
+.cp-login-security { margin: 24px 0 0; color: #98a2b3; font-size: 12px; text-align: center; }
+
+@media (max-width: 520px) {
+    .cp-login-card { padding: 32px 24px; }
+}

@@ -4,27 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-function cp_article_oembed_allowed_html()
-{
-    $allowed_html = wp_kses_allowed_html('post');
-    $allowed_html['iframe'] = [
-        'allow' => true,
-        'allowfullscreen' => true,
-        'class' => true,
-        'frameborder' => true,
-        'height' => true,
-        'loading' => true,
-        'referrerpolicy' => true,
-        'sandbox' => true,
-        'src' => true,
-        'style' => true,
-        'title' => true,
-        'width' => true,
-    ];
-
-    return $allowed_html;
-}
-
 function cp_render_article_blocks($blocks)
 {
     $html = [];
@@ -80,17 +59,9 @@ function cp_render_article_video_block($block)
 {
     $url = $block['url'];
     $caption = isset($block['caption']) ? $block['caption'] : '';
-    $embed = wp_oembed_get($url);
-
-    if ($embed) {
-        $content = wp_kses($embed, cp_article_oembed_allowed_html());
-    } else {
-        $content = sprintf(
-            '<p><a href="%1$s" rel="noopener noreferrer">%2$s</a></p>',
-            esc_url($url),
-            esc_html($url)
-        );
-    }
+    // WordPress resolves this core embed shortcode while rendering content. Keeping
+    // the URL unresolved here prevents remote oEmbed requests during article saves.
+    $content = '[embed]' . esc_url_raw($url) . '[/embed]';
 
     $caption_html = '' !== $caption ? '<figcaption>' . esc_html($caption) . '</figcaption>' : '';
     return '<figure class="cp-article-video">' . $content . $caption_html . '</figure>';

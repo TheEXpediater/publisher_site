@@ -15,6 +15,7 @@
         var confirmModal = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(confirmElement) : null;
         var heroField = form.querySelector('[data-cp-hero-image]');
         var heroWarning = confirmElement.querySelector('[data-cp-hero-warning]');
+        var homepageFeatureInput = form.querySelector('[data-cp-homepage-feature]');
         var confirmed = false;
         var nextId = Date.now();
         var labels = { heading: 'Heading', paragraph: 'Paragraph', image: 'Image', video: 'Video URL' };
@@ -311,7 +312,7 @@
 
         function openHeroMediaLibrary() {
             if (!window.wp || !window.wp.media) {
-                showError('The WordPress Media Library is unavailable on this page.');
+                showError('The Media Library is unavailable on this page.');
                 return;
             }
             var frame = window.wp.media({ title: 'Select Hero Image', button: { text: 'Use as hero image' }, library: { type: 'image' }, multiple: false });
@@ -418,7 +419,7 @@
 
         function openMediaLibrary(card) {
             if (!window.wp || !window.wp.media) {
-                showError('The WordPress Media Library is unavailable on this page.');
+                showError('The Media Library is unavailable on this page.');
                 return;
             }
             var frame = window.wp.media({ title: 'Select Article Image', button: { text: 'Use this image' }, library: { type: 'image' }, multiple: false });
@@ -457,6 +458,7 @@
             confirmElement.querySelector('[data-cp-summary-status]').textContent = form.querySelector('[name="status"] option:checked').textContent;
             confirmElement.querySelector('[data-cp-summary-category]').textContent = form.querySelector('[name="category"] option:checked').textContent;
             confirmElement.querySelector('[data-cp-summary-count]').textContent = String(blocks.length);
+            confirmElement.querySelector('[data-cp-summary-homepage-feature]').textContent = homepageFeatureInput && homepageFeatureInput.checked ? 'Yes' : 'No';
             heroWarning.hidden = heroImageExists();
             var summary = confirmElement.querySelector('[data-cp-summary-blocks]');
             summary.textContent = '';

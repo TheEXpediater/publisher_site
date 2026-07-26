@@ -19,6 +19,15 @@
 .cp-app .cp-hero-preview { width: min(100%, 520px); margin-top: 14px; overflow: hidden; border: 1px solid #e4e7ec; border-radius: 11px; background: #f2f4f7; }
 .cp-app .cp-hero-preview[hidden] { display: none; }
 .cp-app .cp-hero-preview img { width: 100%; max-height: 280px; display: block; object-fit: cover; }
+.cp-app .cp-homepage-feature-field { padding: 18px 20px; border: 1px solid #dfe3e8; border-radius: 13px; background: #fff; }
+.cp-app .cp-homepage-feature-switch { min-height: 30px; display: flex; align-items: flex-start; gap: 10px; margin: 0; padding-left: 0; }
+.cp-app .cp-homepage-feature-switch .form-check-input { width: 42px; height: 22px; flex: 0 0 42px; margin: 2px 0 0; cursor: pointer; }
+.cp-app .cp-homepage-feature-switch .form-check-label { color: #1d2939; font-size: 14px; font-weight: 750; line-height: 1.4; cursor: pointer; }
+.cp-app .cp-homepage-feature-switch .form-check-input:disabled,
+.cp-app .cp-homepage-feature-switch .form-check-input:disabled + .form-check-label { cursor: not-allowed; opacity: .72; }
+.cp-app .cp-homepage-feature-help,
+.cp-app .cp-homepage-feature-current { max-width: 760px; display: block; margin: 8px 0 0; color: #667085; font-size: 12px; line-height: 1.55; }
+.cp-app .cp-homepage-feature-current { color: #475467; font-weight: 650; }
 .cp-app .cp-block-count { padding: 7px 11px; border-radius: 999px; color: #475467; background: #f2f4f7; font-size: 11px; }
 .cp-app .cp-block-count strong { color: var(--cp-primary); }
 .cp-app .cp-builder-blocks { display: grid; gap: 16px; }
