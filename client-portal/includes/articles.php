@@ -116,7 +116,10 @@ function cp_process_article_admin_actions()
 
 function cp_article_list_filters()
 {
-    $status = cp_sanitize_status(cp_get_value('status'), '');
+    // Authors use the Article Library as a read-only catalogue of published stories.
+    $status = cp_is_author_portal_user()
+        ? 'publish'
+        : cp_sanitize_status(cp_get_value('status'), '');
 
     return [
         'search' => sanitize_text_field(trim(cp_get_value('article_search'))),
@@ -187,7 +190,10 @@ function cp_article_library_query_args($filters, $article_page = 1)
         $query_args['cat'] = absint($filters['category']);
     }
 
-    if (!current_user_can('edit_others_posts')) {
+    if (cp_is_author_portal_user()) {
+        // Show the complete published library to Authors without exposing drafts/private stories.
+        $query_args['post_status'] = ['publish'];
+    } elseif (!current_user_can('edit_others_posts')) {
         $query_args['author'] = get_current_user_id();
     }
 
@@ -228,6 +234,7 @@ function cp_articles_page()
         'article_start' => $article_start,
         'article_end' => $article_end,
         'article_max_pages' => $max_pages,
+        'article_library_view_only' => cp_is_author_portal_user(),
         'notice' => cp_request_notice(),
     ]);
     wp_reset_postdata();
@@ -269,9 +276,12 @@ function cp_render_article_builder_page($mode)
     $article_data = [
         'title' => $post ? $post->post_title : '',
         'excerpt' => $post ? $post->post_excerpt : '',
+        'title_rich' => $post ? cp_get_article_rich_title($post) : '',
+        'excerpt_rich' => $post ? cp_get_article_rich_excerpt($post) : '',
         'status' => $post ? $post->post_status : cp_sanitize_status($settings['default_status']),
         'category' => !empty($selected_categories) ? (int) $selected_categories[0] : 0,
         'hero_image' => $hero_image,
+        'author' => cp_get_article_author_editor_data($post),
         'homepage_feature' => [
             'can_manage' => cp_can_manage_homepage_feature(),
             'is_featured' => $post instanceof WP_Post && $homepage_feature_id === absint($post->ID),
@@ -288,8 +298,50 @@ function cp_render_article_builder_page($mode)
         'article_data' => $article_data,
         'blocks' => $blocks,
         'categories' => get_categories(['hide_empty' => false]),
+        'author_accounts' => cp_get_article_author_accounts(),
         'notice' => cp_request_notice(),
     ]);
+}
+
+function cp_resolve_article_author_selection($post = null)
+{
+    if (!$post instanceof WP_Post) {
+        $post = $post ? get_post($post) : null;
+    }
+    $existing = cp_get_article_author_editor_data($post);
+
+    if (!cp_can_assign_article_author()) {
+        return [
+            'mode' => $existing['mode'],
+            'user_id' => absint($existing['user_id']) ?: get_current_user_id(),
+            'custom' => $existing['custom'],
+        ];
+    }
+
+    $mode = sanitize_key(cp_post_value('article_author_mode', 'account'));
+    if ('custom' === $mode) {
+        $custom_author = cp_sanitize_article_custom_author(cp_post_value('article_author_custom'));
+        if ('' === $custom_author) {
+            return new WP_Error('cp_article_author_required', __('Enter the author name before saving the article.', 'client-portal'));
+        }
+
+        return [
+            'mode' => 'custom',
+            'user_id' => absint($existing['user_id']) ?: get_current_user_id(),
+            'custom' => $custom_author,
+        ];
+    }
+
+    $user_id = absint(cp_post_value('article_author_user_id'));
+    if (!cp_is_valid_article_author_account($user_id)) {
+        return new WP_Error('cp_article_author_invalid', __('Select a valid author account before saving the article.', 'client-portal'));
+    }
+
+    return [
+        'mode' => 'account',
+        'user_id' => $user_id,
+        'custom' => '',
+    ];
 }
 
 function cp_save_article_builder_post($post = null)
@@ -318,6 +370,10 @@ function cp_save_article_builder_post($post = null)
         return $blocks;
     }
     $hero_image = cp_sanitize_article_hero_image();
+    $author_selection = cp_resolve_article_author_selection($post);
+    if (is_wp_error($author_selection)) {
+        return $author_selection;
+    }
     $can_manage_homepage_feature = cp_can_manage_homepage_feature();
     $homepage_feature_value = cp_post_value('homepage_featured_article', null);
     $homepage_feature_submitted = null !== $homepage_feature_value;
@@ -329,12 +385,24 @@ function cp_save_article_builder_post($post = null)
         $status = 'draft';
     }
 
+    $excerpt_plain = sanitize_textarea_field(cp_post_value('excerpt'));
+    $title_rich = cp_sanitize_rich_heading_html(cp_post_value('cp_article_title_rich'));
+    $excerpt_rich = cp_sanitize_rich_summary_html(cp_post_value('cp_article_excerpt_rich'));
+
+    if ('' !== $title_rich && cp_rich_text_plain_value($title_rich) !== cp_rich_text_plain_value($title)) {
+        $title_rich = '';
+    }
+    if ('' !== $excerpt_rich && cp_rich_text_plain_value($excerpt_rich) !== cp_rich_text_plain_value($excerpt_plain)) {
+        $excerpt_rich = '';
+    }
+
     $post_data = [
         'post_type' => 'post',
         'post_title' => $title,
-        'post_excerpt' => sanitize_textarea_field(cp_post_value('excerpt')),
+        'post_excerpt' => $excerpt_plain,
         'post_status' => $status,
         'post_content' => cp_render_article_blocks($blocks),
+        'post_author' => absint($author_selection['user_id']),
     ];
 
     if ($post) {
@@ -342,7 +410,6 @@ function cp_save_article_builder_post($post = null)
         $saved_id = wp_update_post(wp_slash($post_data), true);
         $notice_code = 'article_updated';
     } else {
-        $post_data['post_author'] = get_current_user_id();
         $saved_id = wp_insert_post(wp_slash($post_data), true);
         $notice_code = 'article_created';
     }
@@ -363,7 +430,23 @@ function cp_save_article_builder_post($post = null)
         cp_debug_log('Article category save failed', ['article_id' => $saved_id, 'error' => $category_result->get_error_message()]);
     }
     update_post_meta($saved_id, '_cp_article_blocks', wp_slash($blocks));
+    if ('' !== $title_rich) {
+        update_post_meta($saved_id, cp_article_rich_title_meta_key(), wp_slash($title_rich));
+    } else {
+        delete_post_meta($saved_id, cp_article_rich_title_meta_key());
+    }
+    if ('' !== $excerpt_rich) {
+        update_post_meta($saved_id, cp_article_rich_excerpt_meta_key(), wp_slash($excerpt_rich));
+    } else {
+        delete_post_meta($saved_id, cp_article_rich_excerpt_meta_key());
+    }
     cp_save_article_hero_image($saved_id, $hero_image);
+
+    if ('custom' === $author_selection['mode']) {
+        update_post_meta($saved_id, cp_article_custom_author_meta_key(), $author_selection['custom']);
+    } else {
+        delete_post_meta($saved_id, cp_article_custom_author_meta_key());
+    }
 
     if (!$can_manage_homepage_feature && $homepage_feature_submitted) {
         $homepage_feature_notice = 'homepage_feature_not_allowed';

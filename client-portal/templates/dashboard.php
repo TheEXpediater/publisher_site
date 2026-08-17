@@ -58,7 +58,7 @@ $publication_name = cp_get_publication_name();
                     <span class="cp-homepage-feature-kicker" data-cp-feature-category><?php echo esc_html(function_exists('cp_frontend_post_category') ? cp_frontend_post_category($homepage_feature->ID) : __('General', 'client-portal')); ?></span>
                     <h4 data-cp-feature-title><?php echo esc_html(get_the_title($homepage_feature)); ?></h4>
                     <p data-cp-feature-meta>
-                        <span data-cp-feature-author><?php echo esc_html(get_the_author_meta('display_name', $homepage_feature->post_author)); ?></span>
+                        <span data-cp-feature-author><?php echo esc_html(cp_get_article_display_author($homepage_feature)); ?></span>
                         <span aria-hidden="true">&middot;</span>
                         <time data-cp-feature-date datetime="<?php echo esc_attr(get_the_date('c', $homepage_feature)); ?>"><?php echo esc_html(get_the_date('', $homepage_feature)); ?></time>
                     </p>
@@ -186,7 +186,7 @@ $publication_name = cp_get_publication_name();
         <table class="cp-table table"><thead><tr><th><?php esc_html_e('Title', 'client-portal'); ?></th><th><?php esc_html_e('Status', 'client-portal'); ?></th><th><?php esc_html_e('Author', 'client-portal'); ?></th><th><?php esc_html_e('Date', 'client-portal'); ?></th></tr></thead>
         <tbody>
         <?php if ($stats['recent_articles']) : foreach ($stats['recent_articles'] as $article) : ?>
-            <tr><td><strong><?php echo esc_html($article->post_title ?: __('Untitled', 'client-portal')); ?></strong></td><td><span class="cp-badge cp-badge-<?php echo esc_attr(cp_status_badge_class($article->post_status)); ?>"><?php echo esc_html(ucfirst($article->post_status)); ?></span></td><td><?php echo esc_html(get_the_author_meta('display_name', $article->post_author)); ?></td><td><?php echo esc_html(get_the_date('', $article)); ?></td></tr>
+            <tr><td><strong><?php echo esc_html($article->post_title ?: __('Untitled', 'client-portal')); ?></strong></td><td><span class="cp-badge cp-badge-<?php echo esc_attr(cp_status_badge_class($article->post_status)); ?>"><?php echo esc_html(ucfirst($article->post_status)); ?></span></td><td><?php echo esc_html(cp_get_article_display_author($article)); ?></td><td><?php echo esc_html(get_the_date('', $article)); ?></td></tr>
         <?php endforeach; else : ?>
             <tr><td colspan="4" class="cp-empty-state"><?php esc_html_e('No articles have been created yet.', 'client-portal'); ?></td></tr>
         <?php endif; ?>

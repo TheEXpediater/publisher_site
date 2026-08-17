@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Enterprise1979 Publisher Portal
  * Description: A custom WordPress admin publishing portal for Enterprise1979.
- * Version: 3.5.4
+ * Version: 3.8.7
  * Author: Alvin
  * Text Domain: client-portal
  */
@@ -11,7 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CP_VERSION', '3.5.4');
+define('CP_VERSION', '3.8.7');
+if (!defined('CP_WORDPRESS_ACCESS_EMAIL')) {
+    define('CP_WORDPRESS_ACCESS_EMAIL', 'enterpriseenteng@gmail.com');
+}
 define('CP_PATH', plugin_dir_path(__FILE__));
 define('CP_URL', plugin_dir_url(__FILE__));
 define('CP_HOMEPAGE_FEATURED_ARTICLE_OPTION', 'cp_homepage_featured_article_id');
@@ -26,12 +29,14 @@ require_once CP_PATH . 'includes/categories.php';
 require_once CP_PATH . 'includes/users.php';
 require_once CP_PATH . 'includes/analytics.php';
 require_once CP_PATH . 'includes/settings.php';
+require_once CP_PATH . 'includes/activity-log.php';
 require_once CP_PATH . 'includes/frontend-shortcodes.php';
 require_once CP_PATH . 'includes/custom-login.php';
 
 function cp_initialize_plugin()
 {
     load_plugin_textdomain('client-portal', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    cp_maybe_install_activity_log_table();
 }
 
 add_action('plugins_loaded', 'cp_initialize_plugin');
@@ -59,6 +64,11 @@ add_filter('parent_file', 'cp_portal_parent_menu');
 add_filter('submenu_file', 'cp_portal_submenu_highlight');
 add_filter('admin_footer_text', 'cp_white_label_admin_footer_text');
 add_filter('update_footer', 'cp_white_label_admin_footer_version', 999);
+add_filter('admin_body_class', 'cp_portal_admin_body_class');
+add_filter('show_admin_bar', 'cp_portal_show_admin_bar', 999);
+add_filter('login_redirect', 'cp_portal_login_redirect', 999, 3);
+add_filter('admin_title', 'cp_portal_admin_title', 999, 2);
+add_action('admin_head', 'cp_portal_shell_admin_head', 0);
 
 register_activation_hook(__FILE__, 'cp_activate_plugin');
 register_deactivation_hook(__FILE__, 'cp_deactivate_plugin');

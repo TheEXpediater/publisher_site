@@ -131,6 +131,48 @@
     margin: 0;
 }
 
+.cp-login-success {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    margin: 0 0 20px;
+    padding: 11px 13px;
+    border: 1px solid #bfdac7;
+    color: #246b38;
+    background: #f0faf3;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.cp-login-success span {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #ffffff;
+    background: #246b38;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.cp-login-success p {
+    margin: 0;
+}
+
+.cp-login-back {
+    margin: 18px 0 0;
+    text-align: center;
+}
+
+.cp-login-back a {
+    color: var(--cp-login-navy);
+    font-size: 13px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .cp-login-field {
     margin-bottom: 16px;
 }
@@ -224,9 +266,20 @@
 }
 
 .cp-login-remember input {
-    width: 16px;
-    height: 16px;
+    width: 17px;
+    height: 17px;
+    margin: 0;
     accent-color: var(--cp-login-navy);
+    cursor: pointer;
+}
+
+.cp-login-remember input:focus-visible {
+    outline: 2px solid var(--cp-login-navy);
+    outline-offset: 3px;
+}
+
+.cp-login-remember span {
+    cursor: pointer;
 }
 
 .cp-login-row a {

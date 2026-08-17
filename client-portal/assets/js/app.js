@@ -129,6 +129,122 @@
         });
     }
 
+    function initSidebarCollapse(app) {
+        var toggle = app.querySelector('[data-cp-sidebar-collapse]');
+        var storageKey = 'cpPortalSidebarCollapsed';
+        var isDesktop = function () {
+            return window.matchMedia('(min-width: 1081px)').matches;
+        };
+
+        if (!toggle) {
+            return;
+        }
+
+        function setCollapsed(collapsed, persist) {
+            collapsed = Boolean(collapsed) && isDesktop();
+            app.classList.toggle('cp-sidebar-collapsed', collapsed);
+            toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            toggle.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+            toggle.setAttribute('title', collapsed ? 'Expand navigation' : 'Collapse navigation');
+
+            var icon = toggle.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('bi-chevron-left', !collapsed);
+                icon.classList.toggle('bi-chevron-right', collapsed);
+            }
+
+            if (persist) {
+                try {
+                    window.localStorage.setItem(storageKey, collapsed ? '1' : '0');
+                } catch (error) {
+                    // Storage is optional. The navigation still works for this page view.
+                }
+            }
+        }
+
+        var stored = '0';
+        try {
+            stored = window.localStorage.getItem(storageKey) || '0';
+        } catch (error) {
+            stored = '0';
+        }
+        setCollapsed('1' === stored, false);
+
+        toggle.addEventListener('click', function () {
+            setCollapsed(!app.classList.contains('cp-sidebar-collapsed'), true);
+        });
+
+        window.addEventListener('resize', function () {
+            if (!isDesktop()) {
+                app.classList.remove('cp-sidebar-collapsed');
+                toggle.setAttribute('aria-expanded', 'true');
+            } else {
+                try {
+                    setCollapsed('1' === window.localStorage.getItem(storageKey), false);
+                } catch (error) {
+                    setCollapsed(false, false);
+                }
+            }
+        });
+    }
+
+    function initActivityLogModal(app) {
+        var modalElement = document.getElementById('cp-activity-detail-modal');
+        var modal = modalElement && window.bootstrap && window.bootstrap.Modal
+            ? new window.bootstrap.Modal(modalElement)
+            : null;
+        var actionElement = modalElement ? modalElement.querySelector('[data-cp-log-modal-action]') : null;
+        var userElement = modalElement ? modalElement.querySelector('[data-cp-log-modal-user]') : null;
+        var timeElement = modalElement ? modalElement.querySelector('[data-cp-log-modal-time]') : null;
+        var detailsElement = modalElement ? modalElement.querySelector('[data-cp-log-modal-details]') : null;
+        var emptyElement = modalElement ? modalElement.querySelector('[data-cp-log-modal-empty]') : null;
+        var triggerElement = null;
+
+        if (!modal || !actionElement || !userElement || !timeElement || !detailsElement || !emptyElement) {
+            return;
+        }
+
+        app.querySelectorAll('[data-cp-log-detail]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var details = {};
+                triggerElement = button;
+
+                try {
+                    details = JSON.parse(button.getAttribute('data-cp-log-details') || '{}');
+                } catch (error) {
+                    details = {};
+                }
+
+                actionElement.textContent = button.getAttribute('data-cp-log-action') || '';
+                userElement.textContent = button.getAttribute('data-cp-log-user') || '';
+                timeElement.textContent = button.getAttribute('data-cp-log-time') || '';
+                detailsElement.textContent = '';
+
+                var keys = Object.keys(details);
+                emptyElement.hidden = keys.length > 0;
+                detailsElement.hidden = 0 === keys.length;
+
+                keys.forEach(function (key) {
+                    var term = document.createElement('dt');
+                    var description = document.createElement('dd');
+                    term.textContent = key;
+                    description.textContent = null === details[key] || undefined === details[key] ? '' : String(details[key]);
+                    detailsElement.appendChild(term);
+                    detailsElement.appendChild(description);
+                });
+
+                modal.show();
+            });
+        });
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            if (triggerElement) {
+                triggerElement.focus();
+                triggerElement = null;
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var app = document.querySelector('.cp-app');
         if (!app) {
@@ -136,6 +252,7 @@
         }
 
         initToasts(app);
+        initSidebarCollapse(app);
 
         var logoutModal = document.getElementById('cp-logout-modal');
         if (logoutModal && logoutModal.parentNode !== app) {
@@ -155,6 +272,7 @@
         });
 
         initConfirmModal(app);
+        initActivityLogModal(app);
 
         document.addEventListener('keydown', function (event) {
             if ('Escape' === event.key) {

@@ -11,5 +11,6 @@ cp_render_template('article-builder', [
     'article_data' => $article_data,
     'blocks' => $blocks,
     'categories' => $categories,
+    'author_accounts' => $author_accounts,
     'notice' => $notice,
 ]);

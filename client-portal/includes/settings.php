@@ -76,16 +76,53 @@ function cp_allow_authors_publish_field()
 {
     $settings = cp_settings();
     ?>
-    <div class="form-check form-switch">
-        <input type="hidden" name="cp_portal_settings[allow_authors_publish]" value="0">
-        <input class="form-check-input" type="checkbox" role="switch" id="cp-allow-authors-publish" name="cp_portal_settings[allow_authors_publish]" value="1" <?php checked($settings['allow_authors_publish'], 1); ?>>
-        <label class="form-check-label" for="cp-allow-authors-publish"><?php esc_html_e('Allow authors to publish directly', 'client-portal'); ?></label>
-    </div>
+    <input type="hidden" name="cp_portal_settings[allow_authors_publish]" value="0">
+    <label class="cp-setting-toggle" for="cp-allow-authors-publish">
+        <input type="checkbox" role="switch" id="cp-allow-authors-publish" name="cp_portal_settings[allow_authors_publish]" value="1" <?php checked($settings['allow_authors_publish'], 1); ?>>
+        <span class="cp-setting-toggle-track" aria-hidden="true"><span class="cp-setting-toggle-knob"></span></span>
+        <span class="cp-setting-toggle-copy">
+            <strong><?php esc_html_e('Allow authors to publish directly', 'client-portal'); ?></strong>
+            <small><?php esc_html_e('When disabled, authors save articles as drafts for editor or administrator review.', 'client-portal'); ?></small>
+        </span>
+    </label>
     <?php
 }
 
 function cp_settings_page()
 {
     cp_require_capability('manage_options');
-    cp_render_page('settings', ['page_title' => __('Settings', 'client-portal')]);
+
+    $tab = sanitize_key(cp_get_value('tab', 'preferences'));
+    if (!in_array($tab, ['preferences', 'activity'], true)) {
+        $tab = 'preferences';
+    }
+
+    $data = [
+        'page_title' => __('Settings', 'client-portal'),
+        'active_tab' => $tab,
+    ];
+
+    if ('activity' === $tab) {
+        $filters = cp_activity_log_filters();
+        $log_page = max(1, absint(cp_get_value('log_page', 1)));
+        $log_data = cp_activity_log_query($filters, $log_page, 10);
+
+        if ($log_page > $log_data['max_pages']) {
+            $redirect_args = array_filter([
+                'tab' => 'activity',
+                'log_date_from' => $filters['date_from'],
+                'log_date_to' => $filters['date_to'],
+                'log_action' => $filters['action'],
+                'log_page' => $log_data['max_pages'],
+            ]);
+            wp_safe_redirect(cp_admin_url('cp-settings', $redirect_args));
+            exit;
+        }
+
+        $data['activity_filters'] = $filters;
+        $data['activity_log'] = $log_data;
+        $data['activity_actions'] = cp_activity_log_action_labels();
+    }
+
+    cp_render_page('settings', $data);
 }

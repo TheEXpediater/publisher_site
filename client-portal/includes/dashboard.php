@@ -45,7 +45,7 @@ function cp_dashboard_homepage_feature_article_data($post)
         'id' => absint($post->ID),
         'title' => get_the_title($post),
         'category' => function_exists('cp_frontend_post_category') ? cp_frontend_post_category($post->ID) : __('General', 'client-portal'),
-        'author' => get_the_author_meta('display_name', $post->post_author),
+        'author' => cp_get_article_display_author($post),
         'date' => get_the_date('', $post),
         'datetime' => get_the_date('c', $post),
         'permalink' => get_permalink($post),

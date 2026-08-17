@@ -13,11 +13,70 @@ function cp_register_frontend_shortcodes()
     add_shortcode('enterprise_homepage_featured', 'cp_homepage_featured_article_shortcode');
 }
 
+function cp_enterprise_facebook_url()
+{
+    return 'https://www.facebook.com/theenterprisehau';
+}
+
+function cp_rewrite_facebook_links_in_html($html)
+{
+    $html = is_string($html) ? $html : '';
+    if ('' === trim($html) || false === stripos($html, '<a')) {
+        return $html;
+    }
+
+    if (class_exists('WP_HTML_Tag_Processor')) {
+        $processor = new WP_HTML_Tag_Processor($html);
+        while ($processor->next_tag('a')) {
+            $href = (string) $processor->get_attribute('href');
+            $class = (string) $processor->get_attribute('class');
+            $label = (string) $processor->get_attribute('aria-label');
+            $title = (string) $processor->get_attribute('title');
+            $facebook_marker = implode(' ', [$href, $class, $label, $title]);
+            if (false !== stripos($facebook_marker, 'facebook') || false !== stripos($class, 'fa-facebook') || false !== stripos($class, 'bi-facebook')) {
+                $processor->set_attribute('href', cp_enterprise_facebook_url());
+            }
+        }
+        $html = $processor->get_updated_html();
+    }
+
+    return preg_replace_callback(
+        '/<a\b([^>]*)>(.*?)<\/a>/is',
+        static function ($matches) {
+            $anchor = $matches[0];
+            if (false === stripos($anchor, 'facebook') && false === stripos($anchor, 'fa-facebook') && false === stripos($anchor, 'bi-facebook')) {
+                return $anchor;
+            }
+            if (preg_match('/\bhref=(["\']).*?\1/i', $anchor)) {
+                return preg_replace('/\bhref=(["\']).*?\1/i', 'href="' . esc_url(cp_enterprise_facebook_url()) . '"', $anchor, 1);
+            }
+            return preg_replace('/^<a\b/i', '<a href="' . esc_url(cp_enterprise_facebook_url()) . '"', $anchor, 1);
+        },
+        $html
+    );
+}
+
+function cp_rewrite_about_us_facebook_content($content)
+{
+    if (is_admin() || !is_singular('page')) {
+        return $content;
+    }
+
+    $post = get_post();
+    if (!$post instanceof WP_Post) {
+        return $content;
+    }
+
+    $is_about_page = 'about-us' === sanitize_title($post->post_name) || 'about-us' === sanitize_title($post->post_title);
+    return $is_about_page ? cp_rewrite_facebook_links_in_html($content) : $content;
+}
+
 add_action('init', 'cp_register_frontend_shortcodes');
 add_action('wp_enqueue_scripts', 'cp_enqueue_frontend_styles_for_publication_context');
 add_action('template_redirect', 'cp_redirect_standard_search_to_enterprise_search_page', 1);
 add_action('save_post_page', 'cp_refresh_enterprise_search_page_cache', 10, 3);
 add_action('deleted_post', 'cp_clear_enterprise_search_page_cache_on_delete');
+add_filter('the_content', 'cp_rewrite_about_us_facebook_content', 9);
 add_filter('the_content', 'cp_render_single_article_content', 20);
 add_filter('body_class', 'cp_single_article_body_class');
 add_filter('post_class', 'cp_single_article_post_class', 10, 3);
@@ -31,6 +90,10 @@ add_filter('next_post_link', 'cp_suppress_single_article_adjacent_post_link', 10
 function cp_enqueue_frontend_styles()
 {
     wp_enqueue_style('cp-frontend', cp_url('assets/css/frontend.css'), [], CP_VERSION);
+
+    if (cp_is_publication_homepage_request()) {
+        wp_enqueue_script('cp-frontend-layout', cp_url('assets/js/frontend-layout.js'), [], CP_VERSION, true);
+    }
 }
 
 function cp_is_single_enterprise_article_request()
@@ -256,7 +319,7 @@ function cp_frontend_post_author($post)
         return '';
     }
 
-    return get_the_author_meta('display_name', $post->post_author);
+    return cp_get_article_display_author($post);
 }
 
 function cp_frontend_post_image($post_id, $image_size, $class_name)
@@ -288,10 +351,18 @@ function cp_frontend_post_image($post_id, $image_size, $class_name)
     return '<div class="enterprise-placeholder-image" aria-hidden="true"><span>Enterprise1979</span></div>';
 }
 
-function cp_frontend_excerpt($post, $words = 34)
+function cp_frontend_excerpt($post, $words = 34, $plain_ellipsis = false)
 {
-    $excerpt = get_the_excerpt($post);
-    return wp_trim_words(wp_strip_all_tags($excerpt), absint($words), '...');
+    $excerpt = wp_strip_all_tags(get_the_excerpt($post));
+
+    if ($plain_ellipsis) {
+        $charset = get_bloginfo('charset');
+        $excerpt = html_entity_decode($excerpt, ENT_QUOTES | ENT_HTML5, $charset ?: 'UTF-8');
+        $excerpt = preg_replace('/\s*\[\s*(?:\.{3}|…)\s*\]\s*$/u', '...', $excerpt);
+        $excerpt = preg_replace('/\s*…\s*$/u', '...', $excerpt);
+    }
+
+    return wp_trim_words($excerpt, absint($words), '...');
 }
 
 function cp_render_frontend_empty_state($message)
@@ -348,14 +419,14 @@ function cp_render_frontend_archive_post($post_id, $image_size, $show_excerpt, $
     <?php
 }
 
-function cp_render_frontend_article_card($post_id, $image_size = 'medium_large', $show_excerpt = true, $show_read_more = true, $extra_class = '')
+function cp_render_frontend_article_card($post_id, $image_size = 'medium_large', $show_excerpt = true, $show_read_more = true, $extra_class = '', $show_category = true, $excerpt_words = 24, $plain_ellipsis = false)
 {
     $post = get_post($post_id);
     if (!$post instanceof WP_Post) {
         return;
     }
 
-    $excerpt = cp_frontend_excerpt($post, 24);
+    $excerpt = cp_frontend_excerpt($post, max(1, absint($excerpt_words)), (bool) $plain_ellipsis);
     $card_class = trim('enterprise-article-card ' . sanitize_html_class($extra_class));
     ?>
     <article class="<?php echo esc_attr($card_class); ?>">
@@ -363,7 +434,7 @@ function cp_render_frontend_article_card($post_id, $image_size = 'medium_large',
             <?php echo wp_kses_post(cp_frontend_post_image($post->ID, $image_size, 'enterprise-card-thumbnail')); ?>
         </a>
         <div class="enterprise-card-content">
-            <span class="enterprise-category-label"><?php echo esc_html(cp_frontend_post_category($post->ID)); ?></span>
+            <?php if ($show_category) : ?><span class="enterprise-category-label"><?php echo esc_html(cp_frontend_post_category($post->ID)); ?></span><?php endif; ?>
             <h3 class="enterprise-card-title"><a href="<?php echo esc_url(get_permalink($post)); ?>"><?php echo esc_html(get_the_title($post)); ?></a></h3>
             <div class="enterprise-card-meta">
                 <span><?php echo esc_html(cp_frontend_post_author($post)); ?></span>
@@ -565,7 +636,9 @@ function cp_render_homepage_featured_article($post, $content = '', $image_size =
     }
 
     $about_content = is_string($content) ? trim(do_shortcode(shortcode_unautop($content))) : '';
-    $excerpt = cp_frontend_excerpt($post, 42);
+    $about_content = cp_rewrite_facebook_links_in_html($about_content);
+    $excerpt_words = (is_front_page() || is_home()) ? 100 : 42;
+    $excerpt = cp_frontend_excerpt($post, $excerpt_words, is_front_page() || is_home());
     $heading_id = 'enterprise-homepage-feature-title-' . absint($post->ID);
 
     ob_start();
@@ -573,18 +646,22 @@ function cp_render_homepage_featured_article($post, $content = '', $image_size =
     <section class="<?php echo esc_attr(cp_frontend_publication_classes(['enterprise-homepage-feature'])); ?>" aria-labelledby="<?php echo esc_attr($heading_id); ?>">
         <div class="enterprise-homepage-feature-grid <?php echo esc_attr('' !== $about_content ? 'enterprise-homepage-feature-grid-has-about' : 'enterprise-homepage-feature-grid-no-about'); ?>">
             <article class="enterprise-homepage-feature-main">
-                <a class="enterprise-homepage-feature-image" href="<?php echo esc_url(get_permalink($post)); ?>" aria-label="<?php echo esc_attr(get_the_title($post)); ?>">
-                    <?php echo cp_homepage_featured_image($post->ID, $image_size); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                </a>
-                <div class="enterprise-homepage-feature-copy">
-                    <span class="enterprise-category-label"><?php echo esc_html(cp_frontend_post_category($post->ID)); ?></span>
-                    <h2 class="enterprise-homepage-feature-title" id="<?php echo esc_attr($heading_id); ?>"><a href="<?php echo esc_url(get_permalink($post)); ?>"><?php echo esc_html(get_the_title($post)); ?></a></h2>
-                    <div class="enterprise-homepage-feature-meta">
-                        <span><?php echo esc_html(cp_frontend_post_author($post)); ?></span>
-                        <time datetime="<?php echo esc_attr(get_the_date('c', $post)); ?>"><?php echo esc_html(get_the_date('', $post)); ?></time>
+                <div class="enterprise-homepage-feature-kicker"><?php esc_html_e('Featured Article', 'client-portal'); ?></div>
+                <div class="enterprise-homepage-feature-rule" aria-hidden="true"></div>
+                <div class="enterprise-homepage-feature-story">
+                    <a class="enterprise-homepage-feature-image" href="<?php echo esc_url(get_permalink($post)); ?>" aria-label="<?php echo esc_attr(get_the_title($post)); ?>">
+                        <?php echo cp_homepage_featured_image($post->ID, $image_size); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </a>
+                    <div class="enterprise-homepage-feature-copy">
+                        <span class="enterprise-category-label"><?php echo esc_html(cp_frontend_post_category($post->ID)); ?></span>
+                        <h2 class="enterprise-homepage-feature-title" id="<?php echo esc_attr($heading_id); ?>"><a href="<?php echo esc_url(get_permalink($post)); ?>"><?php echo esc_html(get_the_title($post)); ?></a></h2>
+                        <div class="enterprise-homepage-feature-meta">
+                            <span><?php echo esc_html(cp_frontend_post_author($post)); ?></span>
+                            <time datetime="<?php echo esc_attr(get_the_date('c', $post)); ?>"><?php echo esc_html(get_the_date('', $post)); ?></time>
+                        </div>
+                        <?php if ($show_excerpt && '' !== $excerpt) : ?><p class="enterprise-homepage-feature-excerpt"><?php echo esc_html($excerpt); ?></p><?php endif; ?>
+                        <?php if ($show_read_more) : ?><a class="enterprise-homepage-feature-link" href="<?php echo esc_url(get_permalink($post)); ?>"><?php esc_html_e('Read More', 'client-portal'); ?> <span aria-hidden="true">&rarr;</span></a><?php endif; ?>
                     </div>
-                    <?php if ($show_excerpt && '' !== $excerpt) : ?><p class="enterprise-homepage-feature-excerpt"><?php echo esc_html($excerpt); ?></p><?php endif; ?>
-                    <?php if ($show_read_more) : ?><a class="enterprise-homepage-feature-link" href="<?php echo esc_url(get_permalink($post)); ?>"><?php esc_html_e('Read More', 'client-portal'); ?> <span aria-hidden="true">&rarr;</span></a><?php endif; ?>
                 </div>
             </article>
             <?php if ('' !== $about_content) : ?>
@@ -1352,13 +1429,22 @@ function cp_category_cards_shortcode($attributes)
         'enterprise-category-group-grid-count-' . count($groups),
     ];
 
-    if (5 === count($groups)) {
+    // Use the centered five-section magazine layout only when the shortcode
+    // requests at least three columns. Applying the six-track placement rules
+    // to a two-column grid creates implicit columns and uneven card widths.
+    if (5 === count($groups) && $columns >= 3) {
         $grid_classes[] = 'enterprise-category-group-grid-five';
+    }
+
+    $category_card_classes = ['enterprise-category-cards'];
+    $is_landing_page_cards = is_front_page() || is_home();
+    if ($is_landing_page_cards) {
+        $category_card_classes[] = 'enterprise-landing-category-cards';
     }
 
     ob_start();
     ?>
-    <section class="<?php echo esc_attr(cp_frontend_publication_classes(['enterprise-category-cards'])); ?>">
+    <section class="<?php echo esc_attr(cp_frontend_publication_classes($category_card_classes)); ?>">
         <?php if ($show_header) : ?>
             <?php cp_render_frontend_section_header($title, $subtitle, __('Sections', 'client-portal')); ?>
         <?php endif; ?>
@@ -1371,7 +1457,7 @@ function cp_category_cards_shortcode($attributes)
                     <div class="enterprise-section-list">
                         <?php if (!empty($group['post_ids'])) : ?>
                             <?php foreach ($group['post_ids'] as $post_id) : ?>
-                                <?php cp_render_frontend_article_card($post_id, $image_size, $show_excerpt, $show_read_more); ?>
+                                <?php cp_render_frontend_article_card($post_id, $image_size, $show_excerpt, $show_read_more, '', !$is_landing_page_cards, $is_landing_page_cards ? 80 : 24, $is_landing_page_cards); ?>
                             <?php endforeach; ?>
                         <?php else : ?>
                             <?php cp_render_frontend_empty_state(__('No published articles in this section yet.', 'client-portal')); ?>
@@ -1453,6 +1539,8 @@ function cp_render_single_article_layout($post, $content)
     $category_name = $category instanceof WP_Term ? $category->name : __('General', 'client-portal');
     $category_url = $category instanceof WP_Term ? get_category_link($category) : '';
     $excerpt = trim(wp_strip_all_tags((string) $post->post_excerpt));
+    $rich_title = function_exists('cp_get_article_rich_title') ? cp_get_article_rich_title($post) : '';
+    $rich_excerpt = function_exists('cp_get_article_rich_excerpt') ? cp_get_article_rich_excerpt($post) : '';
     $related = cp_render_related_articles($post->ID);
     $has_related = '' !== trim($related);
 
@@ -1470,8 +1558,8 @@ function cp_render_single_article_layout($post, $content)
         </nav>
 
         <header class="enterprise-single-header">
-            <h1><?php echo esc_html(get_the_title($post)); ?></h1>
-            <?php if ('' !== $excerpt) : ?><p class="enterprise-single-deck"><?php echo esc_html($excerpt); ?></p><?php endif; ?>
+            <h1><?php echo '' !== $rich_title ? wp_kses($rich_title, cp_rich_heading_allowed_html()) : esc_html(get_the_title($post)); ?></h1>
+            <?php if ('' !== $rich_excerpt) : ?><div class="enterprise-single-deck enterprise-single-deck-rich"><?php echo wp_kses($rich_excerpt, cp_rich_summary_allowed_html()); ?></div><?php elseif ('' !== $excerpt) : ?><p class="enterprise-single-deck"><?php echo esc_html($excerpt); ?></p><?php endif; ?>
             <div class="enterprise-single-meta">
                 <span class="enterprise-category-label"><?php echo esc_html($category_name); ?></span>
                 <span><?php echo esc_html(cp_frontend_post_author($post)); ?></span>

@@ -15,6 +15,7 @@
     --enterprise-serif: Georgia, "Times New Roman", serif;
     --enterprise-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     width: 100%;
+    box-sizing: border-box;
     color: var(--enterprise-ink);
     font-family: var(--enterprise-sans);
 }
@@ -47,23 +48,25 @@
 }
 
 .enterprise-publication {
+    width: min(100%, 1440px);
     max-width: 1440px;
-    margin: 0 auto;
-    padding: 40px 80px 64px;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 40px 64px 64px;
     background: var(--enterprise-surface);
 }
 
-.enterprise-publication-homepage :where(
-    .site-content,
-    .site-main,
-    .content-area,
-    .entry-content,
-    .wp-block-post-content,
-    .is-layout-constrained,
-    main
-):has(.enterprise-publication) {
-    width: 100%;
-    max-width: none;
+
+.enterprise-publication-homepage .cp-enterprise-home-width-wrapper {
+    width: 100% !important;
+    max-width: none !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+}
+
+.enterprise-publication-homepage .cp-enterprise-home-padding-wrapper {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
 }
 
 .enterprise-publication-homepage :where(.entry-header, .page-header, .wp-block-post-title, .entry-title, .page-title):not(.enterprise-publication *) {
@@ -73,8 +76,8 @@
     border: 0;
 }
 
-.enterprise-publication-homepage :where(.entry-content, .wp-block-post-content, .is-layout-constrained) > :where(.enterprise-publication, .alignwide) {
-    width: 100%;
+.enterprise-publication-homepage .enterprise-publication {
+    width: min(100%, 1440px);
     max-width: 1440px;
     margin-right: auto;
     margin-left: auto;
@@ -484,18 +487,18 @@
 }
 
 .enterprise-homepage-feature {
-    padding-top: 36px;
-    padding-bottom: 48px;
+    padding-top: 48px;
+    padding-bottom: 40px;
 }
 
 .enterprise-homepage-feature-grid {
     display: grid;
-    gap: 34px;
+    gap: 40px;
     align-items: start;
 }
 
 .enterprise-homepage-feature-grid-has-about {
-    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    grid-template-columns: minmax(0, 1fr) 340px;
 }
 
 .enterprise-homepage-feature-grid-no-about {
@@ -506,13 +509,36 @@
     min-width: 0;
 }
 
+.enterprise-homepage-feature-kicker {
+    margin-bottom: 10px;
+    color: #777780;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.enterprise-homepage-feature-rule {
+    width: 100%;
+    margin-bottom: 24px;
+    border-top: 1px solid var(--enterprise-line);
+}
+
+.enterprise-homepage-feature-story {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+
 .enterprise-homepage-feature-image {
     display: block;
     overflow: hidden;
-    margin-bottom: 18px;
+    margin: 0;
     background: #d8d8d8;
     text-decoration: none;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 15 / 11;
 }
 
 .enterprise-homepage-feature-image:hover .enterprise-homepage-feature-thumbnail,
@@ -521,16 +547,18 @@
 }
 
 .enterprise-homepage-feature-copy {
-    max-width: 760px;
+    min-width: 0;
+    max-width: none;
+    padding-top: 2px;
 }
 
 .enterprise-homepage-feature-title {
-    margin: 6px 0 0;
+    margin: 8px 0 0;
     color: var(--enterprise-brand);
     font-family: var(--enterprise-serif);
-    font-size: 36px;
+    font-size: 24px;
     font-weight: 700;
-    line-height: 1.18;
+    line-height: 1.32;
     overflow-wrap: anywhere;
 }
 
@@ -552,8 +580,8 @@
     gap: 4px 12px;
     margin-top: 10px;
     color: #777780;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
     line-height: 1.45;
 }
 
@@ -562,20 +590,20 @@
 }
 
 .enterprise-homepage-feature-excerpt {
-    margin: 16px 0 0;
+    margin: 12px 0 0;
     color: #444450;
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 14px;
+    line-height: 1.72;
 }
 
 .enterprise-homepage-feature-link {
-    min-height: 44px;
+    min-height: 36px;
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    margin-top: 18px;
+    margin-top: 14px;
     color: var(--enterprise-brand);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     line-height: 1.3;
     text-decoration: underline;
@@ -599,10 +627,10 @@
 
 .enterprise-homepage-about {
     min-width: 0;
-    padding: 22px;
-    border-left: 1px solid var(--enterprise-line);
+    padding: 0;
+    border: 0;
     color: var(--enterprise-ink);
-    background: var(--enterprise-faint);
+    background: transparent;
 }
 
 .enterprise-homepage-about > *:first-child {
@@ -613,10 +641,48 @@
     margin-bottom: 0;
 }
 
+.enterprise-homepage-about :where(h1, h2, h3) {
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--enterprise-line);
+    color: var(--enterprise-brand);
+    font-family: var(--enterprise-serif);
+    font-size: 26px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.enterprise-homepage-about p {
+    margin: 0 0 12px;
+    color: var(--enterprise-ink);
+    font-size: 13px;
+    line-height: 1.78;
+}
+
+.enterprise-homepage-about a {
+    font-size: 13px;
+    text-underline-offset: 3px;
+}
+
+.enterprise-category-cards {
+    position: relative;
+    padding-top: 48px;
+}
+
+.enterprise-category-cards::before {
+    position: absolute;
+    top: 0;
+    right: 64px;
+    left: 64px;
+    border-top: 2px solid rgba(0, 0, 41, .10);
+    content: "";
+}
+
 .enterprise-card-grid,
 .enterprise-category-group-grid {
     display: grid;
-    gap: 36px 28px;
+    gap: 36px 40px;
 }
 
 .enterprise-category-group-grid-five {
@@ -633,6 +699,23 @@
 
 .enterprise-category-group-grid-five .enterprise-section-group:nth-child(5) {
     grid-column: 4 / span 2;
+}
+
+/*
+ * Defensive fallback for cached shortcode markup produced by earlier builds.
+ * A five-section class combined with columns=2 must remain a true two-column
+ * grid. Reset the six-track placement rules so no implicit columns are created.
+ */
+.enterprise-category-group-grid-five.enterprise-columns-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.enterprise-category-group-grid-five.enterprise-columns-2 .enterprise-section-group,
+.enterprise-category-group-grid-five.enterprise-columns-2 .enterprise-section-group:nth-child(4),
+.enterprise-category-group-grid-five.enterprise-columns-2 .enterprise-section-group:nth-child(5) {
+    width: auto;
+    grid-column: auto;
+    justify-self: stretch;
 }
 
 .enterprise-card-grid.enterprise-columns-1,
@@ -773,10 +856,27 @@
     padding-top: 0;
 }
 
+
+.enterprise-single-article-page :where(
+    .site-content,
+    .site-main,
+    .content-area,
+    .entry-content,
+    .wp-block-post-content,
+    .content-wrapper,
+    .container
+):has(.enterprise-single-article) {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: auto;
+}
+
 .enterprise-single-article {
     max-width: 1440px;
     margin: 0 auto;
-    padding: 26px 80px 40px;
+    padding: 28px 80px 32px;
     background: #ffffff;
 }
 
@@ -883,6 +983,48 @@
     margin: 0 0 24px;
 }
 
+.enterprise-article-body .cp-lead-paragraph {
+    font-size: 1.16em;
+    line-height: 1.65;
+}
+
+.enterprise-article-body .cp-subheading {
+    margin: 34px 0 14px;
+    color: var(--enterprise-brand);
+    font-size: 1.22em;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.enterprise-article-body .cp-small-note {
+    color: var(--enterprise-muted);
+    font-family: var(--enterprise-sans);
+    font-size: .84em;
+    line-height: 1.55;
+}
+
+.enterprise-article-body blockquote {
+    margin: 30px 0;
+    padding: 4px 0 4px 22px;
+    border-left: 4px solid var(--enterprise-accent);
+    color: #30303b;
+    font-style: italic;
+}
+
+.enterprise-article-body ul,
+.enterprise-article-body ol {
+    margin: 0 0 24px;
+    padding-left: 1.5em;
+}
+
+.enterprise-article-body li + li {
+    margin-top: 8px;
+}
+
+.enterprise-article-body .cp-align-left { text-align: left; }
+.enterprise-article-body .cp-align-center { text-align: center; }
+.enterprise-article-body .cp-align-right { text-align: right; }
+
 .enterprise-article-body h1,
 .enterprise-article-body h2,
 .enterprise-article-body h3,
@@ -939,9 +1081,7 @@
     margin: 34px 0;
 }
 
-.enterprise-article-body .cp-article-image img,
-.enterprise-article-body .wp-block-image img,
-.enterprise-article-body .wp-caption img {
+.enterprise-article-body img {
     width: 100%;
     display: block;
 }
@@ -975,6 +1115,74 @@
     height: auto;
     min-height: 220px;
     display: block;
+}
+
+
+.enterprise-article-body .cp-article-table {
+    width: 100%;
+    max-width: 100%;
+    margin: 34px 0;
+}
+
+.enterprise-article-body .cp-article-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--enterprise-line);
+    background: #ffffff;
+    -webkit-overflow-scrolling: touch;
+}
+
+.enterprise-article-body .cp-article-table-scroll:focus-visible {
+    outline: 2px solid var(--enterprise-focus);
+    outline-offset: 3px;
+}
+
+.enterprise-article-body .cp-article-table table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    color: var(--enterprise-ink);
+    font-family: var(--enterprise-sans);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.enterprise-article-body .cp-article-table caption {
+    padding: 12px 14px;
+    color: var(--enterprise-brand);
+    background: #f4f5f7;
+    font-weight: 700;
+    text-align: left;
+}
+
+.enterprise-article-body .cp-article-table th,
+.enterprise-article-body .cp-article-table td {
+    padding: 11px 13px;
+    border-right: 1px solid var(--enterprise-soft-line);
+    border-bottom: 1px solid var(--enterprise-soft-line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.enterprise-article-body .cp-article-table th:last-child,
+.enterprise-article-body .cp-article-table td:last-child {
+    border-right: 0;
+}
+
+.enterprise-article-body .cp-article-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.enterprise-article-body .cp-article-table thead th {
+    color: var(--enterprise-brand);
+    background: #eceef1;
+    font-weight: 750;
+}
+
+.enterprise-article-body .cp-article-table tbody tr:nth-child(even) td {
+    background: #fafafa;
 }
 
 .enterprise-related-articles {
@@ -1055,7 +1263,9 @@
 
 .enterprise-other-stories {
     margin-top: 34px;
+    margin-bottom: 0;
     padding-top: 16px;
+    padding-bottom: 0;
     border-top: 1px solid var(--enterprise-line);
     background: #ffffff;
 }
@@ -1336,6 +1546,11 @@
         padding-left: 48px;
     }
 
+    .enterprise-category-cards::before {
+        right: 48px;
+        left: 48px;
+    }
+
     .enterprise-card-grid.enterprise-columns-4,
     .enterprise-category-group-grid.enterprise-columns-4 {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1376,7 +1591,7 @@
     }
 
     .enterprise-category-group-grid-five .enterprise-section-group:nth-child(5) {
-        width: min(100%, calc((100% - 28px) / 2));
+        width: min(100%, calc((100% - 40px) / 2));
         justify-self: center;
         grid-column: 1 / -1;
     }
@@ -1395,13 +1610,18 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .enterprise-category-cards::before {
+        right: 32px;
+        left: 32px;
+    }
+
     .enterprise-homepage-feature {
-        padding-top: 32px;
-        padding-bottom: 44px;
+        padding-top: 40px;
+        padding-bottom: 36px;
     }
 
     .enterprise-homepage-feature-grid {
-        grid-template-columns: minmax(0, 1.55fr) minmax(240px, .95fr);
+        grid-template-columns: minmax(0, 1fr) 300px;
         gap: 28px;
     }
 
@@ -1409,8 +1629,13 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .enterprise-homepage-feature-story {
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 22px;
+    }
+
     .enterprise-homepage-feature-title {
-        font-size: 31px;
+        font-size: 22px;
     }
 
     .enterprise-search-columns-4 .enterprise-search-grid,
@@ -1484,24 +1709,37 @@
         padding-top: 14px;
     }
 
+    .enterprise-category-cards {
+        padding-top: 40px;
+    }
+
+    .enterprise-category-cards::before {
+        right: 24px;
+        left: 24px;
+    }
+
     .enterprise-homepage-feature {
-        padding-top: 30px;
-        padding-bottom: 38px;
+        padding-top: 32px;
+        padding-bottom: 32px;
     }
 
     .enterprise-homepage-feature-grid,
     .enterprise-homepage-feature-grid-has-about {
         grid-template-columns: 1fr;
-        gap: 28px;
+        gap: 30px;
+    }
+
+    .enterprise-homepage-feature-story {
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 20px;
     }
 
     .enterprise-homepage-feature-title {
-        font-size: 27px;
+        font-size: 22px;
     }
 
     .enterprise-homepage-about {
-        padding: 20px;
-        border-left: 0;
+        padding-top: 26px;
         border-top: 1px solid var(--enterprise-line);
     }
 
@@ -1570,12 +1808,43 @@
         font-size: 17px;
     }
 
+    .enterprise-category-cards {
+        padding-top: 32px;
+    }
+
+    .enterprise-category-cards::before {
+        right: 16px;
+        left: 16px;
+    }
+
     .enterprise-homepage-feature {
-        padding: 28px 16px 34px;
+        padding: 28px 16px 30px;
+    }
+
+    .enterprise-homepage-feature-rule {
+        margin-bottom: 18px;
+    }
+
+    .enterprise-homepage-feature-story {
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .enterprise-homepage-feature-image {
+        aspect-ratio: 4 / 3;
     }
 
     .enterprise-homepage-feature-title {
-        font-size: 24px;
+        font-size: 18px;
+    }
+
+    .enterprise-homepage-feature-excerpt {
+        display: none;
+    }
+
+    .enterprise-homepage-feature-link {
+        min-height: 32px;
+        margin-top: 10px;
     }
 
     .enterprise-card-excerpt,
@@ -1601,6 +1870,134 @@
     }
 }
 
+
+
+/*
+ * Category archive media fit.
+ * Keep the existing 4:3 frame and crop the source image to fill it.
+ */
+.enterprise-category-archive .enterprise-post-image {
+    position: relative;
+    isolation: isolate;
+}
+
+.enterprise-category-archive .enterprise-post-image > img.enterprise-post-thumbnail {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/*
+ * Enterprise landing-page image and card refinements.
+ * Keep the media frames unchanged while forcing the source image to fill them.
+ * Prevent theme or grid stretch rules from creating empty space below cards.
+ */
+body.enterprise-publication-homepage .enterprise-homepage-feature-image,
+body.enterprise-publication-homepage .enterprise-card-image {
+    position: relative;
+    isolation: isolate;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-image > img.enterprise-homepage-feature-thumbnail,
+body.enterprise-publication-homepage .enterprise-card-image > img.enterprise-card-thumbnail {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+body.enterprise-publication-homepage .enterprise-category-group-grid {
+    align-items: start;
+}
+
+body.enterprise-publication-homepage .enterprise-category-group-grid .enterprise-section-group {
+    height: auto !important;
+    align-self: start;
+}
+
+body.enterprise-publication-homepage .enterprise-section-list {
+    height: auto !important;
+}
+
+body.enterprise-publication-homepage .enterprise-section-list .enterprise-article-card {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 0 0 auto;
+    align-self: stretch;
+}
+
+/*
+ * Landing-page section cards only.
+ * The section bar already names the category, so the repeated category badge is
+ * omitted in PHP. These rules rebalance image and copy without changing the
+ * outer card, section spacing, or non-homepage archive layouts.
+ */
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+    width: clamp(132px, 30%, 180px);
+    height: auto;
+    min-height: 104px;
+    flex: 0 0 clamp(132px, 30%, 180px);
+    aspect-ratio: 5 / 4;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+    align-self: stretch;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-title {
+    font-size: 17px;
+    line-height: 1.28;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-meta {
+    margin-top: 7px;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 9px;
+    line-height: 1.55;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: clamp(120px, 34%, 160px);
+        min-height: 96px;
+        flex-basis: clamp(120px, 34%, 160px);
+    }
+}
+
+@media (max-width: 480px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 108px;
+        height: 86px;
+        min-height: 86px;
+        flex-basis: 108px;
+        aspect-ratio: auto;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-title {
+        font-size: 15px;
+        line-height: 1.3;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .enterprise-post-thumbnail,
     .enterprise-card-thumbnail,
@@ -1617,3 +2014,1170 @@
         transition: none;
     }
 }
+
+
+/*
+ * Enterprise single-article spacing hardening.
+ *
+ * Some themes add vertical padding, margins, or minimum heights to the post,
+ * content, and main wrappers. Reset only wrappers containing the Enterprise
+ * article. The publication article keeps its own responsive 28px/22px/20px
+ * top padding and 32px/32px/30px bottom padding.
+ */
+body.enterprise-single-article-page article.enterprise-single-article-post,
+body.enterprise-single-article-page :where(
+    #content,
+    #primary,
+    #main,
+    main,
+    .site-content,
+    .site-main,
+    .content-area,
+    .entry-content,
+    .wp-block-post-content,
+    .content-wrapper,
+    .container,
+    .ast-container
+):has(.enterprise-single-article) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    flex-grow: 0 !important;
+}
+
+body.enterprise-single-article-page :where(
+    .navigation.post-navigation,
+    .post-navigation,
+    .single-post-navigation,
+    .wp-block-post-navigation-link,
+    .nav-links:has(.nav-previous),
+    .nav-links:has(.nav-next),
+    .nav-previous,
+    .nav-next,
+    .previous-post,
+    .next-post
+):not(.enterprise-single-article *) {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    border: 0 !important;
+}
+
+/*
+ * Search-result media fit.
+ * Preserve the existing 16:10 card frame and crop the source image to cover it.
+ */
+.enterprise-search-page .enterprise-search-card-image {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.enterprise-search-page .enterprise-search-card-image > img.enterprise-search-card-thumbnail {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/*
+ * Single-article Hero Image bounds.
+ * Keep the same editorial image size whether Related Stories exists or not.
+ */
+body.enterprise-single-article-page .enterprise-single-main {
+    width: min(100%, 900px);
+    max-width: 900px;
+    justify-self: start;
+}
+
+body.enterprise-single-article-page .enterprise-single-hero-media {
+    position: relative;
+    isolation: isolate;
+    width: min(100%, 900px) !important;
+    max-width: 900px !important;
+    max-height: 506px;
+    aspect-ratio: 16 / 9;
+}
+
+body.enterprise-single-article-page .enterprise-single-hero-media > img.enterprise-single-hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+@media (max-width: 1024px) {
+    body.enterprise-single-article-page .enterprise-single-main,
+    body.enterprise-single-article-page .enterprise-single-hero-media {
+        width: 100% !important;
+        max-width: 900px !important;
+    }
+}
+
+/*
+ * Landing-page proportion and alignment refinements, v3.6.3.
+ * Scope is limited to the public publication homepage. Archive pages, single
+ * articles, portal screens, and shortcode markup remain unchanged.
+ */
+body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+    align-items: stretch;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+    aspect-ratio: 4 / 3;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-copy {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-copy > .enterprise-category-label {
+    flex: 0 0 auto;
+    margin-bottom: 4px;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-title {
+    min-height: 0;
+    display: -webkit-box;
+    flex: 0 0 auto;
+    overflow: hidden;
+    margin-top: 0;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-meta {
+    flex: 0 0 auto;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+    min-height: 0;
+    display: -webkit-box;
+    flex: 0 1 auto;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-link {
+    min-height: 0;
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 6px;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-category-group-grid {
+    align-items: stretch;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-section-group {
+    width: 100%;
+    min-width: 0;
+    height: 100% !important;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-self: stretch;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-section-list {
+    min-height: 0;
+    height: 100% !important;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+    box-sizing: border-box;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-title {
+    min-height: 0;
+    display: -webkit-box;
+    flex: 0 0 auto;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-meta {
+    min-width: 0;
+    flex: 0 0 auto;
+    overflow: hidden;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+    min-height: 0;
+    display: -webkit-box;
+    flex: 0 1 auto;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+}
+
+body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+    min-height: 0;
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 5px;
+}
+
+@media (min-width: 1025px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-auto-rows: 225px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image,
+    body.enterprise-publication-homepage .enterprise-homepage-feature-copy {
+        height: 225px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+        height: 180px !important;
+        min-height: 180px !important;
+        max-height: 180px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 180px;
+        height: 144px;
+        min-height: 144px;
+        flex: 0 0 180px;
+        aspect-ratio: 5 / 4;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+        height: 144px;
+        max-height: 144px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        margin-top: 6px;
+        font-size: 12.5px;
+        line-height: 1.45;
+        -webkit-line-clamp: 2;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-meta {
+        margin-top: 5px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+        font-size: 10px;
+        line-height: 1.25;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-auto-rows: 180px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image,
+    body.enterprise-publication-homepage .enterprise-homepage-feature-copy {
+        height: 180px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-title {
+        font-size: 20px;
+        line-height: 1.22;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-meta {
+        margin-top: 5px;
+        font-size: 11px;
+        line-height: 1.35;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+        margin-top: 5px;
+        font-size: 12px;
+        line-height: 1.42;
+        -webkit-line-clamp: 2;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-link {
+        font-size: 10px;
+        line-height: 1.25;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+        height: 148px !important;
+        min-height: 148px !important;
+        max-height: 148px;
+        gap: 12px;
+        padding: 18px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 140px;
+        height: 112px;
+        min-height: 112px;
+        flex: 0 0 140px;
+        aspect-ratio: 5 / 4;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+        height: 112px;
+        max-height: 112px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-title {
+        font-size: 15px;
+        line-height: 1.24;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-meta {
+        margin-top: 4px;
+        gap: 3px 8px;
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        margin-top: 4px;
+        font-size: 11px;
+        line-height: 1.4;
+        -webkit-line-clamp: 1;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+        padding-top: 3px;
+        font-size: 9.5px;
+        line-height: 1.2;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+        height: 164px !important;
+        min-height: 164px !important;
+        max-height: 164px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 160px;
+        height: 128px;
+        min-height: 128px;
+        flex: 0 0 160px;
+        aspect-ratio: 5 / 4;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+        height: 128px;
+        max-height: 128px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        -webkit-line-clamp: 2;
+    }
+}
+
+@media (max-width: 480px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+        height: 114px !important;
+        min-height: 114px !important;
+        max-height: 114px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+        height: 86px;
+        max-height: 86px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-meta {
+        margin-top: 3px;
+        gap: 2px 6px;
+        font-size: 9px;
+        line-height: 1.25;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        display: none;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+        padding-top: 3px;
+        font-size: 9px;
+        line-height: 1.2;
+    }
+}
+
+/*
+ * Featured image sizing refinement, v3.6.4.
+ * Scope remains limited to the public landing page. On wide screens the
+ * featured image uses a larger, consistent 4:3 frame so mixed source-image
+ * dimensions do not change the layout or leave an oversized blank area.
+ */
+@media (min-width: 1200px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-template-columns: 380px minmax(0, 1fr);
+        grid-auto-rows: 285px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: 100%;
+        max-width: 380px;
+        height: 285px;
+        max-height: 285px;
+        aspect-ratio: 4 / 3;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-copy {
+        height: 285px;
+        max-height: 285px;
+    }
+}
+
+
+
+/*
+ * Landing-page excerpt capacity refinement, v3.6.5.
+ * Use the available copy height before applying the visual ellipsis. The
+ * server now supplies a longer landing-page excerpt, while these clamps keep
+ * Read More aligned inside the established image-height boundary.
+ */
+@media (min-width: 1200px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+        -webkit-line-clamp: 5;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        -webkit-line-clamp: 3;
+    }
+}
+
+@media (min-width: 1025px) and (max-width: 1199px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+        -webkit-line-clamp: 3;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        -webkit-line-clamp: 3;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+        -webkit-line-clamp: 3;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        -webkit-line-clamp: 2;
+    }
+}
+
+
+/*
+ * Landing-page responsive refinement, v3.6.6.
+ * Scope is restricted to the public publication homepage. Desktop proportions
+ * from v3.6.4 and v3.6.5 remain unchanged.
+ */
+@media (max-width: 1024px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-grid,
+    body.enterprise-publication-homepage .enterprise-homepage-feature-grid-has-about {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: auto;
+        gap: 18px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: min(100%, 560px);
+        max-width: 100%;
+        height: auto;
+        max-height: none;
+        justify-self: start;
+        aspect-ratio: 4 / 3;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-copy {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        padding-top: 0;
+        overflow: visible;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-title {
+        -webkit-line-clamp: 3;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+        display: -webkit-box;
+        flex: none;
+        margin-top: 9px;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-link {
+        display: inline-flex;
+        align-self: flex-start;
+        margin-top: 12px;
+        padding-top: 0;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: clamp(140px, 30vw, 180px);
+        height: auto;
+        min-height: 0;
+        flex: 0 0 clamp(140px, 30vw, 180px);
+        aspect-ratio: 5 / 4;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        align-self: stretch;
+        overflow: hidden;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-title {
+        -webkit-line-clamp: 2;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        display: -webkit-box;
+        flex: 1 1 auto;
+        margin-top: 5px;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+        display: inline-flex;
+        align-self: flex-start;
+        margin-top: auto;
+        padding-top: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: 100%;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-title {
+        font-size: 20px;
+        line-height: 1.24;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-meta {
+        margin-top: 7px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-excerpt {
+        font-size: 13px;
+        line-height: 1.55;
+        -webkit-line-clamp: 3;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-article-card {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: clamp(96px, 34vw, 120px);
+        flex-basis: clamp(96px, 34vw, 120px);
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-content {
+        height: auto;
+        max-height: none;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-title {
+        font-size: 14px;
+        line-height: 1.25;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-meta {
+        margin-top: 4px;
+        font-size: 9px;
+        line-height: 1.25;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-excerpt {
+        display: none;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-read-more {
+        display: inline-flex;
+        margin-top: auto;
+        padding-top: 4px;
+        font-size: 9px;
+        line-height: 1.2;
+    }
+}
+
+/* Paragraph-inserted tables and writer-selected typography, v3.7.0. */
+.enterprise-article-body .cp-inline-table {
+    width: 100%;
+    margin: 28px 0;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: auto;
+    font-family: var(--enterprise-sans);
+    font-size: .9em;
+    line-height: 1.45;
+}
+.enterprise-article-body .cp-inline-table th,
+.enterprise-article-body .cp-inline-table td {
+    min-width: 110px;
+    padding: 10px 12px;
+    border: 1px solid var(--enterprise-line);
+    color: var(--enterprise-brand);
+    background: #fff;
+    text-align: left;
+    vertical-align: top;
+}
+.enterprise-article-body .cp-inline-table th {
+    background: #f5f5f7;
+    font-weight: 700;
+}
+@media (max-width: 700px) {
+    .enterprise-article-body .cp-inline-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+
+/*
+ * Category archive card alignment, v3.8.1.
+ * On desktop, article copy is constrained to the same 4:3 height as its image.
+ * Long titles and excerpts are clipped cleanly while Read More stays anchored
+ * inside the card. Stacked mobile cards retain their natural content height.
+ */
+@media (min-width: 769px) {
+    .enterprise-category-archive .enterprise-post-item {
+        align-items: stretch;
+    }
+
+    .enterprise-category-archive .enterprise-post-image {
+        height: 225px;
+        min-height: 225px;
+        max-height: 225px;
+        align-self: stretch;
+    }
+
+    .enterprise-category-archive .enterprise-post-content {
+        min-width: 0;
+        height: 225px;
+        min-height: 0;
+        max-height: 225px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .enterprise-category-archive .enterprise-category-label,
+    .enterprise-category-archive .enterprise-post-meta,
+    .enterprise-category-archive .enterprise-read-more {
+        flex: 0 0 auto;
+    }
+
+    .enterprise-category-archive .enterprise-post-title {
+        min-width: 0;
+        display: -webkit-box;
+        flex: 0 0 auto;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .enterprise-category-archive .enterprise-post-meta {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .enterprise-category-archive .enterprise-post-excerpt {
+        min-width: 0;
+        min-height: 0;
+        display: -webkit-box;
+        flex: 1 1 auto;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+    }
+
+    .enterprise-category-archive .enterprise-read-more {
+        align-self: flex-start;
+        margin-top: auto;
+        padding-top: 7px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 980px) {
+    .enterprise-category-archive .enterprise-post-item {
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 22px;
+    }
+
+    .enterprise-category-archive .enterprise-post-image,
+    .enterprise-category-archive .enterprise-post-content {
+        height: 195px;
+        min-height: 195px;
+        max-height: 195px;
+    }
+
+    .enterprise-category-archive .enterprise-post-title {
+        font-size: 25px;
+    }
+
+    .enterprise-category-archive .enterprise-post-excerpt {
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 1.55;
+        -webkit-line-clamp: 3;
+    }
+}
+
+@media (max-width: 768px) {
+    .enterprise-category-archive .enterprise-post-content {
+        min-width: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .enterprise-category-archive .enterprise-post-title,
+    .enterprise-category-archive .enterprise-post-excerpt {
+        display: block;
+        overflow: visible;
+        -webkit-line-clamp: initial;
+    }
+}
+
+/*
+ * Published image ratio standardization, v3.8.2.
+ * Scope: public publication images only. Media Library files are not modified.
+ * All published article, card, featured, category, related, other-story, and
+ * search image frames render at an exact 1:1 ratio with proportional cropping.
+ */
+.enterprise-post-image,
+.enterprise-latest-lead-image,
+.enterprise-search-card-image,
+.enterprise-other-story-image,
+body.enterprise-single-article-page .enterprise-single-hero-media {
+    aspect-ratio: 1 / 1 !important;
+}
+
+.enterprise-post-image > img.enterprise-post-thumbnail,
+.enterprise-latest-lead-image > img.enterprise-latest-lead-thumbnail,
+.enterprise-search-card-image > img.enterprise-search-card-thumbnail,
+.enterprise-other-story-image > img.enterprise-other-story-thumbnail,
+body.enterprise-single-article-page .enterprise-single-hero-media > img.enterprise-single-hero-image {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/* Standard compact article cards. Keep their existing vertical footprint. */
+.enterprise-card-image {
+    width: 78px;
+    height: 78px;
+    min-height: 78px;
+    flex: 0 0 78px;
+    aspect-ratio: 1 / 1 !important;
+}
+
+.enterprise-card-image > img.enterprise-card-thumbnail {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/* Related-story thumbnails stay compact while becoming square. */
+.enterprise-related-image {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    aspect-ratio: 1 / 1 !important;
+}
+
+.enterprise-related-image > img.enterprise-related-thumbnail {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/* Homepage featured story. Preserve the established copy height at each breakpoint. */
+body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+    aspect-ratio: 1 / 1 !important;
+}
+
+@media (min-width: 1200px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-template-columns: 285px minmax(0, 1fr);
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: 285px;
+        max-width: 285px;
+        height: 285px;
+        max-height: 285px;
+    }
+}
+
+@media (min-width: 1025px) and (max-width: 1199px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-template-columns: 225px minmax(0, 1fr);
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: 225px;
+        max-width: 225px;
+        height: 225px;
+        max-height: 225px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-story {
+        grid-template-columns: 180px minmax(0, 1fr);
+    }
+
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: 180px;
+        max-width: 180px;
+        height: 180px;
+        max-height: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    body.enterprise-publication-homepage .enterprise-homepage-feature-image {
+        width: min(100%, 560px);
+        max-width: 100%;
+        height: auto;
+        max-height: none;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+body.enterprise-publication-homepage .enterprise-homepage-feature-image > img.enterprise-homepage-feature-thumbnail {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/* Homepage category cards. Preserve each existing card's usable media height. */
+@media (min-width: 1025px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 144px;
+        height: 144px;
+        min-height: 144px;
+        flex: 0 0 144px;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 112px;
+        height: 112px;
+        min-height: 112px;
+        flex: 0 0 112px;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: 128px;
+        height: 128px;
+        min-height: 128px;
+        flex: 0 0 128px;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .enterprise-card-image {
+        width: 70px;
+        height: 70px;
+        min-height: 70px;
+        flex: 0 0 70px;
+    }
+
+    body.enterprise-publication-homepage .enterprise-landing-category-cards .enterprise-card-image {
+        width: clamp(96px, 34vw, 120px);
+        height: auto;
+        min-height: 0;
+        flex-basis: clamp(96px, 34vw, 120px);
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+/* Category archive list. Keep prior row heights and make the media column square. */
+@media (min-width: 981px) {
+    .enterprise-category-archive .enterprise-post-item {
+        grid-template-columns: 225px minmax(0, 1fr);
+    }
+
+    .enterprise-category-archive .enterprise-post-image {
+        width: 225px;
+        height: 225px;
+        min-height: 225px;
+        max-height: 225px;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 980px) {
+    .enterprise-category-archive .enterprise-post-item {
+        grid-template-columns: 195px minmax(0, 1fr);
+    }
+
+    .enterprise-category-archive .enterprise-post-image {
+        width: 195px;
+        height: 195px;
+        min-height: 195px;
+        max-height: 195px;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .enterprise-category-archive .enterprise-post-image,
+    .enterprise-latest-lead-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+/* Search and other-story cards are width-driven, so aspect-ratio supplies height. */
+.enterprise-search-page .enterprise-search-card-image,
+.enterprise-other-story-image {
+    height: auto;
+    aspect-ratio: 1 / 1 !important;
+}
+
+/* Single article hero. Keep the existing main-column width and crop to a square. */
+body.enterprise-single-article-page .enterprise-single-hero-media {
+    max-height: none;
+    aspect-ratio: 1 / 1 !important;
+}
+
+/* Images inserted inside the published article body. Captions remain outside the crop. */
+.enterprise-article-body img {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+/*
+ * Single article image sizing refinement, v3.8.3.
+ * Scope is intentionally limited to the single-article hero and Related Stories.
+ * All images remain square. No Media Library files or other publication cards are changed.
+ */
+@media (min-width: 769px) {
+    body.enterprise-single-article-page .enterprise-single-hero-media {
+        width: min(100%, 700px) !important;
+        max-width: 700px !important;
+        height: auto !important;
+        max-height: none !important;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.enterprise-single-article-page .enterprise-single-hero-media {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 1 / 1 !important;
+    }
+}
+
+/* Match the compact 1:1 card image size used elsewhere on the publication site. */
+body.enterprise-single-article-page .enterprise-related-image {
+    width: 78px;
+    height: 78px;
+    min-width: 78px;
+    min-height: 78px;
+    flex: 0 0 78px;
+    aspect-ratio: 1 / 1 !important;
+}
+
+body.enterprise-single-article-page .enterprise-related-image > img.enterprise-related-thumbnail {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    object-position: center center;
+}
+
+@media (max-width: 480px) {
+    body.enterprise-single-article-page .enterprise-related-image {
+        width: 70px;
+        height: 70px;
+        min-width: 70px;
+        min-height: 70px;
+        flex-basis: 70px;
+    }
+}
+
+/*
+ * Single article Related Stories spacing and text refinement, v3.8.4.
+ * Scope is intentionally limited to the single-article two-column grid and
+ * Related Stories rows. No other cards, archives, searches, or images change.
+ */
+@media (min-width: 1025px) {
+    body.enterprise-single-article-page .enterprise-single-grid-has-related {
+        grid-template-columns: minmax(0, 700px) minmax(280px, 340px);
+        column-gap: 32px;
+        row-gap: 40px;
+        justify-content: start;
+    }
+}
+
+/* Keep thumbnail and headline copy as one compact, proportioned row. */
+body.enterprise-single-article-page .enterprise-related-card-row {
+    min-height: 78px;
+    align-items: flex-start;
+}
+
+body.enterprise-single-article-page .enterprise-related-copy {
+    height: 78px;
+    max-height: 78px;
+    overflow: hidden;
+}
+
+body.enterprise-single-article-page .enterprise-related-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+    body.enterprise-single-article-page .enterprise-related-card-row {
+        min-height: 70px;
+    }
+
+    body.enterprise-single-article-page .enterprise-related-copy {
+        height: 70px;
+        max-height: 70px;
+    }
+}
+
+/*
+ * Single article alignment refinement, v3.8.5.
+ * Scope is limited to the single-article breadcrumb/header/grid and Related
+ * Stories row alignment. Other publication layouts and image rules are untouched.
+ */
+@media (min-width: 1025px) {
+    body.enterprise-single-article-page .enterprise-single-breadcrumb,
+    body.enterprise-single-article-page .enterprise-single-header,
+    body.enterprise-single-article-page .enterprise-single-grid {
+        position: relative;
+        left: clamp(20px, 2.1vw, 36px);
+    }
+}
+
+/* Always anchor Related Stories media and copy to the top edge of each row. */
+body.enterprise-single-article-page .enterprise-related-card-row {
+    align-items: flex-start !important;
+    justify-content: flex-start;
+}
+
+body.enterprise-single-article-page .enterprise-related-image,
+body.enterprise-single-article-page .enterprise-related-copy {
+    align-self: flex-start !important;
+}
+
+body.enterprise-single-article-page .enterprise-related-copy {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-start !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+body.enterprise-single-article-page .enterprise-related-copy .enterprise-category-label {
+    align-self: flex-start;
+    margin-top: 0 !important;
+}
+
+body.enterprise-single-article-page .enterprise-related-title {
+    margin-top: 0 !important;
+}
+
+
+/* 3.8.7 rich single-article title/excerpt editor output. */
+.enterprise-single-deck-rich > :first-child { margin-top: 0; }
+.enterprise-single-deck-rich > :last-child { margin-bottom: 0; }
+.enterprise-single-deck-rich p { margin: 0; color: inherit; font: inherit; line-height: inherit; }
+.enterprise-single-header h1 span,
+.enterprise-single-deck-rich span { line-height: inherit; }

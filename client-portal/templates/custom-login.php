@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 
 $error_message = isset($error_message) ? (string) $error_message : '';
 $redirect_to = isset($redirect_to) ? (string) $redirect_to : cp_admin_url('cp-dashboard');
+$remember_checked = !empty($remember_checked);
 $login_url = cp_login_url($redirect_to);
 $publication_name = cp_get_publication_name();
 $publication_initial = strtoupper(substr($publication_name, 0, 1));
@@ -69,11 +70,11 @@ $publication_initial = strtoupper(substr($publication_name, 0, 1));
                 </div>
 
                 <div class="cp-login-row">
-                    <label class="cp-login-remember">
-                        <input name="rememberme" type="checkbox" value="1">
+                    <label class="cp-login-remember" for="cp-login-rememberme">
+                        <input id="cp-login-rememberme" name="rememberme" type="checkbox" value="1" <?php checked($remember_checked); ?>>
                         <span><?php esc_html_e('Remember me', 'client-portal'); ?></span>
                     </label>
-                    <a href="<?php echo esc_url(wp_lostpassword_url($redirect_to)); ?>"><?php esc_html_e('Forgot password?', 'client-portal'); ?></a>
+                    <a href="<?php echo esc_url(cp_lostpassword_url($redirect_to)); ?>"><?php esc_html_e('Forgot password?', 'client-portal'); ?></a>
                 </div>
 
                 <button class="cp-login-submit" type="submit"><?php esc_html_e('Sign In', 'client-portal'); ?></button>
