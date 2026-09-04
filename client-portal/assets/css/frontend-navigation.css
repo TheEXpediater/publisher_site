@@ -1,0 +1,229 @@
+.cp-primary-nav {
+    --cp-nav-bg: rgb(0, 0, 41);
+    --cp-nav-line: rgba(255, 255, 255, 0.16);
+    --cp-nav-text: #f2f2f5;
+    --cp-nav-text-muted: #b9b9c6;
+    --cp-nav-accent: #c9a24b;
+    --cp-nav-focus: #ffffff;
+    width: 100%;
+    background: var(--cp-nav-bg);
+    border-top: 1px solid var(--cp-nav-line);
+    border-bottom: 1px solid var(--cp-nav-line);
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.cp-primary-nav,
+.cp-primary-nav *,
+.cp-primary-nav *::before,
+.cp-primary-nav *::after {
+    box-sizing: border-box;
+}
+
+.cp-primary-nav-inner {
+    width: min(100%, 1440px);
+    margin: 0 auto;
+    padding: 0 64px;
+    display: flex;
+    align-items: center;
+}
+
+.cp-primary-nav-toggle {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    padding: 8px 10px;
+    background: transparent;
+    border: 1px solid var(--cp-nav-line);
+    border-radius: 3px;
+    color: var(--cp-nav-text);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.cp-primary-nav-toggle-bars {
+    position: relative;
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+}
+
+.cp-primary-nav-toggle-bars::before,
+.cp-primary-nav-toggle-bars::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+}
+
+.cp-primary-nav-toggle-bars::before {
+    top: -6px;
+}
+
+.cp-primary-nav-toggle-bars::after {
+    top: 6px;
+}
+
+.cp-primary-nav-menu {
+    list-style: none;
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.cp-primary-nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.cp-primary-nav-item > a,
+.cp-primary-nav-more-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 18px 16px;
+    color: var(--cp-nav-text);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.cp-primary-nav-item > a:hover,
+.cp-primary-nav-more-toggle:hover {
+    color: var(--cp-nav-accent);
+}
+
+.cp-primary-nav *:focus-visible {
+    outline: 2px solid var(--cp-nav-focus);
+    outline-offset: -2px;
+}
+
+.cp-primary-nav-about {
+    margin-left: auto;
+}
+
+.cp-primary-nav-about > a {
+    color: var(--cp-nav-accent);
+}
+
+.cp-primary-nav-more {
+    position: relative;
+}
+
+.cp-primary-nav-more-toggle::after {
+    content: "";
+    display: inline-block;
+    margin-left: 6px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+}
+
+.cp-primary-nav-more-menu {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    background: var(--cp-nav-bg);
+    border: 1px solid var(--cp-nav-line);
+    z-index: 40;
+}
+
+.cp-primary-nav-more-menu[hidden] {
+    display: none;
+}
+
+.cp-primary-nav-more-menu li a {
+    display: block;
+    padding: 10px 18px;
+    color: var(--cp-nav-text);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+.cp-primary-nav-more-menu li a:hover {
+    color: var(--cp-nav-accent);
+}
+
+@media (max-width: 1024px) {
+    .cp-primary-nav-inner {
+        padding: 0 32px;
+    }
+}
+
+@media (max-width: 782px) {
+    .cp-primary-nav-inner {
+        flex-wrap: wrap;
+        padding: 0 20px;
+    }
+
+    .cp-primary-nav-menu {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding-bottom: 12px;
+    }
+
+    /* Collapsed-by-default behavior is progressive enhancement: it only
+       applies once JS has confirmed it can run the toggle, so the menu
+       stays fully visible and usable if JavaScript is unavailable. */
+    .cp-primary-nav.is-collapsible .cp-primary-nav-toggle {
+        display: inline-flex;
+    }
+
+    .cp-primary-nav.is-collapsible .cp-primary-nav-menu {
+        display: none;
+    }
+
+    .cp-primary-nav.is-collapsible .cp-primary-nav-menu.is-open {
+        display: flex;
+    }
+
+    .cp-primary-nav-item {
+        width: 100%;
+        border-top: 1px solid var(--cp-nav-line);
+    }
+
+    .cp-primary-nav-item > a,
+    .cp-primary-nav-more-toggle {
+        width: 100%;
+        padding: 14px 4px;
+    }
+
+    .cp-primary-nav-about {
+        margin-left: 0;
+    }
+
+    .cp-primary-nav-more-menu {
+        position: static;
+        border: none;
+        border-top: 1px solid var(--cp-nav-line);
+        padding: 0;
+        min-width: 0;
+    }
+
+    .cp-primary-nav-more-menu li a {
+        padding: 12px 4px 12px 20px;
+    }
+}

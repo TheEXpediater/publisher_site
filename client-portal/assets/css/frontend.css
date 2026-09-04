@@ -225,6 +225,47 @@
     line-height: 1.6;
 }
 
+/*
+ * Category archive Astra hardening, matching the same pattern already
+ * applied to single-article (.enterprise-single-article-page) and search
+ * (.enterprise-article-search-page) pages: hide the theme's own duplicate
+ * page title/header/featured image above the shortcode's own hero, and
+ * reset any padding/min-height the theme adds to the page/content wrapper.
+ */
+.enterprise-category-archive-page:has(.enterprise-category-archive) :where(
+    .entry-header,
+    .page-header,
+    .wp-block-post-title,
+    .entry-title,
+    .page-title,
+    .post-thumbnail,
+    .featured-image
+):not(.enterprise-category-archive *) {
+    display: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body.enterprise-category-archive-page :where(
+    #content,
+    #primary,
+    #main,
+    main,
+    .site-content,
+    .site-main,
+    .content-area,
+    .entry-content,
+    .wp-block-post-content,
+    .content-wrapper,
+    .container,
+    .ast-container
+):has(.enterprise-category-archive) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    min-height: 0 !important;
+}
+
 .enterprise-category-archive {
     padding-top: 40px;
 }
@@ -253,6 +294,51 @@
     color: var(--enterprise-muted);
     font-size: 15px;
     line-height: 1.75;
+}
+
+.enterprise-maintenance-notice {
+    max-width: 640px;
+    margin: 8px auto 0;
+    padding: 48px 24px 56px;
+    border-top: 1px solid var(--enterprise-line);
+    text-align: center;
+}
+
+.enterprise-maintenance-notice h2 {
+    margin: 0 0 12px;
+    color: var(--enterprise-brand);
+    font-family: var(--enterprise-serif);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.enterprise-maintenance-notice p {
+    margin: 0 0 28px;
+    color: var(--enterprise-muted);
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+.enterprise-maintenance-home-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 26px;
+    border: 1px solid var(--enterprise-brand);
+    border-radius: 2px;
+    color: var(--enterprise-brand);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.enterprise-maintenance-home-link:hover,
+.enterprise-maintenance-home-link:focus-visible {
+    background: var(--enterprise-brand);
+    color: #ffffff;
 }
 
 .enterprise-post-list-wrap {

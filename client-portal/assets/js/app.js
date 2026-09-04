@@ -63,6 +63,8 @@
             ? new window.bootstrap.Modal(modalElement)
             : null;
         var pendingUrl = '';
+        var pendingForm = null;
+        var pendingSubmitter = null;
         var triggerElement = null;
 
         if (!modal || !confirmButton || !titleElement || !messageElement) {
@@ -88,18 +90,22 @@
             confirmButton.classList.add('btn-primary');
         }
 
-        app.querySelectorAll('[data-cp-confirm]').forEach(function (link) {
-            link.addEventListener('click', function (event) {
+        app.querySelectorAll('[data-cp-confirm]').forEach(function (trigger) {
+            trigger.addEventListener('click', function (event) {
+                var isFormSubmitter = 'BUTTON' === trigger.tagName && 'submit' === trigger.getAttribute('type') && trigger.form;
+
                 event.preventDefault();
 
-                triggerElement = link;
-                pendingUrl = link.href;
+                triggerElement = trigger;
+                pendingUrl = isFormSubmitter ? '' : trigger.href;
+                pendingForm = isFormSubmitter ? trigger.form : null;
+                pendingSubmitter = isFormSubmitter ? trigger : null;
 
-                titleElement.textContent = link.getAttribute('data-cp-confirm-title') || 'Confirm action';
-                messageElement.textContent = link.getAttribute('data-cp-confirm') || 'Are you sure you want to continue?';
-                confirmButton.textContent = link.getAttribute('data-cp-confirm-label') || 'Confirm';
+                titleElement.textContent = trigger.getAttribute('data-cp-confirm-title') || 'Confirm action';
+                messageElement.textContent = trigger.getAttribute('data-cp-confirm') || 'Are you sure you want to continue?';
+                confirmButton.textContent = trigger.getAttribute('data-cp-confirm-label') || 'Confirm';
 
-                var tone = link.getAttribute('data-cp-confirm-tone') || (link.classList.contains('btn-outline-danger') || link.classList.contains('btn-danger') ? 'danger' : 'default');
+                var tone = trigger.getAttribute('data-cp-confirm-tone') || (trigger.classList.contains('btn-outline-danger') || trigger.classList.contains('btn-danger') ? 'danger' : 'default');
                 setTone(tone);
 
                 if (iconElement) {
@@ -112,8 +118,21 @@
 
         confirmButton.addEventListener('click', function () {
             var target = pendingUrl;
+            var form = pendingForm;
+            var submitter = pendingSubmitter;
             pendingUrl = '';
+            pendingForm = null;
+            pendingSubmitter = null;
             modal.hide();
+
+            if (form) {
+                if (form.requestSubmit) {
+                    form.requestSubmit(submitter);
+                } else {
+                    form.submit();
+                }
+                return;
+            }
 
             if (target) {
                 window.location.href = target;
@@ -122,6 +141,8 @@
 
         modalElement.addEventListener('hidden.bs.modal', function () {
             pendingUrl = '';
+            pendingForm = null;
+            pendingSubmitter = null;
             if (triggerElement) {
                 triggerElement.focus();
                 triggerElement = null;

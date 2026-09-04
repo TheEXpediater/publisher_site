@@ -28,9 +28,12 @@ require_once CP_PATH . 'includes/articles.php';
 require_once CP_PATH . 'includes/categories.php';
 require_once CP_PATH . 'includes/users.php';
 require_once CP_PATH . 'includes/analytics.php';
+require_once CP_PATH . 'includes/analytics-google.php';
 require_once CP_PATH . 'includes/settings.php';
 require_once CP_PATH . 'includes/activity-log.php';
 require_once CP_PATH . 'includes/frontend-shortcodes.php';
+require_once CP_PATH . 'includes/frontend-navigation.php';
+require_once CP_PATH . 'includes/login-rate-limit.php';
 require_once CP_PATH . 'includes/custom-login.php';
 
 function cp_initialize_plugin()

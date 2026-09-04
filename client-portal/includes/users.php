@@ -9,6 +9,149 @@ function cp_can_assign_role($role)
     return isset(cp_allowed_roles()[$role]) && current_user_can('promote_users');
 }
 
+/**
+ * The protected publication-owner account (the designated WordPress-access
+ * user, cp_is_wordpress_access_user()) can never be edited, deleted, or
+ * otherwise modified from the custom client-portal Users screen - this is a
+ * semantic alias over that same canonical check, kept as its own named
+ * helper per its use across the Users handlers/templates.
+ */
+function cp_is_protected_owner_user($user = null)
+{
+    return cp_is_wordpress_access_user($user);
+}
+
+/**
+ * User profile photo.
+ *
+ * Uses a direct file upload (never the WordPress Media Library browser, so
+ * article images and other users' photos are never exposed through this
+ * picker) validated and stored via wp_handle_upload()/wp_insert_attachment()
+ * - the same WordPress-safe upload path the article hero image uses - with
+ * the resulting attachment ID kept in user meta.
+ */
+function cp_profile_image_meta_key()
+{
+    return '_cp_profile_image_id';
+}
+
+function cp_get_user_profile_image_id($user_id)
+{
+    return absint(get_user_meta(absint($user_id), cp_profile_image_meta_key(), true));
+}
+
+function cp_get_user_avatar_html($user_id, $size = 42)
+{
+    $user_id = absint($user_id);
+    $attachment_id = cp_get_user_profile_image_id($user_id);
+
+    if ($attachment_id) {
+        $image = wp_get_attachment_image(
+            $attachment_id,
+            [$size, $size],
+            false,
+            ['class' => 'cp-user-avatar-image', 'alt' => '']
+        );
+        if ($image) {
+            return $image;
+        }
+    }
+
+    $user = get_userdata($user_id);
+    return get_avatar($user_id, $size, '', $user ? $user->display_name : '');
+}
+
+function cp_profile_image_allowed_mimes($mimes)
+{
+    return [
+        'jpg|jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+    ];
+}
+
+function cp_validate_profile_image_upload($file)
+{
+    if (empty($file) || !is_array($file) || !isset($file['error']) || UPLOAD_ERR_NO_FILE === $file['error']) {
+        return null;
+    }
+
+    if (UPLOAD_ERR_OK !== $file['error']) {
+        return new WP_Error('cp_profile_image_upload_error', __('The profile photo could not be uploaded. Please try again.', 'client-portal'));
+    }
+
+    if (absint($file['size']) > 3 * MB_IN_BYTES) {
+        return new WP_Error('cp_profile_image_too_large', __('The profile photo must be smaller than 3MB.', 'client-portal'));
+    }
+
+    $allowed_mimes = cp_profile_image_allowed_mimes();
+    $filetype = wp_check_filetype_and_ext($file['tmp_name'], $file['name'], $allowed_mimes);
+    if (empty($filetype['ext']) || empty($filetype['type']) || !in_array($filetype['type'], $allowed_mimes, true)) {
+        return new WP_Error('cp_profile_image_invalid_type', __('Profile photos must be a JPG, PNG, or WebP image.', 'client-portal'));
+    }
+
+    if (!function_exists('getimagesize') || !@getimagesize($file['tmp_name'])) {
+        return new WP_Error('cp_profile_image_invalid_image', __('The uploaded file is not a valid image.', 'client-portal'));
+    }
+
+    return true;
+}
+
+/**
+ * Upload and attach a new profile photo for a user, replacing any previous
+ * one. Returns the new attachment ID, null when no file was submitted (not
+ * an error - the user simply didn't change their photo), or a WP_Error.
+ */
+function cp_handle_profile_image_upload($user_id)
+{
+    $file = isset($_FILES['profile_image']) ? $_FILES['profile_image'] : null;
+    $validation = cp_validate_profile_image_upload($file);
+
+    if (null === $validation || is_wp_error($validation)) {
+        return $validation;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+
+    add_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
+    $moved = wp_handle_upload($file, ['test_form' => false]);
+    remove_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
+
+    if (empty($moved['file']) || !empty($moved['error'])) {
+        return new WP_Error(
+            'cp_profile_image_upload_failed',
+            !empty($moved['error']) ? $moved['error'] : __('The profile photo could not be saved.', 'client-portal')
+        );
+    }
+
+    $attachment_id = wp_insert_attachment(
+        [
+            'post_mime_type' => $moved['type'],
+            'post_title' => sanitize_file_name(pathinfo($moved['file'], PATHINFO_FILENAME)),
+            'post_content' => '',
+            'post_status' => 'inherit',
+        ],
+        $moved['file']
+    );
+
+    if (is_wp_error($attachment_id) || !$attachment_id) {
+        return new WP_Error('cp_profile_image_attachment_failed', __('The profile photo could not be saved.', 'client-portal'));
+    }
+
+    wp_update_attachment_metadata($attachment_id, wp_generate_attachment_metadata($attachment_id, $moved['file']));
+
+    $previous_attachment_id = cp_get_user_profile_image_id($user_id);
+    update_user_meta($user_id, cp_profile_image_meta_key(), $attachment_id);
+
+    if ($previous_attachment_id && $previous_attachment_id !== $attachment_id) {
+        wp_delete_attachment($previous_attachment_id, true);
+    }
+
+    return $attachment_id;
+}
+
 function cp_handle_user_save()
 {
     if (!isset($_POST['cp_user_action'])) {
@@ -23,6 +166,12 @@ function cp_handle_user_save()
         return ['type' => 'danger', 'message' => __('You cannot assign the selected role.', 'client-portal')];
     }
 
+    $profile_image_file = isset($_FILES['profile_image']) ? $_FILES['profile_image'] : null;
+    $profile_image_validation = cp_validate_profile_image_upload($profile_image_file);
+    if (is_wp_error($profile_image_validation)) {
+        return ['type' => 'danger', 'message' => $profile_image_validation->get_error_message()];
+    }
+
     $email = sanitize_email(cp_post_value('email'));
     $display_name = sanitize_text_field(cp_post_value('display_name'));
     $password = cp_post_value('password');
@@ -32,6 +181,9 @@ function cp_handle_user_save()
         $target = get_userdata($user_id);
         if (!$target) {
             return ['type' => 'danger', 'message' => __('The selected user no longer exists.', 'client-portal')];
+        }
+        if (cp_is_protected_owner_user($target)) {
+            return ['type' => 'danger', 'message' => __('This owner account is protected and cannot be modified from the publisher portal.', 'client-portal')];
         }
         if (in_array('administrator', (array) $target->roles, true) && !current_user_can('manage_options')) {
             return ['type' => 'danger', 'message' => __('Only administrators can edit administrator accounts.', 'client-portal')];
@@ -60,7 +212,26 @@ function cp_handle_user_save()
         return ['type' => 'danger', 'message' => $result->get_error_message()];
     }
 
-    cp_redirect('cp-users', ['cp_notice' => $notice_code]);
+    $saved_user_id = absint($result);
+    $photo_uploaded = false;
+
+    if (null !== $profile_image_validation) {
+        $photo_result = cp_handle_profile_image_upload($saved_user_id);
+        if (is_wp_error($photo_result)) {
+            cp_set_temporary_notice(
+                'warning',
+                sprintf(
+                    /* translators: %s: profile photo error message. */
+                    __('The account was saved, but the profile photo could not be uploaded: %s', 'client-portal'),
+                    $photo_result->get_error_message()
+                )
+            );
+            cp_redirect('cp-users');
+        }
+        $photo_uploaded = null !== $photo_result;
+    }
+
+    cp_redirect('cp-users', ['cp_notice' => $photo_uploaded ? $notice_code . '-with-photo' : $notice_code]);
 }
 
 function cp_process_user_admin_actions()
@@ -97,6 +268,10 @@ function cp_handle_user_request()
         cp_redirect('cp-users');
     }
 
+    if (cp_is_protected_owner_user($target)) {
+        cp_redirect('cp-users', ['cp_error' => 'owner-protected']);
+    }
+
     if ('edit' === $action) {
         cp_require_capability('edit_user', $user_id);
         return $target;
@@ -121,6 +296,7 @@ function cp_user_request_error()
     $messages = [
         'self-delete' => __('You cannot delete your own account.', 'client-portal'),
         'admin-delete' => __('Only administrators can delete administrator accounts.', 'client-portal'),
+        'owner-protected' => __('This owner account is protected and cannot be modified from the publisher portal.', 'client-portal'),
     ];
 
     return isset($messages[$error]) ? ['type' => 'danger', 'message' => $messages[$error]] : null;

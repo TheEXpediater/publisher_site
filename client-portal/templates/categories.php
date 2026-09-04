@@ -9,6 +9,7 @@ $modal_category_id = $editing_category ? absint($editing_category->term_id) : 0;
 $modal_category_name = $editing_category ? $editing_category->name : '';
 $modal_category_slug = $editing_category ? $editing_category->slug : '';
 $modal_category_description = $editing_category ? $editing_category->description : '';
+$modal_category_active = $editing_category ? cp_category_is_active($editing_category) : true;
 $category_page = isset($category_page) ? max(1, absint($category_page)) : 1;
 $category_total = isset($category_total) ? absint($category_total) : count($categories);
 $category_start = isset($category_start) ? absint($category_start) : 0;
@@ -63,6 +64,7 @@ if (0 === $category_total) {
                     <th><?php esc_html_e('Name', 'client-portal'); ?></th>
                     <th><?php esc_html_e('Slug', 'client-portal'); ?></th>
                     <th><?php esc_html_e('Articles', 'client-portal'); ?></th>
+                    <th><?php esc_html_e('Status', 'client-portal'); ?></th>
                     <th><?php esc_html_e('Actions', 'client-portal'); ?></th>
                 </tr>
             </thead>
@@ -70,11 +72,13 @@ if (0 === $category_total) {
                 <?php if ($categories) : ?>
                     <?php foreach ($categories as $category) : ?>
                         <?php
+                        $category_is_active = cp_category_is_active($category);
                         $category_data = wp_json_encode([
                             'id' => absint($category->term_id),
                             'name' => (string) $category->name,
                             'slug' => (string) $category->slug,
                             'description' => (string) $category->description,
+                            'active' => $category_is_active,
                         ]);
                         ?>
                         <tr>
@@ -84,6 +88,11 @@ if (0 === $category_total) {
                             </td>
                             <td><code><?php echo esc_html($category->slug); ?></code></td>
                             <td><?php echo esc_html(number_format_i18n($category->count)); ?></td>
+                            <td>
+                                <span class="cp-badge cp-badge-<?php echo $category_is_active ? 'success' : 'secondary'; ?>">
+                                    <?php echo $category_is_active ? esc_html__('Active', 'client-portal') : esc_html__('Inactive', 'client-portal'); ?>
+                                </span>
+                            </td>
                             <td>
                                 <div class="cp-actions">
                                     <button
@@ -99,7 +108,7 @@ if (0 === $category_total) {
                                     </button>
                                     <a
                                         class="btn btn-sm btn-outline-danger"
-                                        data-cp-confirm="<?php echo esc_attr__('Are you sure you want to delete this category?', 'client-portal'); ?>"
+                                        data-cp-confirm="<?php echo esc_attr__('Delete this category?', 'client-portal'); ?>"
                                         data-cp-confirm-title="<?php echo esc_attr__('Delete category', 'client-portal'); ?>"
                                         data-cp-confirm-label="<?php echo esc_attr__('Delete', 'client-portal'); ?>"
                                         data-cp-confirm-tone="danger"
@@ -114,7 +123,7 @@ if (0 === $category_total) {
                     <?php endforeach; ?>
                 <?php else : ?>
                     <tr>
-                        <td colspan="4" class="cp-empty-state"><?php esc_html_e('No categories found.', 'client-portal'); ?></td>
+                        <td colspan="5" class="cp-empty-state"><?php esc_html_e('No categories found.', 'client-portal'); ?></td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -174,6 +183,10 @@ if (0 === $category_total) {
     data-cp-edit-title="<?php echo esc_attr__('Edit Category', 'client-portal'); ?>"
     data-cp-add-label="<?php echo esc_attr__('Add Category', 'client-portal'); ?>"
     data-cp-edit-label="<?php echo esc_attr__('Update Category', 'client-portal'); ?>"
+    data-cp-add-confirm="<?php echo esc_attr__('Create this category?', 'client-portal'); ?>"
+    data-cp-edit-confirm="<?php echo esc_attr__('Save these category changes?', 'client-portal'); ?>"
+    data-cp-edit-confirm-deactivating="<?php echo esc_attr__('Save these changes? This category will become inactive and its category page will be placed under maintenance.', 'client-portal'); ?>"
+    data-cp-edit-confirm-activating="<?php echo esc_attr__('Save these changes? This category will become active and its category page will be available again.', 'client-portal'); ?>"
 >
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -182,6 +195,7 @@ if (0 === $category_total) {
                 <input type="hidden" name="cp_category_action" value="save">
                 <input type="hidden" name="category_page" value="<?php echo esc_attr($category_page); ?>">
                 <input type="hidden" name="category_id" value="<?php echo esc_attr($modal_category_id); ?>" data-cp-category-id>
+                <input type="hidden" name="mode" value="<?php echo esc_attr($editing_category ? 'edit' : 'create'); ?>" data-cp-category-mode>
 
                 <div class="modal-header">
                     <div>
@@ -194,6 +208,26 @@ if (0 === $category_total) {
                 </div>
 
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <span class="form-label d-block"><?php esc_html_e('Status', 'client-portal'); ?></span>
+                        <input type="hidden" name="active" value="0">
+                        <label class="cp-setting-toggle" for="cp-category-active">
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                id="cp-category-active"
+                                name="active"
+                                value="1"
+                                data-cp-category-active
+                                <?php checked($modal_category_active); ?>
+                            >
+                            <span class="cp-setting-toggle-track" aria-hidden="true"><span class="cp-setting-toggle-knob"></span></span>
+                            <span class="cp-setting-toggle-copy">
+                                <strong data-cp-category-active-label><?php echo $modal_category_active ? esc_html__('Active', 'client-portal') : esc_html__('Inactive', 'client-portal'); ?></strong>
+                                <small><?php esc_html_e('Inactive categories are hidden from the public navigation. Articles and the category page are kept.', 'client-portal'); ?></small>
+                            </span>
+                        </label>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label" for="cp-category-name"><?php esc_html_e('Name', 'client-portal'); ?></label>
                         <input
@@ -230,7 +264,14 @@ if (0 === $category_total) {
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?php esc_html_e('Cancel', 'client-portal'); ?></button>
-                    <button type="submit" class="btn btn-primary" data-cp-category-submit>
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        data-cp-category-submit
+                        data-cp-confirm-title="<?php echo esc_attr($editing_category ? __('Update category', 'client-portal') : __('Add category', 'client-portal')); ?>"
+                        data-cp-confirm="<?php echo esc_attr($editing_category ? __('Save these category changes?', 'client-portal') : __('Create this category?', 'client-portal')); ?>"
+                        data-cp-confirm-label="<?php echo esc_attr($editing_category ? __('Save Changes', 'client-portal') : __('Add Category', 'client-portal')); ?>"
+                    >
                         <?php echo $editing_category ? esc_html__('Update Category', 'client-portal') : esc_html__('Add Category', 'client-portal'); ?>
                     </button>
                 </div>

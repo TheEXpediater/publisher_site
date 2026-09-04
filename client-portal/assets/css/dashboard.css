@@ -85,3 +85,55 @@
     .cp-app .enterprise-feature-picker-actions { position: sticky; bottom: 0; flex-wrap: wrap; }
     .cp-app .enterprise-feature-picker-actions .btn { min-height: 44px; flex: 1 1 140px; }
 }
+
+/* Google Analytics / Search Console (Site Kit report data) sections. */
+.cp-app .cp-analytics-google-heading { margin-top: 8px; flex-wrap: wrap; row-gap: 14px; }
+.cp-app .cp-analytics-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.cp-app .cp-date-range-group { display: inline-flex; border: 1px solid var(--cp-border); border-radius: 10px; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+.cp-app .cp-date-range-btn { min-width: 76px; padding: 9px 16px; border: 0; border-right: 1px solid var(--cp-border); background: transparent; color: var(--cp-muted); font-size: 13px; font-weight: 600; line-height: 1.3; cursor: pointer; transition: color .15s ease, background .15s ease; }
+.cp-app .cp-date-range-btn:last-child { border-right: 0; }
+.cp-app .cp-date-range-btn:hover { color: var(--cp-text); background: #f9fafb; }
+.cp-app .cp-date-range-btn.is-active { color: #fff; background: var(--cp-primary); }
+.cp-app .cp-date-range-btn:focus-visible { outline: 2px solid var(--cp-primary); outline-offset: -2px; z-index: 1; position: relative; }
+
+.cp-app .cp-refresh-button { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.cp-app .cp-refresh-button.is-refreshing i { animation: cp-spin 0.9s linear infinite; }
+.cp-app .cp-refresh-button:disabled { opacity: .7; cursor: default; }
+@keyframes cp-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.cp-app .cp-analytics-updated { margin: -6px 0 20px; color: var(--cp-muted); font-size: 12px; }
+.cp-app .cp-analytics-updated-error { color: #b42318; }
+
+.cp-app .cp-analytics-section { overflow: hidden; }
+.cp-app .cp-analytics-section .cp-card-header { padding: 20px 24px; }
+.cp-app .cp-analytics-section > .cp-analytics-body,
+.cp-app .cp-analytics-section > .cp-stat-grid { padding: 22px 24px; }
+.cp-app .cp-analytics-section .cp-stat-grid { margin-bottom: 0; }
+.cp-app .cp-stat-grid-compact { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cp-app .cp-analytics-body { display: grid; gap: 24px; }
+
+.cp-app .cp-analytics-chart-wrap h4 { margin: 0 0 14px; font-size: 13px; font-weight: 700; color: var(--cp-text); }
+.cp-app .cp-analytics-chart { width: 100%; min-height: 280px; display: flex; flex-direction: column; justify-content: center; }
+.cp-app .cp-analytics-chart-svg { width: 100%; height: 260px; display: block; }
+.cp-app .cp-analytics-chart-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.cp-app .cp-analytics-chart-line-primary { stroke: var(--cp-primary); }
+.cp-app .cp-analytics-chart-line-secondary { stroke: #c9cbf5; }
+.cp-app .cp-analytics-chart-legend { display: flex; gap: 20px; margin-top: 14px; font-size: 12px; font-weight: 600; color: var(--cp-muted); }
+.cp-app .cp-analytics-chart-legend-item { position: relative; padding-left: 18px; }
+.cp-app .cp-analytics-chart-legend-item::before { content: ""; position: absolute; top: 50%; left: 0; width: 12px; height: 3px; border-radius: 2px; transform: translateY(-50%); }
+.cp-app .cp-analytics-chart-legend-primary::before { background: var(--cp-primary); }
+.cp-app .cp-analytics-chart-legend-secondary::before { background: #c9cbf5; }
+
+.cp-app .cp-analytics-state { display: flex; align-items: center; justify-content: center; min-height: 200px; margin: 0; padding: 24px; color: var(--cp-muted); font-size: 13px; text-align: center; }
+.cp-app .cp-table-card .cp-analytics-state { min-height: 0; padding: 40px 24px; }
+
+@media (max-width: 900px) { .cp-app .cp-stat-grid-compact { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .cp-app .cp-analytics-toolbar { width: 100%; justify-content: space-between; } }
+@media (max-width: 480px) {
+    .cp-app .cp-stat-grid-compact { grid-template-columns: 1fr; }
+    .cp-app .cp-analytics-toolbar { flex-direction: column; align-items: stretch; }
+    .cp-app .cp-date-range-group { width: 100%; }
+    .cp-app .cp-date-range-btn { flex: 1 1 auto; }
+    .cp-app .cp-refresh-button { justify-content: center; }
+}

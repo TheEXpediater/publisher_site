@@ -209,7 +209,17 @@ function cp_white_label_admin_bar($wp_admin_bar)
 
 function cp_portal_admin_body_class($classes)
 {
-    if (cp_is_portal_only_user() && cp_is_portal_page()) {
+    /*
+     * Hide the native WordPress admin chrome (adminbar, adminmenu) on every
+     * client-portal page for every user, not just portal-only users. The
+     * owner account (cp_is_wordpress_access_user()) is deliberately allowed
+     * to use native wp-admin elsewhere, but on a portal page it must still
+     * show only the custom .cp-app shell - otherwise the native adminmenu
+     * (which already lists this plugin's own Dashboard/Articles/Categories/
+     * Users/Analytics/Settings submenu items) renders alongside the custom
+     * sidebar's own copy of the same items, reading as duplicated navigation.
+     */
+    if (cp_is_portal_page()) {
         $classes .= ' cp-portal-only-shell';
     }
 
@@ -250,7 +260,9 @@ function cp_portal_admin_title($admin_title, $title)
 
 function cp_portal_shell_admin_head()
 {
-    if (!cp_is_portal_only_user() || !cp_is_portal_page()) {
+    // Scoped to cp_is_portal_page() only - see cp_portal_admin_body_class()
+    // for why this must not also require cp_is_portal_only_user().
+    if (!cp_is_portal_page()) {
         return;
     }
     ?>
@@ -462,10 +474,14 @@ function cp_get_notice_message($code)
         'homepage_feature_invalid_article' => ['type' => 'danger', 'message' => __('The selected homepage feature must be a published Enterprise article.', 'client-portal')],
         'category_created' => ['type' => 'success', 'message' => __('Category created successfully.', 'client-portal')],
         'category_updated' => ['type' => 'success', 'message' => __('Category updated successfully.', 'client-portal')],
+        'category_updated_active' => ['type' => 'success', 'message' => __('Category updated successfully. The category is now active.', 'client-portal')],
+        'category_updated_inactive' => ['type' => 'success', 'message' => __('Category updated successfully. The category is now inactive.', 'client-portal')],
         'category_deleted' => ['type' => 'success', 'message' => __('Category deleted successfully.', 'client-portal')],
         'settings_saved' => ['type' => 'success', 'message' => __('Settings saved successfully.', 'client-portal')],
         'user-created' => ['type' => 'success', 'message' => __('User created successfully.', 'client-portal')],
         'user-updated' => ['type' => 'success', 'message' => __('User updated successfully.', 'client-portal')],
+        'user-created-with-photo' => ['type' => 'success', 'message' => __('User created successfully. Profile photo uploaded.', 'client-portal')],
+        'user-updated-with-photo' => ['type' => 'success', 'message' => __('User updated successfully. Profile photo uploaded.', 'client-portal')],
         'user-deleted' => ['type' => 'success', 'message' => __('User deleted successfully.', 'client-portal')],
     ];
 
@@ -897,6 +913,22 @@ function cp_status_badge_class($status)
     return isset($classes[$status]) ? $classes[$status] : 'secondary';
 }
 
+/**
+ * Version string for a local client-portal CSS/JS asset. Uses the file's
+ * own modification time rather than the static CP_VERSION constant, so
+ * editing a portal CSS/JS file automatically changes its enqueued URL
+ * (?ver=...) and forces browsers/CDNs to fetch the new version instead of
+ * continuing to serve a stale cached copy under an unchanged version string.
+ * Falls back to CP_VERSION only if the file can't be found on disk.
+ */
+function cp_asset_version($relative_path)
+{
+    $absolute_path = cp_path($relative_path);
+    $mtime = file_exists($absolute_path) ? filemtime($absolute_path) : false;
+
+    return $mtime ? (string) $mtime : CP_VERSION;
+}
+
 function cp_enqueue_admin_assets()
 {
     if (!cp_is_portal_page()) {
@@ -905,14 +937,42 @@ function cp_enqueue_admin_assets()
 
     wp_enqueue_style('cp-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css', [], '5.3.3');
     wp_enqueue_style('cp-bootstrap-icons', 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css', [], '1.11.3');
-    wp_enqueue_style('cp-style', cp_url('assets/css/style.css'), ['cp-bootstrap'], CP_VERSION);
-    wp_enqueue_style('cp-dashboard', cp_url('assets/css/dashboard.css'), ['cp-style'], CP_VERSION);
+    wp_enqueue_style('cp-style', cp_url('assets/css/style.css'), ['cp-bootstrap'], cp_asset_version('assets/css/style.css'));
+    wp_enqueue_style('cp-dashboard', cp_url('assets/css/dashboard.css'), ['cp-style'], cp_asset_version('assets/css/dashboard.css'));
     wp_enqueue_script('cp-bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', [], '5.3.3', true);
-    wp_enqueue_script('cp-app', cp_url('assets/js/app.js'), ['cp-bootstrap'], CP_VERSION, true);
-    wp_enqueue_script('cp-dashboard', cp_url('assets/js/dashboard.js'), ['cp-app'], CP_VERSION, true);
+    wp_enqueue_script('cp-app', cp_url('assets/js/app.js'), ['cp-bootstrap'], cp_asset_version('assets/js/app.js'), true);
+    wp_enqueue_script('cp-dashboard', cp_url('assets/js/dashboard.js'), ['cp-app'], cp_asset_version('assets/js/dashboard.js'), true);
 
     if ('cp-categories' === cp_current_page()) {
-        wp_enqueue_script('cp-categories', cp_url('assets/js/categories.js'), ['cp-app'], CP_VERSION, true);
+        wp_enqueue_script('cp-categories', cp_url('assets/js/categories.js'), ['cp-app'], cp_asset_version('assets/js/categories.js'), true);
+    }
+
+    if ('cp-users' === cp_current_page()) {
+        wp_enqueue_script('cp-users', cp_url('assets/js/users.js'), ['cp-app'], cp_asset_version('assets/js/users.js'), true);
+    }
+
+    if ('cp-analytics' === cp_current_page()) {
+        wp_enqueue_script('cp-analytics', cp_url('assets/js/analytics.js'), ['cp-app'], cp_asset_version('assets/js/analytics.js'), true);
+        wp_localize_script(
+            'cp-analytics',
+            'cpAnalyticsGoogleData',
+            [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('cp_analytics_google_data'),
+                'defaultRange' => cp_analytics_default_date_range(),
+                'strings' => [
+                    'loading' => __('Loading...', 'client-portal'),
+                    'noData' => __('No data is available for this period.', 'client-portal'),
+                    'error' => __('Website analytics are temporarily unavailable.', 'client-portal'),
+                    'refreshLabel' => __('Refresh Data', 'client-portal'),
+                    'refreshing' => __('Refreshing...', 'client-portal'),
+                    'refreshed' => __('Analytics refreshed successfully.', 'client-portal'),
+                    'lastUpdated' => __('Last updated:', 'client-portal'),
+                    'visitors' => __('Visitors', 'client-portal'),
+                    'pageViews' => __('Page Views', 'client-portal'),
+                ],
+            ]
+        );
     }
 
     if ('cp-dashboard' === cp_current_page()) {
@@ -949,7 +1009,7 @@ function cp_enqueue_admin_assets()
     if (in_array(cp_current_page(), ['cp-article-create', 'cp-article-edit'], true)) {
         wp_enqueue_media();
         wp_enqueue_editor();
-        wp_enqueue_style('cp-article-builder', cp_url('assets/css/article-builder.css'), ['cp-style'], CP_VERSION);
-        wp_enqueue_script('cp-article-builder', cp_url('assets/js/article-builder.js'), ['cp-app', 'media-editor', 'wp-editor'], CP_VERSION, true);
+        wp_enqueue_style('cp-article-builder', cp_url('assets/css/article-builder.css'), ['cp-style'], cp_asset_version('assets/css/article-builder.css'));
+        wp_enqueue_script('cp-article-builder', cp_url('assets/js/article-builder.js'), ['cp-app', 'media-editor', 'wp-editor'], cp_asset_version('assets/js/article-builder.js'), true);
     }
 }

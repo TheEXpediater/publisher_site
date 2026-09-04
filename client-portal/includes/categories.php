@@ -15,6 +15,71 @@ function cp_category_page_args($category_page = 1)
     return $category_page > 1 ? ['category_page' => $category_page] : [];
 }
 
+/**
+ * Category active/inactive state.
+ *
+ * Native WordPress categories have no such concept, so this is stored as
+ * term meta. Absence of the meta (every pre-existing category, before this
+ * feature shipped) is treated as active, so this change cannot silently
+ * hide anything already on the live site.
+ */
+function cp_category_active_meta_key()
+{
+    return '_cp_category_active';
+}
+
+function cp_category_is_active($category)
+{
+    $category = $category instanceof WP_Term ? $category : get_term($category, 'category');
+    if (!$category instanceof WP_Term) {
+        return true;
+    }
+
+    $meta = get_term_meta($category->term_id, cp_category_active_meta_key(), true);
+
+    return '' === $meta || '1' === $meta;
+}
+
+function cp_set_category_active($term_id, $active)
+{
+    update_term_meta(absint($term_id), cp_category_active_meta_key(), $active ? '1' : '0');
+}
+
+/**
+ * Resolve what a save would actually change, so the caller can skip the
+ * mutation entirely (and show "No changes detected." instead of a normal
+ * success notice) when the submitted values match the stored category.
+ */
+function cp_category_save_has_changes($category_id, $name, $slug, $description, $active)
+{
+    if (!$category_id) {
+        return true;
+    }
+
+    $category = get_term($category_id, 'category');
+    if (!$category instanceof WP_Term) {
+        return true;
+    }
+
+    if ($name !== $category->name) {
+        return true;
+    }
+
+    if ('' !== $slug && $slug !== $category->slug) {
+        return true;
+    }
+
+    if ($description !== (string) $category->description) {
+        return true;
+    }
+
+    if ($active !== cp_category_is_active($category)) {
+        return true;
+    }
+
+    return false;
+}
+
 function cp_handle_category_save()
 {
     if (!isset($_POST['cp_category_action'])) {
@@ -26,13 +91,59 @@ function cp_handle_category_save()
 
     $category_page = max(1, absint(cp_post_value('category_page')));
     $category_id = absint(cp_post_value('category_id'));
+
+    /*
+     * The submitted "mode" is the canonical, form-level statement of intent
+     * (rendered server-side into a hidden field, mirrored by JS - see
+     * templates/categories.php / assets/js/categories.js) - it is not
+     * inferred solely from category_id, and category_id is never trusted
+     * blindly either: an "edit" submission must resolve to a real,
+     * currently-existing category term, or the save is rejected outright
+     * rather than silently falling through to creating a new category.
+     */
+    $mode = sanitize_key(cp_post_value('mode', $category_id ? 'edit' : 'create'));
+    if (!in_array($mode, ['create', 'edit'], true)) {
+        $mode = $category_id ? 'edit' : 'create';
+    }
+
+    $existing_category = null;
+    if ($category_id) {
+        $term = get_term($category_id, 'category');
+        $existing_category = $term instanceof WP_Term ? $term : null;
+    }
+
+    if ('edit' === $mode && !$existing_category) {
+        return [
+            'type' => 'danger',
+            'message' => __('Unable to update category because the category could not be identified. Please reload the page and try again.', 'client-portal'),
+            'category_page' => $category_page,
+        ];
+    }
+
     $name = sanitize_text_field(cp_post_value('name'));
+    $slug = sanitize_title(cp_post_value('slug'));
+    $description = sanitize_textarea_field(cp_post_value('description'));
+    // Absent means the checkbox was unchecked (unchecked checkboxes are not
+    // submitted at all), so treat a missing field as inactive, not as
+    // "keep default" - the toggle must work in both directions on create.
+    $active = '1' === cp_post_value('active', '');
+    $previous_active = $existing_category ? cp_category_is_active($existing_category) : null;
+
+    if ('edit' === $mode && !cp_category_save_has_changes($category_id, $name, $slug, $description, $active)) {
+        return [
+            'type' => 'info',
+            'message' => __('No changes detected.', 'client-portal'),
+            'category_page' => $category_page,
+            'no_changes' => true,
+        ];
+    }
+
     $args = [
-        'slug' => sanitize_title(cp_post_value('slug')),
-        'description' => sanitize_textarea_field(cp_post_value('description')),
+        'slug' => $slug,
+        'description' => $description,
     ];
 
-    $result = $category_id
+    $result = 'edit' === $mode
         ? wp_update_term($category_id, 'category', array_merge(['name' => $name], $args))
         : wp_insert_term($name, 'category', $args);
 
@@ -44,11 +155,31 @@ function cp_handle_category_save()
         ];
     }
 
+    $saved_term_id = 'edit' === $mode ? $category_id : absint($result['term_id']);
+    cp_set_category_active($saved_term_id, $active);
+
+    // Verify the status actually persisted before claiming success.
+    if (cp_category_is_active($saved_term_id) !== $active) {
+        return [
+            'type' => 'danger',
+            'message' => __('The category was saved, but its status could not be updated. Please try again.', 'client-portal'),
+            'category_page' => $category_page,
+        ];
+    }
+
+    if ('create' === $mode) {
+        $notice_code = 'category_created';
+    } elseif (null !== $previous_active && $previous_active !== $active) {
+        $notice_code = $active ? 'category_updated_active' : 'category_updated_inactive';
+    } else {
+        $notice_code = 'category_updated';
+    }
+
     cp_redirect(
         'cp-categories',
         array_merge(
             cp_category_page_args($category_page),
-            ['cp_notice' => $category_id ? 'category_updated' : 'category_created']
+            ['cp_notice' => $notice_code]
         )
     );
 }
@@ -150,3 +281,203 @@ function cp_categories_page()
         'notice' => cp_request_notice(),
     ]);
 }
+
+/**
+ * Category-to-Page routing.
+ *
+ * The publication's frontend category destination is a real WordPress Page
+ * running [enterprise_category_posts category="{slug}"] (e.g. /news/), not
+ * the native "category" taxonomy archive (e.g. /category/news/, which
+ * Astra/WordPress render with the theme's generic default template). This
+ * resolves a category term to that Page - reusing an existing one whenever
+ * possible - and provisions one only when genuinely missing.
+ *
+ * The association is stored as term meta keyed by term_id (not by slug), so
+ * renaming a category's slug later does not lose the link to its Page.
+ */
+
+define('CP_CATEGORY_PAGE_TERM_META_KEY', '_cp_category_page_id');
+
+function cp_page_targets_category_slug($page, $slug)
+{
+    $page = get_post($page);
+    $slug = sanitize_title($slug);
+    if (!$page instanceof WP_Post || '' === $slug || !has_shortcode((string) $page->post_content, 'enterprise_category_posts')) {
+        return false;
+    }
+
+    if (!preg_match_all('/' . get_shortcode_regex(['enterprise_category_posts']) . '/', (string) $page->post_content, $matches)) {
+        return false;
+    }
+
+    foreach ($matches[3] as $shortcode_attributes) {
+        $atts = shortcode_parse_atts($shortcode_attributes);
+        if (is_array($atts) && isset($atts['category']) && sanitize_title($atts['category']) === $slug) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function cp_get_category_page($category)
+{
+    $category = $category instanceof WP_Term ? $category : get_term($category, 'category');
+    if (!$category instanceof WP_Term) {
+        return null;
+    }
+
+    $stored_page_id = absint(get_term_meta($category->term_id, CP_CATEGORY_PAGE_TERM_META_KEY, true));
+    if ($stored_page_id) {
+        $page = get_post($stored_page_id);
+        if ($page instanceof WP_Post && 'page' === $page->post_type && 'publish' === $page->post_status) {
+            return $page;
+        }
+
+        // The stored association is stale (page deleted/unpublished); re-resolve below.
+        delete_term_meta($category->term_id, CP_CATEGORY_PAGE_TERM_META_KEY);
+    }
+
+    $page_by_slug = get_page_by_path($category->slug);
+    if ($page_by_slug instanceof WP_Post && 'publish' === $page_by_slug->post_status) {
+        update_term_meta($category->term_id, CP_CATEGORY_PAGE_TERM_META_KEY, $page_by_slug->ID);
+        return $page_by_slug;
+    }
+
+    $candidate_ids = get_posts([
+        'post_type' => 'page',
+        'post_status' => 'publish',
+        'posts_per_page' => 50,
+        's' => 'enterprise_category_posts',
+        'fields' => 'ids',
+        'no_found_rows' => true,
+    ]);
+
+    foreach ($candidate_ids as $candidate_id) {
+        if (cp_page_targets_category_slug($candidate_id, $category->slug)) {
+            update_term_meta($category->term_id, CP_CATEGORY_PAGE_TERM_META_KEY, $candidate_id);
+            return get_post($candidate_id);
+        }
+    }
+
+    return null;
+}
+
+function cp_provision_category_page($category)
+{
+    $category = $category instanceof WP_Term ? $category : get_term($category, 'category');
+    if (!$category instanceof WP_Term) {
+        return null;
+    }
+
+    $existing = cp_get_category_page($category);
+    if ($existing instanceof WP_Post) {
+        return $existing;
+    }
+
+    $page_id = wp_insert_post(
+        [
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'post_title' => $category->name,
+            'post_name' => $category->slug,
+            'post_content' => '[enterprise_category_posts category="' . $category->slug . '"]',
+        ],
+        true
+    );
+
+    if (is_wp_error($page_id) || !$page_id) {
+        cp_debug_log('Failed to provision category page', ['term_id' => $category->term_id, 'slug' => $category->slug]);
+        return null;
+    }
+
+    update_term_meta($category->term_id, CP_CATEGORY_PAGE_TERM_META_KEY, $page_id);
+
+    return get_post($page_id);
+}
+
+/**
+ * Resolve a category's public frontend URL, provisioning its Page on first
+ * use if one doesn't exist yet. Falls back to the native taxonomy archive
+ * URL only if a Page genuinely cannot be resolved or created, so navigation
+ * links never break.
+ */
+function cp_get_category_page_url($category)
+{
+    $category = $category instanceof WP_Term ? $category : get_term($category, 'category');
+    if (!$category instanceof WP_Term) {
+        return '';
+    }
+
+    $page = cp_get_category_page($category);
+    if (!$page instanceof WP_Post) {
+        $page = cp_provision_category_page($category);
+    }
+
+    if ($page instanceof WP_Post) {
+        $permalink = get_permalink($page);
+        if ($permalink) {
+            return $permalink;
+        }
+    }
+
+    $fallback = get_category_link($category);
+    return is_wp_error($fallback) ? '' : $fallback;
+}
+
+function cp_provision_category_page_on_create($term_id, $tt_id, $taxonomy = 'category')
+{
+    if ('category' !== $taxonomy) {
+        return;
+    }
+
+    $term = get_term($term_id, 'category');
+    if ($term instanceof WP_Term) {
+        cp_provision_category_page($term);
+    }
+}
+add_action('created_category', 'cp_provision_category_page_on_create', 10, 3);
+
+/**
+ * Frontend-only redirect: send visitors who land on the native taxonomy
+ * archive (/category/{slug}/) to the publication's real category Page
+ * (/{slug}/) instead. Scoped to category archive GET requests only; skips
+ * admin, AJAX, cron, REST, feeds, and previews. Only redirects when the
+ * resolved destination is actually a different URL than the archive itself,
+ * so a category whose Page cannot be resolved/created (falls back to
+ * get_category_link()) never loops.
+ */
+function cp_redirect_category_archive_to_category_page()
+{
+    if (
+        is_admin()
+        || wp_doing_ajax()
+        || wp_doing_cron()
+        || (defined('REST_REQUEST') && REST_REQUEST)
+        || (function_exists('wp_is_json_request') && wp_is_json_request())
+        || is_feed()
+        || is_preview()
+        || !is_category()
+    ) {
+        return;
+    }
+
+    $category = get_queried_object();
+    if (!$category instanceof WP_Term) {
+        return;
+    }
+
+    $archive_url = get_category_link($category);
+    if (is_wp_error($archive_url)) {
+        return;
+    }
+
+    $target_url = cp_get_category_page_url($category);
+    if ('' === $target_url || untrailingslashit($target_url) === untrailingslashit($archive_url)) {
+        return;
+    }
+
+    wp_safe_redirect($target_url, 301);
+    exit;
+}
+add_action('template_redirect', 'cp_redirect_category_archive_to_category_page', 5);

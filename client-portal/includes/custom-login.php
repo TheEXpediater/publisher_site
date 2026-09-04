@@ -173,6 +173,49 @@ function cp_portal_login_url_filter($login_url, $redirect_to, $force_reauth)
     return $url;
 }
 
+/**
+ * Flag a successful password reset for a publisher-portal account.
+ * WordPress core (wp-login.php, action=resetpass) builds its "Your password
+ * has been reset. Log in" link via wp_login_url() in the same request, so a
+ * request-scoped flag set here is read by cp_portal_reset_success_login_url()
+ * below without needing to alter wp-login.php itself.
+ */
+function cp_flag_portal_password_reset($user)
+{
+    if ($user instanceof WP_User && cp_is_portal_only_user($user)) {
+        cp_portal_password_reset_completed(true);
+    }
+}
+
+function cp_portal_password_reset_completed($set = null)
+{
+    static $completed = false;
+
+    if (null !== $set) {
+        $completed = (bool) $set;
+    }
+
+    return $completed;
+}
+
+/**
+ * Send the "Your password has been reset" confirmation link back to the
+ * custom publisher login instead of WordPress core's wp-login.php.
+ */
+function cp_portal_reset_success_login_url($login_url, $redirect_to, $force_reauth)
+{
+    if (!cp_portal_password_reset_completed()) {
+        return $login_url;
+    }
+
+    $url = cp_login_url();
+    if ($force_reauth) {
+        $url = add_query_arg('reauth', '1', $url);
+    }
+
+    return $url;
+}
+
 function cp_process_custom_login($redirect_to)
 {
     $error_message = '';
@@ -201,6 +244,11 @@ function cp_process_custom_login($redirect_to)
         return __('The username, email address, or password is incorrect.', 'client-portal');
     }
 
+    $locked_until = cp_login_rate_limit_is_locked($login);
+    if ($locked_until) {
+        return cp_login_rate_limit_locked_message($locked_until);
+    }
+
     $user = wp_signon(
         [
             'user_login' => $login,
@@ -211,8 +259,11 @@ function cp_process_custom_login($redirect_to)
     );
 
     if (is_wp_error($user)) {
+        cp_login_rate_limit_record_failure($login);
         return __('The username, email address, or password is incorrect.', 'client-portal');
     }
+
+    cp_login_rate_limit_clear($login);
 
     wp_safe_redirect($redirect_to);
     exit;
@@ -342,6 +393,8 @@ function cp_native_login_errors($errors)
 add_action('init', 'cp_register_login_route');
 add_filter('query_vars', 'cp_register_login_query_var');
 add_filter('login_url', 'cp_portal_login_url_filter', 10, 3);
+add_action('after_password_reset', 'cp_flag_portal_password_reset', 10, 1);
+add_filter('login_url', 'cp_portal_reset_success_login_url', 20, 3);
 add_action('template_redirect', 'cp_render_custom_login', 0);
 add_action('login_enqueue_scripts', 'cp_enqueue_native_login_branding');
 add_filter('login_headerurl', 'cp_native_login_header_url');

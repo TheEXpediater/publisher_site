@@ -89,10 +89,14 @@ add_filter('next_post_link', 'cp_suppress_single_article_adjacent_post_link', 10
 
 function cp_enqueue_frontend_styles()
 {
-    wp_enqueue_style('cp-frontend', cp_url('assets/css/frontend.css'), [], CP_VERSION);
+    // File-mtime versioning (see cp_asset_version()) so an edit to
+    // frontend.css - such as this task's new maintenance-notice rules -
+    // actually reaches browsers instead of being served from a stale cache
+    // under an unchanged static version string.
+    wp_enqueue_style('cp-frontend', cp_url('assets/css/frontend.css'), [], cp_asset_version('assets/css/frontend.css'));
 
     if (cp_is_publication_homepage_request()) {
-        wp_enqueue_script('cp-frontend-layout', cp_url('assets/js/frontend-layout.js'), [], CP_VERSION, true);
+        wp_enqueue_script('cp-frontend-layout', cp_url('assets/js/frontend-layout.js'), [], cp_asset_version('assets/js/frontend-layout.js'), true);
     }
 }
 
@@ -711,6 +715,20 @@ function cp_page_has_enterprise_search_shortcode($post)
     return cp_post_contains_enterprise_shortcode($post, ['enterprise_article_search']);
 }
 
+function cp_page_has_enterprise_category_shortcode($post)
+{
+    return cp_post_contains_enterprise_shortcode($post, ['enterprise_category_posts']);
+}
+
+function cp_is_enterprise_category_page_request()
+{
+    if (is_admin() || !is_singular('page')) {
+        return false;
+    }
+
+    return cp_page_has_enterprise_category_shortcode(get_queried_object());
+}
+
 function cp_validate_enterprise_search_page_id($page_id)
 {
     $page_id = absint($page_id);
@@ -1115,6 +1133,28 @@ function cp_render_other_stories($current_post_id)
     return ob_get_clean();
 }
 
+function cp_render_category_maintenance_notice($category_name)
+{
+    ob_start();
+    ?>
+    <section class="enterprise-publication enterprise-category-archive enterprise-category-maintenance">
+        <header class="enterprise-category-hero">
+            <div class="enterprise-section-bar"><span><?php echo esc_html($category_name); ?></span></div>
+            <div class="enterprise-category-hero-copy">
+                <span class="enterprise-section-kicker"><?php esc_html_e('Enterprise1979 Publication', 'client-portal'); ?></span>
+                <h1><?php echo esc_html($category_name); ?></h1>
+            </div>
+        </header>
+        <div class="enterprise-maintenance-notice">
+            <h2><?php esc_html_e('Category Temporarily Unavailable', 'client-portal'); ?></h2>
+            <p><?php esc_html_e('This section is currently under maintenance. Please check back later.', 'client-portal'); ?></p>
+            <a class="enterprise-maintenance-home-link" href="<?php echo esc_url(home_url('/')); ?>"><?php esc_html_e('Back to Home', 'client-portal'); ?></a>
+        </div>
+    </section>
+    <?php
+    return ob_get_clean();
+}
+
 function cp_category_posts_shortcode($attributes)
 {
     $attributes = shortcode_atts(
@@ -1142,6 +1182,19 @@ function cp_category_posts_shortcode($attributes)
     $category_term = get_category_by_slug($category_slug);
     $custom_title = sanitize_text_field(cp_frontend_attribute($attributes['title']));
     $category_name = $custom_title ?: cp_frontend_category_name($category_slug);
+
+    /*
+     * An inactive category keeps its /slug/ Page reachable (no redirect, no
+     * 404, nothing deleted) but shows a maintenance notice instead of the
+     * article list - stop here, before the article query/output, exactly as
+     * for an active category otherwise would run below. Reuses the same
+     * cp_category_is_active() term-meta check the admin table and the
+     * frontend navigation filter already use, so this works for every
+     * category dynamically with nothing hardcoded per category.
+     */
+    if ($category_term instanceof WP_Term && !cp_category_is_active($category_term)) {
+        return cp_render_category_maintenance_notice($category_name);
+    }
     $subtitle_override = sanitize_textarea_field(cp_frontend_attribute($attributes['subtitle']));
     $category_description = $category_term instanceof WP_Term ? sanitize_textarea_field($category_term->description) : '';
     $subtitle = '' !== $subtitle_override ? $subtitle_override : $category_description;
@@ -1497,6 +1550,10 @@ function cp_single_article_body_class($classes)
 
     if (cp_is_enterprise_search_page_request()) {
         $classes[] = 'enterprise-article-search-page';
+    }
+
+    if (cp_is_enterprise_category_page_request()) {
+        $classes[] = 'enterprise-category-archive-page';
     }
 
     return $classes;

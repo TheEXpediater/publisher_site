@@ -24,6 +24,12 @@ $portal_settings = cp_settings();
             <small><?php echo esc_html($current_user->user_email); ?></small>
         </div>
         <div class="cp-user-avatar"><?php echo wp_kses_post(get_avatar($current_user->ID, 42, '', $current_user->display_name)); ?></div>
+        <?php if (cp_is_protected_owner_user($current_user)) : ?>
+            <a class="cp-logout-button cp-wp-admin-button" href="<?php echo esc_url(admin_url()); ?>">
+                <i class="bi bi-wordpress" aria-hidden="true"></i>
+                <span><?php esc_html_e('WordPress Admin', 'client-portal'); ?></span>
+            </a>
+        <?php endif; ?>
         <button class="cp-logout-button" type="button" data-bs-toggle="modal" data-bs-target="#cp-logout-modal">
             <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
             <span><?php esc_html_e('Logout', 'client-portal'); ?></span>
