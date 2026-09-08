@@ -4,13 +4,16 @@
     --cp-nav-text: #f2f2f5;
     --cp-nav-text-muted: #b9b9c6;
     --cp-nav-accent: #c9a24b;
+    --cp-nav-current: #ffffff;
     --cp-nav-focus: #ffffff;
+    --cp-nav-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    --cp-nav-font-size: 13px;
     width: 100%;
     background: var(--cp-nav-bg);
     border-top: 1px solid var(--cp-nav-line);
     border-bottom: 1px solid var(--cp-nav-line);
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: var(--cp-nav-font-family);
 }
 
 .cp-primary-nav,
@@ -87,13 +90,12 @@
     align-items: center;
 }
 
-.cp-primary-nav-item > a,
-.cp-primary-nav-more-toggle {
+.cp-primary-nav-item > a {
     display: inline-flex;
     align-items: center;
     padding: 18px 16px;
     color: var(--cp-nav-text);
-    font-size: 13px;
+    font-size: var(--cp-nav-font-size);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -102,11 +104,17 @@
     background: transparent;
     border: none;
     cursor: pointer;
+    box-shadow: inset 0 -3px 0 0 transparent;
+    transition: color 140ms ease, box-shadow 140ms ease;
 }
 
-.cp-primary-nav-item > a:hover,
-.cp-primary-nav-more-toggle:hover {
+.cp-primary-nav-item > a:hover {
     color: var(--cp-nav-accent);
+}
+
+.cp-primary-nav-item.is-current > a {
+    color: var(--cp-nav-current);
+    box-shadow: inset 0 -3px 0 0 var(--cp-nav-current);
 }
 
 .cp-primary-nav *:focus-visible {
@@ -116,54 +124,124 @@
 
 .cp-primary-nav-about {
     margin-left: auto;
+    position: relative;
+    display: flex;
+    align-items: stretch;
 }
 
-.cp-primary-nav-about > a {
+.cp-primary-nav-about-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 18px 8px 18px 16px;
+    color: var(--cp-nav-text);
+    font-size: var(--cp-nav-font-size);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: inset 0 -3px 0 0 transparent;
+    transition: color 140ms ease, box-shadow 140ms ease;
+}
+
+.cp-primary-nav-about-link:hover {
     color: var(--cp-nav-accent);
 }
 
-.cp-primary-nav-more {
-    position: relative;
+.cp-primary-nav-about.is-current .cp-primary-nav-about-link {
+    color: var(--cp-nav-current);
+    box-shadow: inset 0 -3px 0 0 var(--cp-nav-current);
 }
 
-.cp-primary-nav-more-toggle::after {
-    content: "";
+.cp-primary-nav-about-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 18px 16px 18px 4px;
+    background: transparent;
+    border: none;
+    color: var(--cp-nav-text);
+    cursor: pointer;
+}
+
+.cp-primary-nav-about-toggle:hover {
+    color: var(--cp-nav-accent);
+}
+
+.cp-primary-nav-about-toggle span {
     display: inline-block;
-    margin-left: 6px;
+    width: 0;
+    height: 0;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
     border-top: 5px solid currentColor;
 }
 
-.cp-primary-nav-more-menu {
+.cp-primary-nav-about-toggle[aria-expanded="true"] span {
+    transform: scaleY(-1);
+}
+
+/*
+ * Indicates one of the overflow dropdown's own categories is the current
+ * page, without ever implying About Us itself is current - that state
+ * (is-current on .cp-primary-nav-about, aria-current on the About Us link)
+ * is only ever set when the About Us page itself is being viewed. This is
+ * a distinct, subtler dot rather than the white underline used for an
+ * actually-current item, so the two states can never be visually confused.
+ */
+.cp-primary-nav-about-toggle.has-active-child::after {
+    content: "";
+    position: absolute;
+    top: 14px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cp-nav-current);
+}
+
+.cp-primary-nav-about-menu {
     list-style: none;
     margin: 0;
     padding: 8px 0;
     position: absolute;
     top: 100%;
-    left: 0;
+    right: 0;
     min-width: 220px;
     background: var(--cp-nav-bg);
     border: 1px solid var(--cp-nav-line);
     z-index: 40;
 }
 
-.cp-primary-nav-more-menu[hidden] {
+.cp-primary-nav-about-menu[hidden] {
     display: none;
 }
 
-.cp-primary-nav-more-menu li a {
+@media (min-width: 783px) {
+    .cp-primary-nav-about:hover .cp-primary-nav-about-menu[hidden],
+    .cp-primary-nav-about:focus-within .cp-primary-nav-about-menu[hidden] {
+        display: block;
+    }
+}
+
+.cp-primary-nav-about-menu li a {
     display: block;
     padding: 10px 18px;
     color: var(--cp-nav-text);
-    font-size: 13px;
+    font-size: var(--cp-nav-font-size);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-decoration: none;
+    box-shadow: inset 3px 0 0 0 transparent;
 }
 
-.cp-primary-nav-more-menu li a:hover {
+.cp-primary-nav-about-menu li a:hover {
     color: var(--cp-nav-accent);
+}
+
+.cp-primary-nav-about-menu li.is-current a {
+    color: var(--cp-nav-current);
+    box-shadow: inset 3px 0 0 0 var(--cp-nav-current);
 }
 
 @media (max-width: 1024px) {
@@ -205,25 +283,94 @@
         border-top: 1px solid var(--cp-nav-line);
     }
 
-    .cp-primary-nav-item > a,
-    .cp-primary-nav-more-toggle {
+    .cp-primary-nav-item > a {
         width: 100%;
         padding: 14px 4px;
     }
 
     .cp-primary-nav-about {
         margin-left: 0;
+        flex-wrap: wrap;
     }
 
-    .cp-primary-nav-more-menu {
+    .cp-primary-nav-about-link {
+        flex: 1 1 auto;
+        padding: 14px 4px;
+    }
+
+    .cp-primary-nav-about-toggle {
+        flex: 0 0 auto;
+        padding: 14px 8px;
+    }
+
+    .cp-primary-nav-about-menu {
         position: static;
+        width: 100%;
         border: none;
         border-top: 1px solid var(--cp-nav-line);
         padding: 0;
         min-width: 0;
     }
 
-    .cp-primary-nav-more-menu li a {
+    .cp-primary-nav-about-menu li a {
         padding: 12px 4px 12px 20px;
     }
+}
+
+.cp-footer-nav {
+    --cp-nav-current: #ffffff;
+    font-family: var(--cp-nav-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+    font-size: var(--cp-nav-font-size, 13px);
+    width: 100%;
+}
+
+.cp-footer-nav-menu {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px 24px;
+    margin: 0;
+    padding: 0;
+}
+
+.cp-footer-nav-item > a {
+    display: inline-block;
+    padding: 4px 0;
+    color: #ffffff;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: inset 0 -2px 0 0 transparent;
+    transition: box-shadow 140ms ease, opacity 140ms ease;
+}
+
+/*
+ * #cp-footer-navigation (an ID, on the <nav> wrapper - see
+ * cp_render_footer_navigation_markup()) rather than relying on the class
+ * selector alone: the theme's own footer-area link color is otherwise free
+ * to win the cascade against a same-specificity class rule, which is
+ * exactly what was making these links render gray instead of white. Scoped
+ * to this plugin's own footer nav only - no other footer link on the site
+ * is touched.
+ */
+#cp-footer-navigation .cp-footer-nav-item > a,
+#cp-footer-navigation .cp-footer-nav-item > a:visited {
+    color: #ffffff;
+}
+
+.cp-footer-nav-item > a:hover,
+.cp-footer-nav-item > a:focus-visible {
+    color: #ffffff;
+    opacity: 0.75;
+}
+
+.cp-footer-nav-item.is-current > a {
+    box-shadow: inset 0 -2px 0 0 currentColor;
+}
+
+.cp-footer-nav *:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }

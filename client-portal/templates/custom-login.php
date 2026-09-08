@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 $error_message = isset($error_message) ? (string) $error_message : '';
+$locked_until = isset($locked_until) ? absint($locked_until) : 0;
 $redirect_to = isset($redirect_to) ? (string) $redirect_to : cp_admin_url('cp-dashboard');
 $remember_checked = !empty($remember_checked);
 $login_url = cp_login_url($redirect_to);
@@ -36,9 +37,9 @@ $publication_initial = strtoupper(substr($publication_name, 0, 1));
             <p class="cp-login-intro"><?php esc_html_e('Use your publication account to manage articles and publication content.', 'client-portal'); ?></p>
 
             <?php if ($error_message) : ?>
-                <div class="cp-login-error" role="alert">
+                <div class="cp-login-error" role="alert" <?php if ($locked_until) : ?>data-cp-lockout-until="<?php echo esc_attr($locked_until); ?>" data-cp-lockout-message="<?php echo esc_attr($error_message); ?>"<?php endif; ?>>
                     <span aria-hidden="true">!</span>
-                    <p><?php echo esc_html($error_message); ?></p>
+                    <p data-cp-lockout-text><?php echo esc_html($error_message); ?></p>
                 </div>
             <?php endif; ?>
 
@@ -77,7 +78,7 @@ $publication_initial = strtoupper(substr($publication_name, 0, 1));
                     <a href="<?php echo esc_url(cp_lostpassword_url($redirect_to)); ?>"><?php esc_html_e('Forgot password?', 'client-portal'); ?></a>
                 </div>
 
-                <button class="cp-login-submit" type="submit"><?php esc_html_e('Sign In', 'client-portal'); ?></button>
+                <button class="cp-login-submit" type="submit" <?php disabled($locked_until > 0); ?>><?php esc_html_e('Sign In', 'client-portal'); ?></button>
             </form>
 
             <p class="cp-login-security"><?php esc_html_e('Protected editorial access.', 'client-portal'); ?></p>

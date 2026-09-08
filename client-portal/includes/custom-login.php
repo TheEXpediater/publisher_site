@@ -24,6 +24,7 @@ function cp_activate_plugin()
 
 function cp_deactivate_plugin()
 {
+    cp_release_footer_menu_location_on_deactivate();
     flush_rewrite_rules();
 }
 
@@ -216,12 +217,18 @@ function cp_portal_reset_success_login_url($login_url, $redirect_to, $force_reau
     return $url;
 }
 
+/**
+ * Returns ['message' => string, 'locked_until' => int] - locked_until is a
+ * Unix timestamp (0 when not locked) so the login template can render a
+ * live, server-authoritative countdown instead of a static wait time that
+ * goes stale the moment the page finishes loading.
+ */
 function cp_process_custom_login($redirect_to)
 {
-    $error_message = '';
+    $result = ['message' => '', 'locked_until' => 0];
 
     if ('POST' !== strtoupper(isset($_SERVER['REQUEST_METHOD']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])) : '')) {
-        return $error_message;
+        return $result;
     }
 
     $submitted_nonce = isset($_POST['cp_login_nonce']) && is_scalar($_POST['cp_login_nonce'])
@@ -229,7 +236,8 @@ function cp_process_custom_login($redirect_to)
         : '';
 
     if (!$submitted_nonce || !wp_verify_nonce($submitted_nonce, 'cp_portal_login')) {
-        return __('Your login request expired. Please try again.', 'client-portal');
+        $result['message'] = __('Your login request expired. Please try again.', 'client-portal');
+        return $result;
     }
 
     $login = isset($_POST['log']) && is_scalar($_POST['log'])
@@ -241,12 +249,18 @@ function cp_process_custom_login($redirect_to)
     $remember = isset($_POST['rememberme']) && is_scalar($_POST['rememberme']) && '1' === sanitize_text_field(wp_unslash((string) $_POST['rememberme']));
 
     if ('' === $login || '' === $password) {
-        return __('The username, email address, or password is incorrect.', 'client-portal');
+        $result['message'] = __('The username, email address, or password is incorrect.', 'client-portal');
+        return $result;
     }
 
     $locked_until = cp_login_rate_limit_is_locked($login);
     if ($locked_until) {
-        return cp_login_rate_limit_locked_message($locked_until);
+        cp_debug_log('Custom login: request blocked by an active lock, wp_signon() not called', [
+            'locked_until' => $locked_until,
+        ]);
+        $result['message'] = cp_login_rate_limit_locked_message($locked_until);
+        $result['locked_until'] = $locked_until;
+        return $result;
     }
 
     $user = wp_signon(
@@ -260,7 +274,12 @@ function cp_process_custom_login($redirect_to)
 
     if (is_wp_error($user)) {
         cp_login_rate_limit_record_failure($login);
-        return __('The username, email address, or password is incorrect.', 'client-portal');
+        $relocked_until = cp_login_rate_limit_is_locked($login);
+        $result['message'] = $relocked_until
+            ? cp_login_rate_limit_locked_message($relocked_until)
+            : __('The username, email address, or password is incorrect.', 'client-portal');
+        $result['locked_until'] = $relocked_until;
+        return $result;
     }
 
     cp_login_rate_limit_clear($login);
@@ -317,7 +336,7 @@ function cp_render_custom_login()
     $remember_checked = isset($_POST['rememberme'])
         && is_scalar($_POST['rememberme'])
         && '1' === sanitize_text_field(wp_unslash((string) $_POST['rememberme']));
-    $error_message = cp_process_custom_login($redirect_to);
+    $login_result = cp_process_custom_login($redirect_to);
 
     status_header(200);
     nocache_headers();
@@ -325,16 +344,56 @@ function cp_render_custom_login()
 
     wp_enqueue_style('cp-custom-login', cp_url('assets/css/custom-login.css'), [], CP_VERSION);
     wp_enqueue_script('cp-custom-login', cp_url('assets/js/custom-login.js'), [], CP_VERSION, true);
+    wp_localize_script(
+        'cp-custom-login',
+        'cpLoginLockout',
+        [
+            /* translators: %s: remaining time, formatted as mm:ss. */
+            'template' => __('Too many sign-in attempts. Please try again in %s.', 'client-portal'),
+        ]
+    );
 
     cp_render_template(
         'custom-login',
         [
-            'error_message' => $error_message,
+            'error_message' => isset($login_result['message']) ? (string) $login_result['message'] : '',
+            'locked_until' => isset($login_result['locked_until']) ? absint($login_result['locked_until']) : 0,
             'redirect_to' => $redirect_to,
             'remember_checked' => $remember_checked,
         ]
     );
     exit;
+}
+
+/**
+ * Force the Publisher Portal logout link (topbar.php: wp_logout_url(cp_login_url()))
+ * to actually land on /publisher-login/ rather than falling back to
+ * wp-login.php?loggedout=true. WordPress core already honors the
+ * redirect_to query arg produced by wp_logout_url() by default, but this
+ * environment was observed landing on the native wp-login.php screen
+ * instead - re-asserting the destination here, at the filter that has the
+ * final say over the logout target, makes the portal's own logout link
+ * authoritative regardless of what upstream (theme/host/another plugin)
+ * is doing to the default resolution. Scoped strictly to requests that
+ * explicitly asked to return to the portal login (i.e. this plugin's own
+ * logout link) so unrelated wp-login.php/wp-admin logout flows, including
+ * the WordPress-access owner's, are left untouched.
+ */
+function cp_enforce_portal_logout_redirect($redirect_to, $requested_redirect_to, $user)
+{
+    $requested = is_scalar($requested_redirect_to) ? (string) $requested_redirect_to : '';
+    if ('' === $requested) {
+        return $redirect_to;
+    }
+
+    $requested = html_entity_decode($requested, ENT_QUOTES);
+    $portal_login_base = untrailingslashit(home_url('/publisher-login/'));
+
+    if (0 !== strpos(untrailingslashit($requested), $portal_login_base)) {
+        return $redirect_to;
+    }
+
+    return wp_validate_redirect(esc_url_raw($requested), cp_login_url());
 }
 
 function cp_enqueue_native_login_branding()
@@ -395,6 +454,7 @@ add_filter('query_vars', 'cp_register_login_query_var');
 add_filter('login_url', 'cp_portal_login_url_filter', 10, 3);
 add_action('after_password_reset', 'cp_flag_portal_password_reset', 10, 1);
 add_filter('login_url', 'cp_portal_reset_success_login_url', 20, 3);
+add_filter('logout_redirect', 'cp_enforce_portal_logout_redirect', 999, 3);
 add_action('template_redirect', 'cp_render_custom_login', 0);
 add_action('login_enqueue_scripts', 'cp_enqueue_native_login_branding');
 add_filter('login_headerurl', 'cp_native_login_header_url');

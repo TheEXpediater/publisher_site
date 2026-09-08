@@ -11,11 +11,12 @@
         menu.removeAttribute('hidden');
     }
 
-    function initMoreDropdown(nav) {
-        var toggle = nav.querySelector('.cp-primary-nav-more-toggle');
-        var menu = nav.querySelector('.cp-primary-nav-more-menu');
+    function initAboutDropdown(nav) {
+        var parent = nav.querySelector('.cp-primary-nav-about');
+        var toggle = nav.querySelector('.cp-primary-nav-about-toggle');
+        var menu = nav.querySelector('.cp-primary-nav-about-menu');
 
-        if (!toggle || !menu) {
+        if (!parent || !toggle || !menu) {
             return;
         }
 
@@ -29,6 +30,30 @@
             } else {
                 openDropdown(toggle, menu);
             }
+        });
+
+        // Desktop hover/focus reveal is CSS-driven ([hidden] is overridden
+        // by a :hover/:focus-within rule) so the dropdown still works with
+        // JS disabled; this only keeps aria-expanded truthful while that
+        // happens, without changing what's actually shown.
+        parent.addEventListener('mouseenter', function () {
+            toggle.setAttribute('aria-expanded', 'true');
+        });
+        parent.addEventListener('mouseleave', function () {
+            if (!parent.contains(document.activeElement)) {
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+        parent.addEventListener('focusin', function () {
+            menu.removeAttribute('hidden');
+            toggle.setAttribute('aria-expanded', 'true');
+        });
+        parent.addEventListener('focusout', function () {
+            window.setTimeout(function () {
+                if (!parent.contains(document.activeElement) && !parent.matches(':hover')) {
+                    closeDropdown(toggle, menu);
+                }
+            }, 0);
         });
 
         document.addEventListener('click', function (event) {
@@ -66,7 +91,7 @@
         }
 
         nav.classList.add('is-collapsible');
-        initMoreDropdown(nav);
+        initAboutDropdown(nav);
         initMobileToggle(nav);
     }
 

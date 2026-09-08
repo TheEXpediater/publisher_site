@@ -944,6 +944,8 @@ function cp_enqueue_admin_assets()
     wp_enqueue_script('cp-dashboard', cp_url('assets/js/dashboard.js'), ['cp-app'], cp_asset_version('assets/js/dashboard.js'), true);
 
     if ('cp-categories' === cp_current_page()) {
+        wp_enqueue_style('cp-frontend-navigation', cp_url('assets/css/frontend-navigation.css'), ['cp-style'], cp_asset_version('assets/css/frontend-navigation.css'));
+        wp_enqueue_style('cp-category-menu-editor', cp_url('assets/css/category-menu-editor.css'), ['cp-frontend-navigation'], cp_asset_version('assets/css/category-menu-editor.css'));
         wp_enqueue_script('cp-categories', cp_url('assets/js/categories.js'), ['cp-app'], cp_asset_version('assets/js/categories.js'), true);
     }
 

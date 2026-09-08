@@ -308,6 +308,11 @@
     background: #000050;
 }
 
+.cp-login-submit:disabled {
+    background: #8a8aa0;
+    cursor: not-allowed;
+}
+
 .cp-login-security {
     margin: 22px 0 0;
     color: #999999;

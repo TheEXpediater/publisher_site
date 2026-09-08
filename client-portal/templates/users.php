@@ -33,11 +33,18 @@ $can_create = current_user_can('create_users');
                 <?php endif; ?>
             </span>
             <div class="cp-profile-photo-controls">
+                <input type="hidden" name="remove_profile_image" value="0" data-cp-remove-profile-image>
                 <label class="btn btn-sm btn-outline-secondary" for="cp-user-profile-image">
                     <i class="bi bi-camera" aria-hidden="true"></i>
                     <?php echo $editing_user ? esc_html__('Change Profile Photo', 'client-portal') : esc_html__('Choose Profile Photo', 'client-portal'); ?>
                 </label>
                 <input class="visually-hidden" type="file" id="cp-user-profile-image" name="profile_image" accept="image/jpeg,image/png,image/webp" data-cp-profile-photo-input>
+                <?php if ($editing_user && cp_get_user_profile_image_id($editing_user->ID)) : ?>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-cp-remove-profile-photo>
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                        <?php esc_html_e('Remove Photo', 'client-portal'); ?>
+                    </button>
+                <?php endif; ?>
                 <span class="cp-profile-photo-filename" data-cp-profile-photo-filename><?php esc_html_e('No photo selected', 'client-portal'); ?></span>
                 <div class="form-text"><?php esc_html_e('JPG, PNG, or WebP. Max 3MB.', 'client-portal'); ?></div>
             </div>

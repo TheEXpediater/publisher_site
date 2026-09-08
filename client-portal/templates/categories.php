@@ -17,6 +17,31 @@ $category_end = isset($category_end) ? absint($category_end) : 0;
 $category_max_pages = isset($category_max_pages) ? max(1, absint($category_max_pages)) : 1;
 $category_page_args = cp_category_page_args($category_page);
 
+$nav_header_categories = isset($nav_header_categories) && is_array($nav_header_categories) ? $nav_header_categories : [];
+$nav_footer_categories = isset($nav_footer_categories) && is_array($nav_footer_categories) ? $nav_footer_categories : [];
+$nav_about_us_url = isset($nav_about_us_url) ? (string) $nav_about_us_url : home_url('/about-us/');
+$nav_header_typography = isset($nav_header_typography) && is_array($nav_header_typography) ? $nav_header_typography : cp_nav_default_typography();
+$nav_footer_typography = isset($nav_footer_typography) && is_array($nav_footer_typography) ? $nav_footer_typography : cp_nav_default_typography();
+$nav_font_families = isset($nav_font_families) && is_array($nav_font_families) ? $nav_font_families : cp_nav_font_family_choices();
+$nav_font_sizes = isset($nav_font_sizes) && is_array($nav_font_sizes) ? $nav_font_sizes : cp_nav_font_size_choices();
+$nav_max_visible = isset($nav_max_visible) ? absint($nav_max_visible) : CP_NAV_MAX_VISIBLE_CATEGORIES;
+$nav_editor_data = wp_json_encode([
+    'header' => [
+        'categories' => $nav_header_categories,
+        'fontFamily' => isset($nav_header_typography['font_family']) ? $nav_header_typography['font_family'] : 'default',
+        'fontSize' => isset($nav_header_typography['font_size']) ? absint($nav_header_typography['font_size']) : 13,
+    ],
+    'footer' => [
+        'categories' => $nav_footer_categories,
+        'fontFamily' => isset($nav_footer_typography['font_family']) ? $nav_footer_typography['font_family'] : 'default',
+        'fontSize' => isset($nav_footer_typography['font_size']) ? absint($nav_footer_typography['font_size']) : 13,
+    ],
+    'aboutUsUrl' => $nav_about_us_url,
+    'maxVisible' => $nav_max_visible,
+    'ajaxUrl' => admin_url('admin-ajax.php'),
+    'nonce' => wp_create_nonce('cp_save_nav_menu'),
+]);
+
 if (0 === $category_total) {
     $category_count_text = __('No categories found', 'client-portal');
 } else {
@@ -35,16 +60,28 @@ if (0 === $category_total) {
         <h2><?php esc_html_e('Category Manager', 'client-portal'); ?></h2>
         <p><?php esc_html_e('Build a clear structure for your publication.', 'client-portal'); ?></p>
     </div>
-    <button
-        class="btn btn-primary"
-        type="button"
-        data-bs-toggle="modal"
-        data-bs-target="#cp-category-modal"
-        data-cp-category-add
-    >
-        <i class="bi bi-plus-lg" aria-hidden="true"></i>
-        <?php esc_html_e('Add Category', 'client-portal'); ?>
-    </button>
+    <div class="cp-page-heading-actions">
+        <button
+            class="btn btn-outline-primary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#cp-menu-modal"
+            data-cp-menu-view
+        >
+            <i class="bi bi-menu-button-wide" aria-hidden="true"></i>
+            <?php esc_html_e('View Menu', 'client-portal'); ?>
+        </button>
+        <button
+            class="btn btn-primary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#cp-category-modal"
+            data-cp-category-add
+        >
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            <?php esc_html_e('Add Category', 'client-portal'); ?>
+        </button>
+    </div>
 </div>
 
 <?php cp_render_admin_notice($notice); ?>
@@ -276,6 +313,137 @@ if (0 === $category_total) {
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<?php
+$render_nav_typography_fields = static function ($surface, $typography) use ($nav_font_families, $nav_font_sizes) {
+    ?>
+    <div class="cp-menu-editor-toolbar">
+        <div class="cp-menu-editor-toolbar-field">
+            <label for="cp-menu-font-family-<?php echo esc_attr($surface); ?>"><?php esc_html_e('Font Family', 'client-portal'); ?></label>
+            <select class="form-select form-select-sm" id="cp-menu-font-family-<?php echo esc_attr($surface); ?>" data-cp-menu-font-family="<?php echo esc_attr($surface); ?>">
+                <?php foreach ($nav_font_families as $font_key => $font_choice) : ?>
+                    <option value="<?php echo esc_attr($font_key); ?>" <?php selected(isset($typography['font_family']) ? $typography['font_family'] : '', $font_key); ?>>
+                        <?php echo esc_html($font_choice['label']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="cp-menu-editor-toolbar-field">
+            <label for="cp-menu-font-size-<?php echo esc_attr($surface); ?>"><?php esc_html_e('Font Size', 'client-portal'); ?></label>
+            <select class="form-select form-select-sm" id="cp-menu-font-size-<?php echo esc_attr($surface); ?>" data-cp-menu-font-size="<?php echo esc_attr($surface); ?>">
+                <?php foreach ($nav_font_sizes as $size_choice) : ?>
+                    <option value="<?php echo esc_attr($size_choice); ?>" <?php selected(isset($typography['font_size']) ? absint($typography['font_size']) : 0, $size_choice); ?>>
+                        <?php echo esc_html(sprintf(__('%dpx', 'client-portal'), $size_choice)); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    </div>
+    <?php
+};
+?>
+<div
+    class="modal fade cp-modal cp-menu-modal"
+    id="cp-menu-modal"
+    tabindex="-1"
+    aria-labelledby="cp-menu-modal-title"
+    aria-hidden="true"
+    data-cp-menu-editor="<?php echo esc_attr($nav_editor_data); ?>"
+>
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="cp-eyebrow mb-1"><?php esc_html_e('Frontend Navigation', 'client-portal'); ?></p>
+                    <h2 class="modal-title" id="cp-menu-modal-title"><?php esc_html_e('Site Menu', 'client-portal'); ?></h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php esc_attr_e('Close', 'client-portal'); ?>"></button>
+            </div>
+            <div class="modal-body">
+                <div class="cp-menu-editor-feedback" data-cp-menu-feedback hidden role="status" aria-live="polite"></div>
+
+                <div data-cp-menu-view-mode>
+                    <p class="cp-menu-editor-intro">
+                        <?php esc_html_e('This is the actual header and footer navigation currently live on the site, built from your Categories in their saved order. About Us always stays last; the first 7 categories appear directly, the rest inside its dropdown.', 'client-portal'); ?>
+                    </p>
+
+                    <div class="cp-menu-editor-preview" data-cp-menu-view-preview="header" aria-label="<?php esc_attr_e('Header navigation preview', 'client-portal'); ?>">
+                        <?php echo cp_render_primary_navigation_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </div>
+                    <div class="cp-menu-editor-preview-footer-label"><?php esc_html_e('Footer navigation', 'client-portal'); ?></div>
+                    <div class="cp-menu-editor-preview" data-cp-menu-view-preview="footer" aria-label="<?php esc_attr_e('Footer navigation preview', 'client-portal'); ?>">
+                        <?php echo cp_render_footer_navigation_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </div>
+                </div>
+
+                <div data-cp-menu-edit-mode hidden>
+                    <div class="cp-menu-editor-tabs" role="tablist" aria-label="<?php esc_attr_e('Menu Editor', 'client-portal'); ?>">
+                        <button type="button" class="cp-menu-editor-tab is-active" data-cp-menu-tab="header" role="tab" aria-selected="true" aria-controls="cp-menu-tab-panel-header" id="cp-menu-tab-header">
+                            <?php esc_html_e('Header', 'client-portal'); ?>
+                        </button>
+                        <button type="button" class="cp-menu-editor-tab" data-cp-menu-tab="footer" role="tab" aria-selected="false" aria-controls="cp-menu-tab-panel-footer" id="cp-menu-tab-footer" tabindex="-1">
+                            <?php esc_html_e('Footer', 'client-portal'); ?>
+                        </button>
+                    </div>
+
+                    <div class="cp-menu-editor-tab-panel" data-cp-menu-tab-panel="header" id="cp-menu-tab-panel-header" role="tabpanel" aria-labelledby="cp-menu-tab-header">
+                        <h3 class="cp-menu-editor-section-title"><?php esc_html_e('Header Menu', 'client-portal'); ?></h3>
+                        <div class="cp-menu-editor-preview" data-cp-menu-preview="header" aria-label="<?php esc_attr_e('Header navigation preview', 'client-portal'); ?>"></div>
+
+                        <h4 class="cp-menu-editor-subsection-title"><?php esc_html_e('Header Appearance', 'client-portal'); ?></h4>
+                        <?php $render_nav_typography_fields('header', $nav_header_typography); ?>
+
+                        <h4 class="cp-menu-editor-subsection-title"><?php esc_html_e('Menu Position', 'client-portal'); ?></h4>
+                        <p class="cp-menu-editor-body-help">
+                            <?php esc_html_e('Press and hold a category to drag it, or use the arrow buttons. The first 7 positions appear directly in the header; the rest move into the About Us dropdown. About Us always stays last and cannot be moved.', 'client-portal'); ?>
+                        </p>
+                        <ul class="cp-menu-editor-list" data-cp-menu-list="header" role="list"></ul>
+                        <div class="cp-menu-editor-fixed-item">
+                            <span class="cp-menu-editor-fixed-badge"><i class="bi bi-lock-fill" aria-hidden="true"></i> <?php esc_html_e('Fixed', 'client-portal'); ?></span>
+                            <span><?php esc_html_e('About Us', 'client-portal'); ?></span>
+                            <span class="cp-menu-editor-fixed-note"><?php esc_html_e('Always last. Not draggable.', 'client-portal'); ?></span>
+                        </div>
+                    </div>
+
+                    <div class="cp-menu-editor-tab-panel" data-cp-menu-tab-panel="footer" id="cp-menu-tab-panel-footer" role="tabpanel" aria-labelledby="cp-menu-tab-footer" hidden>
+                        <h3 class="cp-menu-editor-section-title"><?php esc_html_e('Footer Menu', 'client-portal'); ?></h3>
+                        <div class="cp-menu-editor-preview" data-cp-menu-preview="footer" aria-label="<?php esc_attr_e('Footer navigation preview', 'client-portal'); ?>"></div>
+
+                        <h4 class="cp-menu-editor-subsection-title"><?php esc_html_e('Footer Appearance', 'client-portal'); ?></h4>
+                        <?php $render_nav_typography_fields('footer', $nav_footer_typography); ?>
+
+                        <h4 class="cp-menu-editor-subsection-title"><?php esc_html_e('Menu Position', 'client-portal'); ?></h4>
+                        <p class="cp-menu-editor-body-help">
+                            <?php esc_html_e('Press and hold a category to drag it, or use the arrow buttons. The footer shows every active category in this order - there is no direct-item limit. About Us always stays last and cannot be moved.', 'client-portal'); ?>
+                        </p>
+                        <ul class="cp-menu-editor-list" data-cp-menu-list="footer" role="list"></ul>
+                        <div class="cp-menu-editor-fixed-item">
+                            <span class="cp-menu-editor-fixed-badge"><i class="bi bi-lock-fill" aria-hidden="true"></i> <?php esc_html_e('Fixed', 'client-portal'); ?></span>
+                            <span><?php esc_html_e('About Us', 'client-portal'); ?></span>
+                            <span class="cp-menu-editor-fixed-note"><?php esc_html_e('Always last. Not draggable.', 'client-portal'); ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-cp-menu-close>
+                    <?php esc_html_e('Close', 'client-portal'); ?>
+                </button>
+                <button type="button" class="btn btn-primary" data-cp-menu-edit>
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                    <?php esc_html_e('Edit Menu', 'client-portal'); ?>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-cp-menu-cancel hidden>
+                    <?php esc_html_e('Cancel', 'client-portal'); ?>
+                </button>
+                <button type="button" class="btn btn-primary" data-cp-menu-save hidden>
+                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                    <?php esc_html_e('Save Changes', 'client-portal'); ?>
+                </button>
+            </div>
         </div>
     </div>
 </div>

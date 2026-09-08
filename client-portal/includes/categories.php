@@ -158,6 +158,25 @@ function cp_handle_category_save()
     $saved_term_id = 'edit' === $mode ? $category_id : absint($result['term_id']);
     cp_set_category_active($saved_term_id, $active);
 
+    /*
+     * A renamed category's mapped frontend Page (see cp_get_category_page()
+     * below) keeps its own separate post_title, set once when the Page was
+     * first provisioned. The frontend heading and nav labels already
+     * resolve the term's current name dynamically (get_category_by_slug()
+     * et al.), so they were never stale - but WordPress's own Page-title-
+     * driven output (the document <title>, and the theme's page header/
+     * breadcrumb, which read the Page object directly rather than the
+     * term) is not something this plugin controls or bypasses, and stayed
+     * on the old name unless this is kept in sync. This is the same
+     * scenario a category that started life as WordPress's default
+     * "Uncategorized" category (retaining its term ID and its Page) hits
+     * the moment it's renamed - the term ID and article associations are
+     * untouched by any of this, only the Page's title field.
+     */
+    if ('edit' === $mode && $existing_category instanceof WP_Term && $existing_category->name !== $name) {
+        cp_sync_category_page_title($saved_term_id, $name);
+    }
+
     // Verify the status actually persisted before claiming success.
     if (cp_category_is_active($saved_term_id) !== $active) {
         return [
@@ -268,6 +287,19 @@ function cp_categories_page()
     $category_start = $category_total > 0 ? (($category_page - 1) * $category_per_page) + 1 : 0;
     $category_end = $category_total > 0 ? min($category_start + $category_count - 1, $category_total) : 0;
 
+    $nav_category_list = static function ($surface) {
+        return array_map(
+            static function ($category) {
+                return [
+                    'id' => absint($category->term_id),
+                    'name' => (string) $category->name,
+                    'url' => (string) cp_get_category_page_url($category),
+                ];
+            },
+            cp_get_ordered_navigation_categories($surface)
+        );
+    };
+
     cp_render_page('categories', [
         'page_title' => __('Categories', 'client-portal'),
         'categories' => is_array($categories) ? $categories : [],
@@ -279,6 +311,14 @@ function cp_categories_page()
         'category_end' => $category_end,
         'category_max_pages' => $category_max_pages,
         'notice' => cp_request_notice(),
+        'nav_header_categories' => $nav_category_list('header'),
+        'nav_footer_categories' => $nav_category_list('footer'),
+        'nav_about_us_url' => cp_get_about_us_url(),
+        'nav_header_typography' => cp_get_nav_typography('header'),
+        'nav_footer_typography' => cp_get_nav_typography('footer'),
+        'nav_font_families' => cp_nav_font_family_choices(),
+        'nav_font_sizes' => cp_nav_font_size_choices(),
+        'nav_max_visible' => CP_NAV_MAX_VISIBLE_CATEGORIES,
     ]);
 }
 
@@ -318,6 +358,31 @@ function cp_page_targets_category_slug($page, $slug)
     }
 
     return false;
+}
+
+/**
+ * Keep a category's mapped Page title in sync with the term's current name
+ * after a rename. Only touches post_title - never post_name/slug (the
+ * Page's URL), so an existing renamed category's frontend URL never
+ * changes as a side effect of a name edit. A no-op (not an error) if the
+ * category has no mapped Page yet; one will simply be provisioned with the
+ * correct title whenever it's first needed.
+ */
+function cp_sync_category_page_title($category_id, $new_name)
+{
+    $page = cp_get_category_page($category_id);
+    if (!$page instanceof WP_Post) {
+        return;
+    }
+
+    if ($page->post_title === $new_name) {
+        return;
+    }
+
+    wp_update_post([
+        'ID' => $page->ID,
+        'post_title' => $new_name,
+    ]);
 }
 
 function cp_get_category_page($category)

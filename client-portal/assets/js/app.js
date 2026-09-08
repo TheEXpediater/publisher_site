@@ -65,6 +65,7 @@
         var pendingUrl = '';
         var pendingForm = null;
         var pendingSubmitter = null;
+        var pendingCallback = null;
         var triggerElement = null;
 
         if (!modal || !confirmButton || !titleElement || !messageElement) {
@@ -120,10 +121,17 @@
             var target = pendingUrl;
             var form = pendingForm;
             var submitter = pendingSubmitter;
+            var callback = pendingCallback;
             pendingUrl = '';
             pendingForm = null;
             pendingSubmitter = null;
+            pendingCallback = null;
             modal.hide();
+
+            if (callback) {
+                callback();
+                return;
+            }
 
             if (form) {
                 if (form.requestSubmit) {
@@ -143,11 +151,42 @@
             pendingUrl = '';
             pendingForm = null;
             pendingSubmitter = null;
+            pendingCallback = null;
             if (triggerElement) {
                 triggerElement.focus();
                 triggerElement = null;
             }
         });
+
+        /**
+         * Programmatic counterpart to the declarative [data-cp-confirm]
+         * triggers above, for actions that aren't a plain link or form
+         * submit (e.g. an AJAX save) - same shared confirm dialog, same
+         * visual language, just invoked from JS with a callback instead of
+         * a URL/form. Additive only; every existing [data-cp-confirm]
+         * trigger above is unaffected.
+         */
+        window.cpConfirmAction = function (options) {
+            options = options || {};
+
+            titleElement.textContent = options.title || 'Confirm action';
+            messageElement.textContent = options.message || 'Are you sure you want to continue?';
+            confirmButton.textContent = options.confirmLabel || 'Confirm';
+
+            var tone = options.tone || 'default';
+            setTone(tone);
+            if (iconElement) {
+                iconElement.hidden = 'default' === tone;
+            }
+
+            pendingUrl = '';
+            pendingForm = null;
+            pendingSubmitter = null;
+            pendingCallback = 'function' === typeof options.onConfirm ? options.onConfirm : null;
+            triggerElement = options.returnFocusTo instanceof HTMLElement ? options.returnFocusTo : null;
+
+            modal.show();
+        };
     }
 
     function initSidebarCollapse(app) {

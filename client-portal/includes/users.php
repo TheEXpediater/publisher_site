@@ -40,6 +40,25 @@ function cp_get_user_profile_image_id($user_id)
     return absint(get_user_meta(absint($user_id), cp_profile_image_meta_key(), true));
 }
 
+/**
+ * Clears a user's custom profile photo (user meta + the attachment itself),
+ * falling back to normal get_avatar() behavior - the same fallback
+ * cp_get_user_avatar_html() already uses whenever no custom image is set.
+ */
+function cp_remove_user_profile_image($user_id)
+{
+    $user_id = absint($user_id);
+    $attachment_id = cp_get_user_profile_image_id($user_id);
+
+    delete_user_meta($user_id, cp_profile_image_meta_key());
+
+    if ($attachment_id) {
+        wp_delete_attachment($attachment_id, true);
+    }
+
+    return true;
+}
+
 function cp_get_user_avatar_html($user_id, $size = 42)
 {
     $user_id = absint($user_id);
@@ -102,6 +121,20 @@ function cp_validate_profile_image_upload($file)
  * one. Returns the new attachment ID, null when no file was submitted (not
  * an error - the user simply didn't change their photo), or a WP_Error.
  */
+/**
+ * The actual upload/attachment/metadata work below is wrapped in a
+ * try/catch(\Throwable) - not just the WP_Error checks already inline -
+ * because a PHP fatal here (e.g. a TypeError from an unexpected value
+ * reaching wp_generate_attachment_metadata(), or an environment missing an
+ * image-processing extension in a way a specific host's WP_Image_Editor
+ * implementation doesn't itself catch) would otherwise surface as
+ * WordPress's white-screen "critical error" instead of a normal Publisher
+ * Portal notice. Since PHP 7, most former fatals are catchable Error/
+ * TypeError instances implementing \Throwable, so this reliably converts
+ * them into the same graceful WP_Error path as every other failure mode
+ * here, without masking or suppressing what actually happened (it's logged
+ * via cp_debug_log(), which already redacts sensitive keys).
+ */
 function cp_handle_profile_image_upload($user_id)
 {
     $file = isset($_FILES['profile_image']) ? $_FILES['profile_image'] : null;
@@ -111,45 +144,56 @@ function cp_handle_profile_image_upload($user_id)
         return $validation;
     }
 
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/image.php';
-    require_once ABSPATH . 'wp-admin/includes/media.php';
+    try {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
 
-    add_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
-    $moved = wp_handle_upload($file, ['test_form' => false]);
-    remove_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
+        add_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
+        $moved = wp_handle_upload($file, ['test_form' => false]);
+        remove_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
 
-    if (empty($moved['file']) || !empty($moved['error'])) {
-        return new WP_Error(
-            'cp_profile_image_upload_failed',
-            !empty($moved['error']) ? $moved['error'] : __('The profile photo could not be saved.', 'client-portal')
+        if (empty($moved['file']) || !is_string($moved['file']) || !file_exists($moved['file']) || !empty($moved['error'])) {
+            return new WP_Error(
+                'cp_profile_image_upload_failed',
+                !empty($moved['error']) ? $moved['error'] : __('The profile photo could not be saved.', 'client-portal')
+            );
+        }
+
+        $attachment_id = wp_insert_attachment(
+            [
+                'post_mime_type' => $moved['type'],
+                'post_title' => sanitize_file_name(pathinfo($moved['file'], PATHINFO_FILENAME)),
+                'post_content' => '',
+                'post_status' => 'inherit',
+            ],
+            $moved['file']
         );
+
+        if (is_wp_error($attachment_id) || !$attachment_id) {
+            return new WP_Error('cp_profile_image_attachment_failed', __('The profile photo could not be saved.', 'client-portal'));
+        }
+
+        $metadata = wp_generate_attachment_metadata($attachment_id, $moved['file']);
+        wp_update_attachment_metadata($attachment_id, is_array($metadata) ? $metadata : []);
+
+        $previous_attachment_id = cp_get_user_profile_image_id($user_id);
+        update_user_meta($user_id, cp_profile_image_meta_key(), $attachment_id);
+
+        if ($previous_attachment_id && $previous_attachment_id !== $attachment_id) {
+            wp_delete_attachment($previous_attachment_id, true);
+        }
+
+        return $attachment_id;
+    } catch (\Throwable $exception) {
+        remove_filter('upload_mimes', 'cp_profile_image_allowed_mimes');
+        cp_debug_log('Profile photo upload failed with an unexpected error', [
+            'user_id' => $user_id,
+            'exception' => get_class($exception) . ': ' . $exception->getMessage(),
+        ]);
+
+        return new WP_Error('cp_profile_image_unexpected_error', __('The profile photo could not be uploaded due to an unexpected error. Please try again.', 'client-portal'));
     }
-
-    $attachment_id = wp_insert_attachment(
-        [
-            'post_mime_type' => $moved['type'],
-            'post_title' => sanitize_file_name(pathinfo($moved['file'], PATHINFO_FILENAME)),
-            'post_content' => '',
-            'post_status' => 'inherit',
-        ],
-        $moved['file']
-    );
-
-    if (is_wp_error($attachment_id) || !$attachment_id) {
-        return new WP_Error('cp_profile_image_attachment_failed', __('The profile photo could not be saved.', 'client-portal'));
-    }
-
-    wp_update_attachment_metadata($attachment_id, wp_generate_attachment_metadata($attachment_id, $moved['file']));
-
-    $previous_attachment_id = cp_get_user_profile_image_id($user_id);
-    update_user_meta($user_id, cp_profile_image_meta_key(), $attachment_id);
-
-    if ($previous_attachment_id && $previous_attachment_id !== $attachment_id) {
-        wp_delete_attachment($previous_attachment_id, true);
-    }
-
-    return $attachment_id;
 }
 
 function cp_handle_user_save()
@@ -171,6 +215,10 @@ function cp_handle_user_save()
     if (is_wp_error($profile_image_validation)) {
         return ['type' => 'danger', 'message' => $profile_image_validation->get_error_message()];
     }
+    // A newly chosen file always takes priority over a Remove Photo request
+    // submitted in the same save (e.g. the user clicked Remove, then changed
+    // their mind and picked a different photo before saving).
+    $remove_profile_image = null === $profile_image_validation && '1' === cp_post_value('remove_profile_image', '');
 
     $email = sanitize_email(cp_post_value('email'));
     $display_name = sanitize_text_field(cp_post_value('display_name'));
@@ -216,7 +264,15 @@ function cp_handle_user_save()
     $photo_uploaded = false;
 
     if (null !== $profile_image_validation) {
-        $photo_result = cp_handle_profile_image_upload($saved_user_id);
+        try {
+            $photo_result = cp_handle_profile_image_upload($saved_user_id);
+        } catch (\Throwable $exception) {
+            cp_debug_log('Profile photo upload failed with an unexpected error', [
+                'user_id' => $saved_user_id,
+                'exception' => get_class($exception) . ': ' . $exception->getMessage(),
+            ]);
+            $photo_result = new WP_Error('cp_profile_image_unexpected_error', __('The profile photo could not be uploaded due to an unexpected error. Please try again.', 'client-portal'));
+        }
         if (is_wp_error($photo_result)) {
             cp_set_temporary_notice(
                 'warning',
@@ -229,6 +285,17 @@ function cp_handle_user_save()
             cp_redirect('cp-users');
         }
         $photo_uploaded = null !== $photo_result;
+    } elseif ($remove_profile_image) {
+        try {
+            cp_remove_user_profile_image($saved_user_id);
+        } catch (\Throwable $exception) {
+            cp_debug_log('Profile photo removal failed with an unexpected error', [
+                'user_id' => $saved_user_id,
+                'exception' => get_class($exception) . ': ' . $exception->getMessage(),
+            ]);
+            cp_set_temporary_notice('warning', __('The account was saved, but the profile photo could not be removed. Please try again.', 'client-portal'));
+            cp_redirect('cp-users');
+        }
     }
 
     cp_redirect('cp-users', ['cp_notice' => $photo_uploaded ? $notice_code . '-with-photo' : $notice_code]);
