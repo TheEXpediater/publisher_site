@@ -71,6 +71,12 @@ if (0 === $category_total) {
             <i class="bi bi-menu-button-wide" aria-hidden="true"></i>
             <?php esc_html_e('View Menu', 'client-portal'); ?>
         </button>
+        <?php if (function_exists('cp_can_manage_pages') && cp_can_manage_pages()) : ?>
+            <a class="btn btn-outline-primary" href="<?php echo esc_url(cp_admin_url('cp-pages')); ?>">
+                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                <?php esc_html_e('Pages', 'client-portal'); ?>
+            </a>
+        <?php endif; ?>
         <button
             class="btn btn-primary"
             type="button"
@@ -366,17 +372,31 @@ $render_nav_typography_fields = static function ($surface, $typography) use ($na
                 <div class="cp-menu-editor-feedback" data-cp-menu-feedback hidden role="status" aria-live="polite"></div>
 
                 <div data-cp-menu-view-mode>
-                    <p class="cp-menu-editor-intro">
-                        <?php esc_html_e('This is the actual header and footer navigation currently live on the site, built from your Categories in their saved order. About Us always stays last; the first 7 categories appear directly, the rest inside its dropdown.', 'client-portal'); ?>
-                    </p>
+                    <div class="cp-menu-editor-tabs" role="tablist" aria-label="<?php esc_attr_e('Navigation preview', 'client-portal'); ?>" data-cp-view-tabs>
+                        <button type="button" class="cp-menu-editor-tab is-active" data-cp-view-tab="header" role="tab" aria-selected="true" aria-controls="cp-menu-view-panel-header" id="cp-menu-view-tab-header">
+                            <?php esc_html_e('Header', 'client-portal'); ?>
+                        </button>
+                        <button type="button" class="cp-menu-editor-tab" data-cp-view-tab="footer" role="tab" aria-selected="false" aria-controls="cp-menu-view-panel-footer" id="cp-menu-view-tab-footer" tabindex="-1">
+                            <?php esc_html_e('Footer', 'client-portal'); ?>
+                        </button>
+                    </div>
 
-                    <div class="cp-menu-editor-preview" data-cp-menu-view-preview="header" aria-label="<?php esc_attr_e('Header navigation preview', 'client-portal'); ?>">
-                        <?php echo cp_render_primary_navigation_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <div class="cp-menu-editor-tab-panel" data-cp-view-tab-panel="header" id="cp-menu-view-panel-header" role="tabpanel" aria-labelledby="cp-menu-view-tab-header">
+                        <h3 class="cp-menu-editor-section-title"><?php esc_html_e('Header Navigation Preview', 'client-portal'); ?></h3>
+                        <div class="cp-menu-editor-preview" data-cp-menu-view-preview="header" aria-label="<?php esc_attr_e('Header navigation preview', 'client-portal'); ?>">
+                            <?php echo cp_render_primary_navigation_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </div>
                     </div>
-                    <div class="cp-menu-editor-preview-footer-label"><?php esc_html_e('Footer navigation', 'client-portal'); ?></div>
-                    <div class="cp-menu-editor-preview" data-cp-menu-view-preview="footer" aria-label="<?php esc_attr_e('Footer navigation preview', 'client-portal'); ?>">
-                        <?php echo cp_render_footer_navigation_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <div class="cp-menu-editor-tab-panel" data-cp-view-tab-panel="footer" id="cp-menu-view-panel-footer" role="tabpanel" aria-labelledby="cp-menu-view-tab-footer" hidden>
+                        <h3 class="cp-menu-editor-section-title"><?php esc_html_e('Footer Navigation Preview', 'client-portal'); ?></h3>
+                        <div class="cp-menu-editor-preview" data-cp-menu-view-preview="footer" aria-label="<?php esc_attr_e('Footer navigation preview', 'client-portal'); ?>">
+                            <?php echo cp_render_footer_navigation_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </div>
                     </div>
+
+                    <p class="cp-menu-editor-intro cp-menu-editor-intro-below">
+                        <?php esc_html_e('This is the actual navigation currently live on the site, built from your Categories in their saved order. About Us always stays last; the first 7 categories appear directly, the rest inside its dropdown.', 'client-portal'); ?>
+                    </p>
                 </div>
 
                 <div data-cp-menu-edit-mode hidden>

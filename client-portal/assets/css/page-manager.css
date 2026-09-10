@@ -1,0 +1,81 @@
+/**
+ * Page Manager screen additions only. The About Us Navigation settings
+ * modal's Page Order list reuses the Category Menu Editor's own
+ * .cp-menu-editor-* item/list/feedback classes verbatim (see
+ * assets/css/category-menu-editor.css, enqueued alongside this file) so
+ * the drag/move-button interaction feels identical across both admin
+ * screens - only the gear trigger button and the small dropdown-preview
+ * mock below are specific to this screen.
+ */
+
+.cp-app .cp-icon-only-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cp-app .cp-about-nav-preview {
+    padding: 16px 18px;
+}
+
+.cp-app .cp-about-nav-preview.is-inactive {
+    opacity: 0.5;
+}
+
+.cp-app .cp-about-nav-preview-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: #1d2939;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--cp-border);
+}
+
+.cp-app .cp-about-nav-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.cp-app .cp-about-nav-preview-list li {
+    font-size: 13px;
+    color: #344054;
+    padding-left: 14px;
+    position: relative;
+}
+
+.cp-app .cp-about-nav-preview-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--cp-border);
+}
+
+.cp-app .cp-about-nav-preview-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--cp-muted);
+}
+
+.cp-app .cp-menu-editor-item-inactive {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.cp-app .cp-menu-editor-list-inactive {
+    margin-top: 8px;
+}

@@ -103,7 +103,7 @@ function cp_is_active_page($slug)
 
 function cp_portal_pages()
 {
-    return ['cp-dashboard', 'cp-articles', 'cp-article-create', 'cp-article-edit', 'cp-categories', 'cp-users', 'cp-analytics', 'cp-settings'];
+    return ['cp-dashboard', 'cp-articles', 'cp-article-create', 'cp-article-edit', 'cp-categories', 'cp-pages', 'cp-page-create', 'cp-page-edit', 'cp-users', 'cp-analytics', 'cp-settings'];
 }
 
 function cp_wordpress_access_email()
@@ -477,6 +477,10 @@ function cp_get_notice_message($code)
         'category_updated_active' => ['type' => 'success', 'message' => __('Category updated successfully. The category is now active.', 'client-portal')],
         'category_updated_inactive' => ['type' => 'success', 'message' => __('Category updated successfully. The category is now inactive.', 'client-portal')],
         'category_deleted' => ['type' => 'success', 'message' => __('Category deleted successfully.', 'client-portal')],
+        'page_created' => ['type' => 'success', 'message' => __('Page created successfully.', 'client-portal')],
+        'page_updated' => ['type' => 'success', 'message' => __('Page updated successfully.', 'client-portal')],
+        'page_trashed' => ['type' => 'success', 'message' => __('Page moved to Trash.', 'client-portal')],
+        'page_order_updated' => ['type' => 'success', 'message' => __('Page order updated.', 'client-portal')],
         'settings_saved' => ['type' => 'success', 'message' => __('Settings saved successfully.', 'client-portal')],
         'user-created' => ['type' => 'success', 'message' => __('User created successfully.', 'client-portal')],
         'user-updated' => ['type' => 'success', 'message' => __('User updated successfully.', 'client-portal')],
@@ -1013,5 +1017,31 @@ function cp_enqueue_admin_assets()
         wp_enqueue_editor();
         wp_enqueue_style('cp-article-builder', cp_url('assets/css/article-builder.css'), ['cp-style'], cp_asset_version('assets/css/article-builder.css'));
         wp_enqueue_script('cp-article-builder', cp_url('assets/js/article-builder.js'), ['cp-app', 'media-editor', 'wp-editor'], cp_asset_version('assets/js/article-builder.js'), true);
+    }
+
+    if (in_array(cp_current_page(), ['cp-page-create', 'cp-page-edit'], true)) {
+        wp_enqueue_media();
+        wp_enqueue_editor();
+        // Reuses the Article Builder's own block-canvas chrome
+        // (.cp-builder-block, .cp-icon-button, .cp-add-block, etc.) rather
+        // than restyling the same shapes a second time - see
+        // assets/css/page-builder.css for the page-specific additions only.
+        wp_enqueue_style('cp-article-builder', cp_url('assets/css/article-builder.css'), ['cp-style'], cp_asset_version('assets/css/article-builder.css'));
+        wp_enqueue_style('cp-page-builder', cp_url('assets/css/page-builder.css'), ['cp-article-builder'], cp_asset_version('assets/css/page-builder.css'));
+        wp_enqueue_script('cp-page-builder', cp_url('assets/js/page-builder.js'), ['cp-app', 'media-editor', 'wp-editor'], cp_asset_version('assets/js/page-builder.js'), true);
+    }
+
+    if ('cp-pages' === cp_current_page()) {
+        // The About Us Navigation settings modal's Page Order list reuses
+        // the Category Menu Editor's own drag/move-button item chrome
+        // (.cp-menu-editor-item, .cp-menu-editor-move-btn, etc. - see
+        // assets/css/category-menu-editor.css) rather than a second copy of
+        // the same interaction pattern - see assets/css/page-manager.css
+        // for the Pages-screen-specific additions only (the gear button,
+        // the small dropdown-preview mock).
+        wp_enqueue_style('cp-frontend-navigation', cp_url('assets/css/frontend-navigation.css'), ['cp-style'], cp_asset_version('assets/css/frontend-navigation.css'));
+        wp_enqueue_style('cp-category-menu-editor', cp_url('assets/css/category-menu-editor.css'), ['cp-frontend-navigation'], cp_asset_version('assets/css/category-menu-editor.css'));
+        wp_enqueue_style('cp-page-manager', cp_url('assets/css/page-manager.css'), ['cp-category-menu-editor'], cp_asset_version('assets/css/page-manager.css'));
+        wp_enqueue_script('cp-page-manager', cp_url('assets/js/page-manager.js'), ['cp-app'], cp_asset_version('assets/js/page-manager.js'), true);
     }
 }

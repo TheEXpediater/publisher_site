@@ -298,6 +298,31 @@
         var draggedId = null;
         var idSequence = 0;
 
+        /**
+         * This modal renders the same real navigation markup the public
+         * site uses (cp_render_primary_navigation_markup() /
+         * cp_render_footer_navigation_markup(), plus this file's own
+         * client-side re-render of the same shape during Edit Menu
+         * dragging) precisely so the preview looks and reads exactly like
+         * the live header/footer - but a preview must never actually
+         * navigate the administrator away from the Category Manager. A
+         * single delegated listener on the modal (rather than re-wiring
+         * every re-render) intercepts any link inside a
+         * .cp-menu-editor-preview and stops it there; capture:true so it
+         * runs before Bootstrap's own delegated handlers. The About Us
+         * dropdown toggle (.cp-primary-nav-about-toggle) is a <button>,
+         * not a link, so it is untouched and keeps working via
+         * wireAboutToggle() below. This never touches the real public
+         * header/footer - those are separate markup on the front end, not
+         * inside this admin modal.
+         */
+        modalElement.addEventListener('click', function (event) {
+            var link = event.target.closest ? event.target.closest('a') : null;
+            if (link && link.closest('.cp-menu-editor-preview')) {
+                event.preventDefault();
+            }
+        }, true);
+
         var viewModeEl = modalElement.querySelector('[data-cp-menu-view-mode]');
         var editModeEl = modalElement.querySelector('[data-cp-menu-edit-mode]');
         var feedback = modalElement.querySelector('[data-cp-menu-feedback]');
@@ -773,6 +798,40 @@
         var initialHeaderPreview = modalElement.querySelector('[data-cp-menu-view-preview="header"]');
         if (initialHeaderPreview) {
             wireAboutToggle(initialHeaderPreview);
+        }
+
+        /**
+         * View mode's own Header/Footer tabs - visually and semantically
+         * matching Edit mode's tabs (same .cp-menu-editor-tab/-tab-panel
+         * classes and aria pattern) per the requirement that the two not
+         * read as unrelated UI. Unlike Edit mode, nothing here needs
+         * re-rendering on switch - both panels' server-rendered markup
+         * already exists in the DOM; this only toggles which one is
+         * visible, so only one preview (never both) is ever shown/scrolled
+         * through at once.
+         */
+        var viewTabsRoot = modalElement.querySelector('[data-cp-view-tabs]');
+        if (viewTabsRoot) {
+            var viewTabButtons = Array.prototype.slice.call(viewTabsRoot.querySelectorAll('[data-cp-view-tab]'));
+            var viewTabPanels = {};
+            modalElement.querySelectorAll('[data-cp-view-tab-panel]').forEach(function (panel) {
+                viewTabPanels[panel.getAttribute('data-cp-view-tab-panel')] = panel;
+            });
+
+            viewTabButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var surface = button.getAttribute('data-cp-view-tab');
+                    viewTabButtons.forEach(function (btn) {
+                        var isActive = btn === button;
+                        btn.classList.toggle('is-active', isActive);
+                        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                        btn.tabIndex = isActive ? 0 : -1;
+                    });
+                    Object.keys(viewTabPanels).forEach(function (key) {
+                        viewTabPanels[key].hidden = key !== surface;
+                    });
+                });
+            });
         }
     });
 }());

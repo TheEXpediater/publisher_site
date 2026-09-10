@@ -1,0 +1,136 @@
+/*
+ * Supplemental admin styles for the Page Builder/Page Manager. This file is
+ * enqueued alongside the existing assets/css/article-builder.css (see
+ * includes/helpers.php), which already styles the shared block-canvas
+ * chrome (.cp-builder-block, .cp-icon-button, .cp-add-block, etc.) reused
+ * here - only the page-specific additions live in this file.
+ */
+
+.cp-app .cp-permalink-preview {
+    padding: 10px 14px;
+    background: #f7f8fb;
+    border: 1px solid var(--cp-border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--cp-muted);
+    word-break: break-all;
+}
+
+.cp-app .cp-image-picker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.cp-app .cp-image-preview img {
+    max-width: 160px;
+    max-height: 120px;
+    border-radius: 8px;
+    border: 1px solid var(--cp-border);
+    object-fit: cover;
+}
+
+.cp-app .cp-page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cp-primary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cp-app .cp-page-link:hover {
+    text-decoration: underline;
+}
+
+.cp-app .cp-actions-tight {
+    margin-top: 6px;
+    gap: 4px;
+}
+
+/* Staff Grid sub-editor */
+
+.cp-app .cp-staff-editor-list {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.cp-app .cp-staff-editor-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: start;
+    padding: 14px;
+    background: #fafbfc;
+    border: 1px solid var(--cp-border);
+    border-radius: 12px;
+}
+
+.cp-app .cp-staff-editor-portrait {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    width: 120px;
+}
+
+.cp-app .cp-staff-editor-portrait-preview {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #eaecf0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cp-app .cp-staff-editor-portrait-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cp-app .cp-staff-editor-portrait-preview svg {
+    width: 44px;
+    height: 44px;
+    fill: #98a2b3;
+}
+
+.cp-app .cp-staff-editor-portrait-actions {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+}
+
+.cp-app .cp-staff-editor-fields .form-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--cp-muted);
+    margin-bottom: 3px;
+}
+
+.cp-app .cp-staff-editor-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+@media (max-width: 640px) {
+    .cp-app .cp-staff-editor-card {
+        grid-template-columns: 1fr;
+    }
+    .cp-app .cp-staff-editor-portrait {
+        width: 100%;
+        grid-auto-flow: column;
+        justify-content: start;
+    }
+    .cp-app .cp-staff-editor-actions {
+        flex-direction: row;
+    }
+}

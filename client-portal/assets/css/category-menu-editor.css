@@ -40,6 +40,16 @@
     line-height: 1.5;
 }
 
+/*
+ * The View Menu preview is the featured content - this note now sits below
+ * it as subdued helper text rather than above it competing for top billing.
+ * Same muted styling as .cp-menu-editor-intro; only the margin direction
+ * changes since it now follows the preview instead of leading it.
+ */
+.cp-app .cp-menu-editor-intro-below {
+    margin: 4px 0 0;
+}
+
 .cp-app .cp-menu-editor-toolbar {
     display: flex;
     align-items: flex-end;
@@ -116,13 +126,24 @@
     color: var(--cp-muted);
 }
 
+/*
+ * overflow-x: auto here previously also forced overflow-y: auto per the
+ * CSS spec (an axis can't stay "visible" once the other axis is anything
+ * but visible) - which clipped the About Us dropdown into a scrolled
+ * region the moment it opened, since the dropdown is a position:absolute
+ * child that extends below this box. The header items no longer need
+ * horizontal scroll here anyway (flex-wrap: nowrap + compacted padding
+ * below already keep 7 categories + About Us on one row at this modal's
+ * width), so this is plain overflow: visible - the dropdown now expands
+ * freely instead of being cut off.
+ */
 .cp-app .cp-menu-editor-preview {
     padding: 18px;
     background: #f2f3f7;
     border: 1px solid var(--cp-border);
     border-radius: 12px;
     margin-bottom: 20px;
-    overflow-x: auto;
+    overflow: visible;
 }
 
 .cp-app .cp-menu-editor-preview .cp-primary-nav {

@@ -217,6 +217,35 @@
     display: none;
 }
 
+/*
+ * Managed Pages (Staff, Join the Publication, ...) and overflow Categories
+ * (position 8+) are kept as visually distinct groups inside the dropdown -
+ * per CLAUDE.md 12.3, the two must never look or be sourced as one
+ * ambiguous flat list, even though both render inside the same
+ * .cp-primary-nav-about-menu container.
+ */
+.cp-primary-nav-about-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cp-primary-nav-about-group + .cp-primary-nav-about-group {
+    border-top: 1px solid var(--cp-nav-line);
+    margin-top: 6px;
+    padding-top: 6px;
+}
+
+.cp-primary-nav-about-group-label {
+    display: block;
+    padding: 6px 18px 2px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cp-nav-text-muted);
+}
+
 @media (min-width: 783px) {
     .cp-primary-nav-about:hover .cp-primary-nav-about-menu[hidden],
     .cp-primary-nav-about:focus-within .cp-primary-nav-about-menu[hidden] {

@@ -46,6 +46,51 @@ function cp_set_category_active($term_id, $active)
 }
 
 /**
+ * About Us is now exclusively a WordPress Page (see includes/pages.php) -
+ * "about-us" is its own reserved slug identity, never a category. A
+ * pre-Pages-feature install may still carry a legacy "About Us" category
+ * term left over from before that migration; this identifies it by its
+ * exact reserved slug (never by display name alone, so an unrelated
+ * category is never mistaken for it) so it can be kept out of the Category
+ * Manager/navigation and so the identity can never be recreated.
+ */
+function cp_reserved_about_us_category_slug()
+{
+    return 'about-us';
+}
+
+function cp_is_reserved_about_us_category($category)
+{
+    $category = $category instanceof WP_Term ? $category : get_term($category, 'category');
+    if (!$category instanceof WP_Term) {
+        return false;
+    }
+
+    return cp_reserved_about_us_category_slug() === $category->slug;
+}
+
+function cp_get_reserved_about_us_category_term_id()
+{
+    $term = get_term_by('slug', cp_reserved_about_us_category_slug(), 'category');
+
+    return $term instanceof WP_Term ? absint($term->term_id) : 0;
+}
+
+/**
+ * True when the submitted name/slug for a new or renamed category would
+ * collide with the reserved About Us Page identity - checked against both
+ * the explicit slug field and the slug WordPress would derive from the
+ * name, so a submission that leaves the slug blank (letting WordPress
+ * auto-generate it from the name) is caught the same way.
+ */
+function cp_category_identity_conflicts_with_about_us($name, $slug)
+{
+    $reserved = cp_reserved_about_us_category_slug();
+
+    return sanitize_title($slug) === $reserved || sanitize_title($name) === $reserved;
+}
+
+/**
  * Resolve what a save would actually change, so the caller can skip the
  * mutation entirely (and show "No changes detected." instead of a normal
  * success notice) when the submitted values match the stored category.
@@ -128,6 +173,14 @@ function cp_handle_category_save()
     // "keep default" - the toggle must work in both directions on create.
     $active = '1' === cp_post_value('active', '');
     $previous_active = $existing_category ? cp_category_is_active($existing_category) : null;
+
+    if (cp_category_identity_conflicts_with_about_us($name, $slug)) {
+        return [
+            'type' => 'danger',
+            'message' => __('About Us is managed as a Page and cannot be created as an article category.', 'client-portal'),
+            'category_page' => $category_page,
+        ];
+    }
 
     if ('edit' === $mode && !cp_category_save_has_changes($category_id, $name, $slug, $description, $active)) {
         return [
@@ -237,7 +290,11 @@ function cp_handle_category_request()
 
     if ('edit' === $action) {
         $term = get_term($category_id, 'category');
-        return is_wp_error($term) ? null : $term;
+        if (is_wp_error($term) || !$term instanceof WP_Term || cp_is_reserved_about_us_category($term)) {
+            return null;
+        }
+
+        return $term;
     }
 
     $result = wp_delete_term($category_id, 'category');
@@ -259,9 +316,18 @@ function cp_categories_page()
     $editing_category = cp_handle_category_request();
     $category_page = cp_current_category_page();
     $category_per_page = 10;
+    // Excludes the reserved About Us identity (see
+    // cp_get_reserved_about_us_category_term_id()) so a leftover legacy
+    // category term from before the Pages feature - or one somehow
+    // recreated - never appears in the Category Manager. About Us is a
+    // WordPress Page now, never a category.
+    $reserved_category_id = cp_get_reserved_about_us_category_term_id();
+    $exclude_category_ids = $reserved_category_id ? [$reserved_category_id] : [];
+
     $category_total = wp_count_terms([
         'taxonomy' => 'category',
         'hide_empty' => false,
+        'exclude' => $exclude_category_ids,
     ]);
 
     if (is_wp_error($category_total)) {
@@ -281,6 +347,7 @@ function cp_categories_page()
         'order' => 'ASC',
         'number' => $category_per_page,
         'offset' => ($category_page - 1) * $category_per_page,
+        'exclude' => $exclude_category_ids,
     ]);
 
     $category_count = is_array($categories) ? count($categories) : 0;

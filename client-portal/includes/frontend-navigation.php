@@ -34,12 +34,26 @@ function cp_get_footer_navigation_categories()
     return cp_get_ordered_navigation_categories('footer');
 }
 
+/**
+ * The About Us navigation parent Page. Prefers the explicit Page Manager
+ * option (includes/pages.php: CP_ABOUT_US_PAGE_ID_OPTION, set by the seed
+ * routine / whichever Page an administrator designates as the parent) so
+ * the parent is never re-derived from a guessable slug once configured;
+ * falls back to the conventional /about-us/ slug for a fresh install where
+ * that option hasn't been set yet.
+ */
 function cp_get_about_us_page()
 {
     static $page = false;
 
     if (false === $page) {
-        $found = get_page_by_path('about-us');
+        $configured_id = function_exists('cp_get_about_us_page_id') ? cp_get_about_us_page_id() : 0;
+        $found = $configured_id ? get_post($configured_id) : null;
+
+        if (!$found instanceof WP_Post || 'page' !== $found->post_type) {
+            $found = get_page_by_path('about-us');
+        }
+
         $page = $found instanceof WP_Post ? $found : null;
     }
 
@@ -57,6 +71,23 @@ function cp_get_about_us_url()
     }
 
     return home_url('/about-us/');
+}
+
+/**
+ * The Page Manager's Active/Inactive toggle for About Us is real WordPress
+ * post_status (publish/draft) - see includes/pages.php - so this is the one
+ * place that decides whether the top-level About Us navigation item (and
+ * therefore its whole dropdown, including managed child Pages and overflow
+ * categories) is public. cp_get_about_us_page() intentionally still returns
+ * a draft About Us Page (needed for admin editing/preview elsewhere); the
+ * public-facing nav renderers below call this instead of assuming presence
+ * means visible.
+ */
+function cp_about_us_is_publicly_visible()
+{
+    $about_page = cp_get_about_us_page();
+
+    return $about_page instanceof WP_Post && 'publish' === $about_page->post_status;
 }
 
 /**
@@ -83,7 +114,10 @@ function cp_nav_label($text)
  *    and on a single article via its established "primary category"
  *    (get_the_category()[0], the same concept already used for the
  *    single-article breadcrumb in includes/frontend-shortcodes.php).
- * Returns ['type' => 'about'|'category'|'', 'term_id' => int].
+ * Returns ['type' => 'about'|'category'|'page'|'', 'term_id' => int].
+ * ('page' identifies a managed About-nav Page such as Staff/Join by its
+ * post ID, reusing the same 'term_id' key as a generic "item id" slot
+ * rather than adding a parallel field everywhere it's consumed.)
  */
 function cp_get_nav_active_context()
 {
@@ -105,6 +139,11 @@ function cp_get_nav_active_context()
 
         if ($about_page instanceof WP_Post && $queried_id === $about_page->ID) {
             $context = ['type' => 'about', 'term_id' => 0];
+            return $context;
+        }
+
+        if (function_exists('cp_page_is_managed') && cp_page_is_managed($queried_id)) {
+            $context = ['type' => 'page', 'term_id' => absint($queried_id)];
             return $context;
         }
 
@@ -154,9 +193,15 @@ function cp_nav_item_is_current($type, $term_id = 0)
 
 function cp_render_primary_navigation_markup()
 {
+    $about_us_visible = cp_about_us_is_publicly_visible();
     $categories = cp_get_primary_navigation_categories();
     $visible_categories = array_slice($categories, 0, CP_NAV_MAX_VISIBLE_CATEGORIES);
-    $overflow_categories = array_slice($categories, CP_NAV_MAX_VISIBLE_CATEGORIES);
+    // When About Us itself is inactive/draft, its whole top-level item -
+    // including the dropdown that would otherwise hold overflow categories
+    // and managed Pages - disappears (see cp_about_us_is_publicly_visible()
+    // docblock), so neither is resolved while it's hidden.
+    $overflow_categories = $about_us_visible ? array_slice($categories, CP_NAV_MAX_VISIBLE_CATEGORIES) : [];
+    $about_pages = ($about_us_visible && function_exists('cp_get_about_nav_pages')) ? cp_get_about_nav_pages() : [];
     $about_us_url = cp_get_about_us_url();
     $about_is_current = cp_nav_item_is_current('about');
     $has_active_overflow_child = false;
@@ -166,6 +211,13 @@ function cp_render_primary_navigation_markup()
             break;
         }
     }
+    foreach ($about_pages as $about_page) {
+        if (cp_nav_item_is_current('page', $about_page->ID)) {
+            $has_active_overflow_child = true;
+            break;
+        }
+    }
+    $has_about_dropdown = !empty($overflow_categories) || !empty($about_pages);
 
     ob_start();
     ?>
@@ -195,13 +247,14 @@ function cp_render_primary_navigation_markup()
                     </li>
                 <?php endforeach; ?>
 
+                <?php if ($about_us_visible) : ?>
                 <li class="cp-primary-nav-item cp-primary-nav-about<?php echo $about_is_current ? ' is-current' : ''; ?>">
                     <a
                         class="cp-primary-nav-about-link"
                         href="<?php echo esc_url($about_us_url); ?>"
                         <?php echo $about_is_current ? ' aria-current="page"' : ''; ?>
                     ><?php esc_html_e('About Us', 'client-portal'); ?></a>
-                    <?php if (!empty($overflow_categories)) : ?>
+                    <?php if ($has_about_dropdown) : ?>
                         <button
                             type="button"
                             class="cp-primary-nav-about-toggle<?php echo $has_active_overflow_child ? ' has-active-child' : ''; ?>"
@@ -211,22 +264,42 @@ function cp_render_primary_navigation_markup()
                         >
                             <span aria-hidden="true"></span>
                         </button>
-                        <ul id="cp-primary-nav-about-menu" class="cp-primary-nav-about-menu">
-                            <?php foreach ($overflow_categories as $category) : ?>
-                                <?php
-                                $category_url = cp_get_category_page_url($category);
-                                if ('' === $category_url) {
-                                    continue;
-                                }
-                                $is_current = cp_nav_item_is_current('category', $category->term_id);
-                                ?>
-                                <li class="<?php echo $is_current ? 'is-current' : ''; ?>">
-                                    <a href="<?php echo esc_url($category_url); ?>"<?php echo $is_current ? ' aria-current="page"' : ''; ?>><?php echo cp_nav_label($category->name); ?></a>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <div id="cp-primary-nav-about-menu" class="cp-primary-nav-about-menu">
+                            <?php if (!empty($about_pages)) : ?>
+                                <div class="cp-primary-nav-about-group">
+                                    <ul>
+                                        <?php foreach ($about_pages as $about_page) : ?>
+                                            <?php $is_current = cp_nav_item_is_current('page', $about_page->ID); ?>
+                                            <li class="<?php echo $is_current ? 'is-current' : ''; ?>">
+                                                <a href="<?php echo esc_url(get_permalink($about_page)); ?>"<?php echo $is_current ? ' aria-current="page"' : ''; ?>><?php echo cp_nav_label($about_page->post_title); ?></a>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($overflow_categories)) : ?>
+                                <div class="cp-primary-nav-about-group">
+                                    <?php if (!empty($about_pages)) : ?><span class="cp-primary-nav-about-group-label"><?php esc_html_e('More Sections', 'client-portal'); ?></span><?php endif; ?>
+                                    <ul>
+                                        <?php foreach ($overflow_categories as $category) : ?>
+                                            <?php
+                                            $category_url = cp_get_category_page_url($category);
+                                            if ('' === $category_url) {
+                                                continue;
+                                            }
+                                            $is_current = cp_nav_item_is_current('category', $category->term_id);
+                                            ?>
+                                            <li class="<?php echo $is_current ? 'is-current' : ''; ?>">
+                                                <a href="<?php echo esc_url($category_url); ?>"<?php echo $is_current ? ' aria-current="page"' : ''; ?>><?php echo cp_nav_label($category->name); ?></a>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </li>
+                <?php endif; ?>
             </ul>
         </div>
     </nav>
@@ -248,6 +321,7 @@ function cp_render_primary_navigation_markup()
  */
 function cp_render_footer_navigation_markup()
 {
+    $about_us_visible = cp_about_us_is_publicly_visible();
     $categories = cp_get_footer_navigation_categories();
     $about_us_url = cp_get_about_us_url();
     $about_is_current = cp_nav_item_is_current('about');
@@ -268,9 +342,11 @@ function cp_render_footer_navigation_markup()
                     <a href="<?php echo esc_url($category_url); ?>"<?php echo $is_current ? ' aria-current="page"' : ''; ?>><?php echo cp_nav_label($category->name); ?></a>
                 </li>
             <?php endforeach; ?>
+            <?php if ($about_us_visible) : ?>
             <li class="cp-footer-nav-item cp-footer-nav-about<?php echo $about_is_current ? ' is-current' : ''; ?>">
                 <a href="<?php echo esc_url($about_us_url); ?>"<?php echo $about_is_current ? ' aria-current="page"' : ''; ?>><?php esc_html_e('About Us', 'client-portal'); ?></a>
             </li>
+            <?php endif; ?>
         </ul>
     </nav>
     <?php

@@ -140,6 +140,13 @@ function cp_get_ordered_navigation_categories($surface = 'header')
         'hide_empty' => true,
     ]);
     $categories = is_array($categories) ? array_values(array_filter($categories, 'cp_category_is_active')) : [];
+    // About Us is a WordPress Page, never a category (see
+    // cp_is_reserved_about_us_category()) - excluded explicitly here rather
+    // than relying only on hide_empty, so this stays correct even if a
+    // legacy/reserved-slug term ever ends up with an article attached.
+    $categories = array_values(array_filter($categories, static function ($category) {
+        return !cp_is_reserved_about_us_category($category);
+    }));
 
     $by_id = [];
     foreach ($categories as $category) {

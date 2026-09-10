@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Enterprise1979 Publisher Portal
  * Description: A custom WordPress admin publishing portal for Enterprise1979.
- * Version: 3.8.14
+ * Version: 3.9.2
  * Author: Alvin
  * Text Domain: client-portal
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CP_VERSION', '3.8.14');
+define('CP_VERSION', '3.9.2');
 if (!defined('CP_WORDPRESS_ACCESS_EMAIL')) {
     define('CP_WORDPRESS_ACCESS_EMAIL', 'enterpriseenteng@gmail.com');
 }
@@ -26,6 +26,9 @@ require_once CP_PATH . 'includes/article-renderer.php';
 require_once CP_PATH . 'includes/article-builder.php';
 require_once CP_PATH . 'includes/articles.php';
 require_once CP_PATH . 'includes/categories.php';
+require_once CP_PATH . 'includes/page-builder.php';
+require_once CP_PATH . 'includes/pages.php';
+require_once CP_PATH . 'includes/page-seed.php';
 require_once CP_PATH . 'includes/users.php';
 require_once CP_PATH . 'includes/analytics.php';
 require_once CP_PATH . 'includes/analytics-google.php';
@@ -50,6 +53,7 @@ add_action('admin_enqueue_scripts', 'cp_enqueue_admin_assets');
 add_action('admin_init', 'cp_register_settings');
 add_action('admin_init', 'cp_process_article_admin_actions', 20);
 add_action('admin_init', 'cp_process_category_admin_actions', 20);
+add_action('admin_init', 'cp_process_page_admin_actions', 20);
 add_action('admin_init', 'cp_process_user_admin_actions', 20);
 add_action('admin_init', 'cp_restrict_portal_admin_access', 999);
 add_action('admin_post_cp_publish_article', 'cp_handle_article_publish');
