@@ -1920,3 +1920,513 @@ Card size progressively decreases from one-person rows through six-person rows.
 Incomplete rows remain centered.
 
 Tablet/mobile layouts remain usable without horizontal overflow.
+
+33. Managed Page Builder Editing UX
+
+This section supersedes older Page Builder admin UX requirements where they conflict.
+
+33.1 Goal
+
+The managed Page Builder must be usable by a normal publication administrator without requiring knowledge of HTML.
+
+The administrator should edit content visually in the same general interaction model as the existing Article Builder.
+
+The Page Builder may support more block types than the Article Builder because institutional Pages contain different content, but basic text editing should feel consistent across both systems.
+
+Do not build a second independent text editor stack when the existing Article Builder/editor infrastructure can be reused.
+
+Prefer fixing and sharing existing behavior over duplicating it.
+
+33.2 No raw HTML as normal editing UI
+
+Administrators must not normally edit content such as:
+
+<p>Meet the editorial board...</p>
+
+inside a plain textarea.
+
+Stored HTML may remain internally for WordPress rendering and sanitization, but the editing interface must present formatted content visually.
+
+Example:
+
+Stored:
+
+<p>Meet the editorial board, editorial staff, and reportorial staff of The Enterprise.</p>
+
+Editor displays:
+
+Meet the editorial board, editorial staff, and reportorial staff of The Enterprise.
+
+The administrator should not need to type:
+
+<p>
+<strong>
+<em>
+<a>
+<ul>
+<li>
+
+or other HTML tags manually.
+
+HTML/source editing is not the default Page Builder experience.
+
+33.3 Reuse the existing WordPress/Article Builder editor
+
+The existing Article Builder is the UX reference.
+
+Reuse the existing WordPress editor/TinyMCE infrastructure and existing safe formatting patterns where practical.
+
+Do not introduce:
+
+React
+Vue
+Gutenberg as a second embedded application
+another third-party page-builder framework
+a second unrelated rich-text library
+
+unless direct inspection proves the existing WordPress editor cannot satisfy the requirement.
+
+The Page Builder already contains editor initialization code. Diagnose and repair the actual initialization/lifecycle problem before replacing it.
+
+33.4 Rich Text block
+
+Rich Text should behave like a lightweight Google Docs style editor.
+
+Provide at minimum:
+
+Font Family
+Font Size
+Bold
+Italic
+Underline
+Text alignment
+Bulleted list
+Numbered list
+Link
+Unlink
+Undo
+Redo
+
+Where supported safely and already available in the Article Builder, also support:
+
+strikethrough
+text color
+clear formatting
+
+Do not add unnecessary formatting features that are difficult to sanitize or inconsistent with the public site.
+
+The user should see formatted text, not HTML markup.
+
+33.5 Heading block
+
+Heading blocks must have:
+
+Heading Level:
+H1
+H2
+H3
+H4
+H5
+H6
+
+and visual editing controls for:
+
+Font Family
+Font Size
+Bold
+Italic
+Underline
+Alignment
+Undo
+Redo
+
+Changing H1/H2/etc. must preserve the text content.
+
+The level selector represents semantic HTML structure.
+
+Font-size controls affect presentation but must not silently change the semantic heading level.
+
+33.6 Block system
+
+The following Page block types remain supported:
+
+Heading
+Rich Text
+Image
+Staff Grid
+Button / CTA
+Divider / Spacer
+
+Do not remove existing valid blocks.
+
+The Add Block control must work reliably.
+
+Selecting a block type must immediately insert a new editable block into the current Page Builder without refreshing the page.
+
+New text blocks must initialize their rich-text editor immediately.
+
+New image blocks must initialize their Media Library controls.
+
+New Staff Grid blocks must initialize their Staff controls.
+
+New Button blocks must expose label, URL, and style controls.
+
+New Divider blocks must expose spacing/divider controls.
+
+The inserted block must participate immediately in:
+
+serialization
+saving
+reordering
+duplication
+deletion
+
+33.7 Block toolbar
+
+Every content block should have a compact consistent block toolbar.
+
+Primary toolbar actions:
+
+Move Up
+Move Down
+Duplicate
+Delete
+
+Provide Full Screen / Focus mode where appropriate for:
+
+Heading
+Rich Text
+
+Do not display irrelevant actions for block types that cannot use them.
+
+Use tooltips and accessible labels.
+
+33.8 Context menu
+
+Desktop users may right-click a block to open a compact context menu.
+
+The context menu is a convenience layer, not the only way to perform actions.
+
+Suggested options:
+
+Edit / Focus
+Insert Block Above
+Insert Block Below
+Duplicate
+Move Up
+Move Down
+Delete
+
+For text blocks:
+
+Full Screen / Focus Mode
+
+Do not intercept right-click inside an active text editor if doing so would prevent normal text-selection, link, spelling, or browser/editor behavior.
+
+A safe implementation is to activate the custom context menu when right-clicking the block chrome/header rather than arbitrary text inside the editor.
+
+Touch and keyboard users must have equivalent normal buttons.
+
+Never make right-click mandatory.
+
+33.9 Add Block UX
+
++ Add Block must be a reliable insertion control.
+
+When opened, show clear block choices with icon + name + short description.
+
+Examples:
+
+Heading
+Section title or heading
+
+Rich Text
+Paragraphs, lists, links, and formatted copy
+
+Image
+Media Library image with alt text
+
+Staff Grid
+Publication staff cards and metadata
+
+Button / CTA
+Clickable call-to-action
+
+Divider / Spacer
+Separate sections or add vertical space
+
+Allow insertion:
+
+at the bottom using the main + Add Block control
+
+and optionally:
+
+between blocks
+above a block
+below a block
+
+Do not require drag-and-drop merely to insert content at a specific location.
+
+33.10 Google Docs style interaction
+
+"Google Docs style" means:
+
+the user works with rendered content rather than markup,
+formatting controls are understandable,
+editing responds immediately,
+keyboard input behaves normally,
+undo/redo works,
+content is visually readable while editing,
+the interface avoids unnecessary technical fields.
+
+It does NOT mean cloning Google Docs or creating a full collaborative document engine.
+
+Do not add:
+
+real-time multi-user collaboration
+comments system
+revision suggestions
+document pagination
+complex freeform canvas positioning
+
+unless separately requested.
+
+33.11 Page metadata remains separate from content editing
+
+Page Details remain outside the document canvas.
+
+Keep:
+
+Page Name / Title
+Status
+URL Slug
+Page URL preview
+Show in About Us dropdown
+
+These are page-level settings.
+
+Do not mix URL/permalink configuration into Rich Text blocks.
+
+The Page Content area below them is the document/content editing workspace.
+
+33.12 Block-specific controls
+
+Keep advanced settings contextual.
+
+Image:
+image preview
+Select / Replace
+Remove
+Alt Text
+optional caption where currently supported
+alignment where safe
+
+Staff Grid:
+Staff image/artwork
+Name
+Position
+Section / Group
+Alt Text
+ordering
+existing Staff controls
+
+The public Staff artwork rules defined in the latest Staff section still apply.
+
+Button / CTA:
+Button Label
+Link URL
+Style
+target behavior if safely supported
+
+Divider / Spacer:
+spacing size
+divider visibility/style if supported
+
+Do not show unrelated controls globally.
+
+33.13 Progressive disclosure
+
+Avoid placing every possible setting on screen at once.
+
+Show the content itself prominently.
+
+Secondary settings may use:
+
+compact toolbar
+More / three-dot menu
+block settings popover
+context menu
+
+Do not hide essential functions so deeply that administrators cannot discover them.
+
+33.14 Editor lifecycle
+
+Rich-text editors must initialize correctly for:
+
+existing Heading blocks
+existing Rich Text blocks
+new Heading blocks
+new Rich Text blocks
+duplicated text blocks
+
+Before:
+
+serialization
+duplication
+movement where DOM manipulation affects editors
+deletion
+form submission
+
+synchronize editor content safely.
+
+Remove/reinitialize editor instances when required by DOM movement or duplication.
+
+Never create duplicate TinyMCE instances for one textarea.
+
+Do not allow stale editor content to overwrite current user content.
+
+33.15 Existing HTML migration
+
+Existing managed Page content containing valid stored HTML must remain compatible.
+
+When loading an existing Rich Text block:
+
+<p>Hello</p>
+
+must appear visually as:
+
+Hello
+
+inside the editor.
+
+Do not display the literal <p> tags to normal administrators.
+
+Do not destroy existing valid formatting during migration.
+
+Do not blindly strip all HTML.
+
+Continue using the project's existing WordPress sanitization rules.
+
+33.16 Right-click accessibility and safety
+
+A custom context menu must:
+
+close with Escape
+close when clicking outside
+use keyboard-focusable menu items
+maintain visible focus
+not trap keyboard focus
+not replace essential standard toolbar controls
+
+Prefer native-feeling behavior.
+
+Keep implementation small.
+
+33.17 Failure visibility
+
+If WordPress/TinyMCE fails to initialize, do not silently degrade into a confusing raw-HTML textarea without explanation.
+
+Provide a graceful fallback.
+
+A fallback textarea should display human-readable content where safely possible and/or show a visible editor initialization error to authorized administrators.
+
+JavaScript errors must be investigated rather than hidden.
+
+33.18 Validation
+
+Verify Page Builder with:
+
+existing About Us Page
+existing Staff Page
+existing Join the Publication Page
+new temporary test Page where safe
+
+Test:
+
+existing Heading editor
+existing Rich Text editor
+HTML renders visually
+Font Family
+Font Size
+Bold
+Italic
+Underline
+Alignment
+Lists
+Links
+Undo/Redo
+Add Heading
+Add Rich Text
+Add Image
+Add Staff Grid
+Add Button
+Add Divider
+Duplicate
+Move Up
+Move Down
+Delete
+right-click context menu
+Full Screen / Focus mode
+Save
+reload
+saved content remains correct
+
+Do not claim browser verification unless actually performed.
+
+33.19 Deployment discipline
+
+Before changing source:
+
+verify git status
+verify current branch
+push the current clean baseline to origin/main
+
+Do not begin modifications until the pre-change baseline is safely present on the remote repository.
+
+Development remains local-first.
+
+After implementation:
+
+validate
+commit
+push final source to origin/main
+backup production
+deploy over the established SSH workflow
+verify production
+
+Do not use production as the primary code editor.
+
+Do not manually patch individual production PHP/JS/CSS files unless a production-only emergency diagnostic explicitly requires it.
+
+The normal flow is:
+
+verified local baseline
+→ push baseline
+→ local implementation
+→ local validation
+→ commit
+→ push
+→ production backup
+→ SSH deployment
+→ live validation
+
+33.20 Scope discipline
+
+Do not rewrite the entire Page system.
+
+Do not alter unrelated:
+
+Articles
+Categories
+Users
+Analytics
+login limiter
+authentication
+navigation
+Staff public SVG behavior
+WordPress core
+Astra theme
+
+Reuse existing code wherever it already solves the requirement.
+
+Fix root causes rather than layering workarounds.
