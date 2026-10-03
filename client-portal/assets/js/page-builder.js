@@ -115,6 +115,12 @@
                     personEl.querySelectorAll('[data-cp-staff-field]').forEach(function (field) {
                         person[field.getAttribute('data-cp-staff-field')] = field.value;
                     });
+                    // Client-only hint so a duplicated block can still preview
+                    // its uploaded images; ignored by the server sanitizer.
+                    var idField = personEl.querySelector('[data-cp-staff-field="attachment_id"]');
+                    if (idField && idField.getAttribute('data-preview-url')) {
+                        person._previewUrl = idField.getAttribute('data-preview-url');
+                    }
                     data.people.push(person);
                 });
             }
@@ -170,45 +176,94 @@
             });
         }
 
+        /* Staff card preview mirrors the public image priority
+           (includes/page-builder.php cp_render_staff_portrait()): uploaded
+           image, then bundled artwork, then placeholder. */
         function wireStaffPersonPortrait(personEl) {
             var selectButton = personEl.querySelector('[data-cp-staff-select-portrait]');
             var removeButton = personEl.querySelector('[data-cp-staff-remove-portrait]');
             var preview = personEl.querySelector('[data-cp-staff-portrait-preview]');
+            var sourceLabel = personEl.querySelector('[data-cp-staff-source]');
             var idField = personEl.querySelector('[data-cp-staff-field="attachment_id"]');
+            var bundledField = personEl.querySelector('[data-cp-staff-field="bundled"]');
+            var attachmentUrl = (idField && parseInt(idField.value, 10) > 0) ? (idField.getAttribute('data-preview-url') || '') : '';
+
+            function refreshPreview() {
+                var bundledKey = bundledField ? bundledField.value : '';
+                var bundledUrl = bundledKey && Object.prototype.hasOwnProperty.call(STAFF_ARTWORK, bundledKey) ? STAFF_ARTWORK[bundledKey] : '';
+                var url = attachmentUrl || bundledUrl;
+                if (preview) {
+                    if (url) {
+                        preview.innerHTML = '<img src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async">';
+                        preview.removeAttribute('data-empty');
+                    } else {
+                        preview.innerHTML = PLACEHOLDER_HTML;
+                        preview.setAttribute('data-empty', '');
+                    }
+                }
+                if (sourceLabel) {
+                    sourceLabel.textContent = attachmentUrl ? 'Uploaded image' : (bundledUrl ? 'Bundled artwork' : 'Placeholder');
+                }
+                if (removeButton) {
+                    removeButton.hidden = !attachmentUrl;
+                }
+            }
 
             if (selectButton) {
                 selectButton.addEventListener('click', function () {
                     openImagePicker(function (attachment) {
+                        attachmentUrl = (attachment.sizes && attachment.sizes.medium) ? attachment.sizes.medium.url : attachment.url;
                         if (idField) {
                             idField.value = attachment.id;
+                            idField.setAttribute('data-preview-url', attachmentUrl);
                         }
-                        if (preview) {
-                            var url = (attachment.sizes && attachment.sizes.thumbnail) ? attachment.sizes.thumbnail.url : attachment.url;
-                            preview.innerHTML = '<img src="' + url + '" alt="">';
-                            preview.removeAttribute('data-empty');
-                        }
-                        if (removeButton) {
-                            removeButton.hidden = false;
-                        }
+                        refreshPreview();
                     });
                 });
             }
 
             if (removeButton) {
                 removeButton.addEventListener('click', function () {
+                    attachmentUrl = '';
                     if (idField) {
                         idField.value = '0';
+                        idField.removeAttribute('data-preview-url');
                     }
-                    if (preview) {
-                        preview.innerHTML = PLACEHOLDER_HTML;
-                        preview.setAttribute('data-empty', '');
-                    }
-                    removeButton.hidden = true;
+                    refreshPreview();
                 });
             }
+
+            if (bundledField) {
+                bundledField.addEventListener('change', refreshPreview);
+            }
+
+            refreshPreview();
         }
 
         var PLACEHOLDER_HTML = '<span class="cp-staff-portrait-placeholder" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5Zm0 2c-4.42 0-8 2.24-8 5v2h16v-2c0-2.76-3.58-5-8-5Z"/></svg></span>';
+
+        /* Trusted bundled Staff artwork (key => URL), localized by
+           includes/helpers.php from assets/images/staff/. */
+        var STAFF_ARTWORK = (window.cpPageBuilder && window.cpPageBuilder.staffArtwork && 'object' === typeof window.cpPageBuilder.staffArtwork) ? window.cpPageBuilder.staffArtwork : {};
+
+        function escapeHtml(value) {
+            return String(null === value || undefined === value ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function staffArtworkSelectHtml(selected) {
+            var options = '<option value="">None</option>';
+            Object.keys(STAFF_ARTWORK).forEach(function (key) {
+                options += '<option value="' + escapeHtml(key) + '"' + (key === selected ? ' selected' : '') + '>' + escapeHtml(key + '.svg') + '</option>';
+            });
+            return '<div class="col-md-6"><label class="form-label">Bundled Artwork</label>' +
+                '<select class="form-select form-select-sm" data-cp-staff-field="bundled">' + options + '</select>' +
+                '<div class="form-text">Used when no uploaded image is selected.</div></div>';
+        }
 
         /* ---- Staff sub-editor (add/remove/reorder person) ---- */
 
@@ -253,28 +308,7 @@
             list.querySelectorAll('[data-cp-staff-person]').forEach(wirePerson);
 
             addButton.addEventListener('click', function () {
-                var template = document.createElement('div');
-                template.innerHTML =
-                    '<div class="cp-staff-editor-card" data-cp-staff-person>' +
-                    '<div class="cp-staff-editor-portrait">' +
-                    '<div class="cp-staff-editor-portrait-preview" data-cp-staff-portrait-preview data-empty>' + PLACEHOLDER_HTML + '</div>' +
-                    '<input type="hidden" data-cp-staff-field="attachment_id" value="0">' +
-                    '<div class="cp-staff-editor-portrait-actions">' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary" data-cp-staff-select-portrait>Upload / Select</button>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger" data-cp-staff-remove-portrait hidden>Remove</button>' +
-                    '</div></div>' +
-                    '<div class="cp-staff-editor-fields"><div class="row g-2">' +
-                    '<div class="col-md-6"><label class="form-label">Name</label><input class="form-control form-control-sm" data-cp-staff-field="name"></div>' +
-                    '<div class="col-md-6"><label class="form-label">Position</label><input class="form-control form-control-sm" data-cp-staff-field="position"></div>' +
-                    '<div class="col-md-6"><label class="form-label">Section / Group</label><input class="form-control form-control-sm" data-cp-staff-field="group"></div>' +
-                    '<div class="col-md-6"><label class="form-label">Alt text</label><input class="form-control form-control-sm" data-cp-staff-field="alt"></div>' +
-                    '</div></div>' +
-                    '<div class="cp-staff-editor-actions">' +
-                    '<button type="button" class="cp-icon-button" data-cp-staff-move-up title="Move Up"><i class="bi bi-arrow-up"></i></button>' +
-                    '<button type="button" class="cp-icon-button" data-cp-staff-move-down title="Move Down"><i class="bi bi-arrow-down"></i></button>' +
-                    '<button type="button" class="cp-icon-button cp-icon-button-danger" data-cp-staff-remove title="Remove Person"><i class="bi bi-trash"></i></button>' +
-                    '</div></div>';
-                var personEl = template.firstElementChild;
+                var personEl = buildStaffPersonElement({});
                 list.appendChild(personEl);
                 wirePerson(personEl);
             });
@@ -434,19 +468,22 @@
             var el = document.createElement('div');
             el.className = 'cp-staff-editor-card';
             el.setAttribute('data-cp-staff-person', '');
+            var attachmentId = parseInt(person.attachment_id, 10) || 0;
             el.innerHTML =
                 '<div class="cp-staff-editor-portrait">' +
-                '<div class="cp-staff-editor-portrait-preview" data-cp-staff-portrait-preview' + (person.attachment_id ? '' : ' data-empty') + '>' + PLACEHOLDER_HTML + '</div>' +
-                '<input type="hidden" data-cp-staff-field="attachment_id" value="' + (person.attachment_id || 0) + '">' +
+                '<div class="cp-staff-editor-portrait-preview" data-cp-staff-portrait-preview data-empty>' + PLACEHOLDER_HTML + '</div>' +
+                '<small class="cp-staff-editor-source" data-cp-staff-source>Placeholder</small>' +
+                '<input type="hidden" data-cp-staff-field="attachment_id" value="' + attachmentId + '"' + (attachmentId && person._previewUrl ? ' data-preview-url="' + escapeHtml(person._previewUrl) + '"' : '') + '>' +
                 '<div class="cp-staff-editor-portrait-actions">' +
                 '<button type="button" class="btn btn-sm btn-outline-secondary" data-cp-staff-select-portrait>Upload / Select</button>' +
                 '<button type="button" class="btn btn-sm btn-outline-danger" data-cp-staff-remove-portrait hidden>Remove</button>' +
                 '</div></div>' +
                 '<div class="cp-staff-editor-fields"><div class="row g-2">' +
-                '<div class="col-md-6"><label class="form-label">Name</label><input class="form-control form-control-sm" data-cp-staff-field="name" value="' + (person.name || '') + '"></div>' +
-                '<div class="col-md-6"><label class="form-label">Position</label><input class="form-control form-control-sm" data-cp-staff-field="position" value="' + (person.position || '') + '"></div>' +
-                '<div class="col-md-6"><label class="form-label">Section / Group</label><input class="form-control form-control-sm" data-cp-staff-field="group" value="' + (person.group || '') + '"></div>' +
-                '<div class="col-md-6"><label class="form-label">Alt text</label><input class="form-control form-control-sm" data-cp-staff-field="alt" value="' + (person.alt || '') + '"></div>' +
+                '<div class="col-md-6"><label class="form-label">Name</label><input class="form-control form-control-sm" data-cp-staff-field="name" value="' + escapeHtml(person.name) + '"></div>' +
+                '<div class="col-md-6"><label class="form-label">Position</label><input class="form-control form-control-sm" data-cp-staff-field="position" value="' + escapeHtml(person.position) + '"></div>' +
+                '<div class="col-md-6"><label class="form-label">Section / Group</label><input class="form-control form-control-sm" data-cp-staff-field="group" value="' + escapeHtml(person.group) + '"></div>' +
+                '<div class="col-md-6"><label class="form-label">Alt text</label><input class="form-control form-control-sm" data-cp-staff-field="alt" value="' + escapeHtml(person.alt) + '"></div>' +
+                staffArtworkSelectHtml(person.bundled || '') +
                 '</div></div>' +
                 '<div class="cp-staff-editor-actions">' +
                 '<button type="button" class="cp-icon-button" data-cp-staff-move-up title="Move Up"><i class="bi bi-arrow-up"></i></button>' +

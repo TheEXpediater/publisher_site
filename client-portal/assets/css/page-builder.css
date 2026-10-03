@@ -74,13 +74,16 @@
     display: grid;
     justify-items: center;
     gap: 8px;
-    width: 120px;
+    width: 140px;
 }
 
+/* Complete Staff artwork (portrait + printed name/position) is shown whole -
+   contained in a square frame, never circle-cropped. */
 .cp-app .cp-staff-editor-portrait-preview {
-    width: 88px;
-    height: 88px;
-    border-radius: 50%;
+    width: 132px;
+    height: 132px;
+    border-radius: 8px;
+    border: 1px solid var(--cp-border);
     overflow: hidden;
     background: #eaecf0;
     display: flex;
@@ -91,7 +94,13 @@
 .cp-app .cp-staff-editor-portrait-preview img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+}
+
+.cp-app .cp-staff-editor-source {
+    font-size: 11px;
+    color: var(--cp-muted);
+    text-align: center;
 }
 
 .cp-app .cp-staff-editor-portrait-preview svg {

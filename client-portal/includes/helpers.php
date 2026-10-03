@@ -1029,6 +1029,9 @@ function cp_enqueue_admin_assets()
         wp_enqueue_style('cp-article-builder', cp_url('assets/css/article-builder.css'), ['cp-style'], cp_asset_version('assets/css/article-builder.css'));
         wp_enqueue_style('cp-page-builder', cp_url('assets/css/page-builder.css'), ['cp-article-builder'], cp_asset_version('assets/css/page-builder.css'));
         wp_enqueue_script('cp-page-builder', cp_url('assets/js/page-builder.js'), ['cp-app', 'media-editor', 'wp-editor'], cp_asset_version('assets/js/page-builder.js'), true);
+        // Trusted bundled Staff artwork (key => URL) so Staff cards added
+        // client-side get the same Bundled Artwork choices as saved ones.
+        wp_localize_script('cp-page-builder', 'cpPageBuilder', ['staffArtwork' => cp_staff_bundled_artwork()]);
     }
 
     if ('cp-pages' === cp_current_page()) {

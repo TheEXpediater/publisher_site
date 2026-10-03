@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Enterprise1979 Publisher Portal
  * Description: A custom WordPress admin publishing portal for Enterprise1979.
- * Version: 3.9.5
+ * Version: 3.9.6
  * Author: Alvin
  * Text Domain: client-portal
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CP_VERSION', '3.9.5');
+define('CP_VERSION', '3.9.6');
 if (!defined('CP_WORDPRESS_ACCESS_EMAIL')) {
     define('CP_WORDPRESS_ACCESS_EMAIL', 'enterpriseenteng@gmail.com');
 }

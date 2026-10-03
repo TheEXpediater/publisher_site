@@ -1639,3 +1639,284 @@ versioned ZIP
 SSH backup/deploy/verification
 
 accessible responsive rendering
+
+32. Staff Complete Artwork Cards — Current Requirement
+
+This section supersedes older Staff portrait rendering requirements where they conflict.
+
+32.1 Core model
+
+Staff metadata and Staff visual presentation are separate concerns.
+
+Every Staff record must continue to preserve its structured metadata, including where applicable:
+
+- name
+- position
+- section/group
+- ordering
+- alt text
+- WordPress attachment ID
+- bundled SVG asset reference
+
+Do not remove this metadata merely because the supplied Staff artwork already contains visible text.
+
+The Publisher Portal admin must continue to show enough structured information for an administrator to understand exactly which artwork belongs to which person.
+
+32.2 Admin Staff editor
+
+Inside the Page Builder Staff Grid editor, each Staff member must continue to expose:
+
+Name
+
+Position
+
+Section / Group
+
+Alt Text
+
+Image / artwork preview
+
+Upload / Select image control
+
+Replace image where supported
+
+Remove image where supported
+
+Move Up / Move Down
+
+Remove person
+
+Other existing Staff editing functionality must remain intact.
+
+The administrator must be able to identify:
+
+who the person is,
+their position,
+their section,
+the image assigned to them,
+and the accessibility text associated with the image.
+
+Do not simplify the admin editor into image-only cards.
+
+The admin interface is the management interface and must retain the structured information.
+
+32.3 Public Staff page
+
+The public Staff page uses a different presentation rule.
+
+When a Staff member has a valid image/artwork:
+
+RENDER THE IMAGE ONLY.
+
+Do not render a second visible:
+
+name
+position
+section label per card
+caption
+
+underneath or beside the artwork.
+
+The artwork itself is the complete visible Staff card.
+
+The person's name and position remain stored metadata but are not duplicated visually on the public Staff page.
+
+Accessibility must still use the structured metadata.
+
+Example alt text:
+
+Maryiel N. Jimenez, Editor-in-Chief
+
+Do not rely only on text embedded visually inside an SVG for accessibility.
+
+32.4 Supplied SVG artwork
+
+Development source artwork currently exists in:
+
+C:\Publication\publisher_site\SBA-Staffs-about_us\
+
+These files may have numeric filenames such as:
+
+1.svg
+2.svg
+3.svg
+
+Never infer the person from the number.
+
+Inspect each SVG and determine the person represented by the actual artwork.
+
+Use:
+
+SVG text
+metadata
+title/description
+labels
+rendered visual inspection
+
+as necessary.
+
+Create a verified mapping before assigning assets.
+
+Never knowingly assign uncertain artwork to a Staff record.
+
+The original SBA-Staffs-about_us directory remains a development/source directory and may remain ignored by Git.
+
+Production must not depend directly on that ignored directory.
+
+Trusted SVG assets required by the plugin should be copied into a version-controlled plugin-owned asset location such as:
+
+client-portal/assets/images/staff/
+
+Use descriptive production filenames after identity is confirmed.
+
+32.5 Image priority
+
+Preserve the existing administrator image-selection workflow.
+
+A Staff record may have:
+
+1. an administrator-selected WordPress image attachment,
+2. a bundled trusted Staff SVG,
+3. or a placeholder when neither exists.
+
+Recommended frontend priority:
+
+administrator-selected image
+then bundled Staff SVG
+then neutral placeholder
+
+This allows the administrator to replace supplied artwork later without changing PHP code.
+
+Regardless of whether the visible asset is SVG, PNG, JPG, WEBP, or another approved image type, the public Staff card remains IMAGE ONLY.
+
+Do not restore visible name/position text beneath normal uploaded images.
+
+The structured metadata remains available to the admin and accessibility layer.
+
+32.6 SVG security
+
+Do not globally enable unrestricted SVG uploads.
+
+Do not weaken WordPress MIME security.
+
+Supplied trusted SVG files may be bundled as plugin-owned static assets after inspection.
+
+Reject or sanitize unexpected active SVG content such as:
+
+script
+foreignObject
+event handlers
+javascript URLs
+remote executable content
+
+Serve trusted SVG artwork through normal image rendering rather than injecting arbitrary SVG markup into page HTML.
+
+32.7 Artwork proportions
+
+Staff artwork is complete artwork, not a circular portrait.
+
+Do not force Staff artwork into:
+
+border-radius: 50%
+aspect-ratio: 1 / 1
+object-fit: cover
+
+when those rules crop or distort the artwork.
+
+Preserve the source artwork's natural aspect ratio.
+
+Use containment behavior where appropriate.
+
+Never crop the person's embedded name or position.
+
+32.8 Staff row sizing
+
+Maximum desktop row size remains six Staff members.
+
+Rows are data-driven.
+
+Visual card size depends on the number of people in THAT row.
+
+Fewer people = larger artwork.
+
+More people = smaller artwork.
+
+Required relative behavior:
+
+1 person = largest reasonable card
+2 people = slightly smaller
+3 people = smaller
+4 people = smaller
+5 people = smaller
+6 people = smallest desktop size
+
+Do not make one-person artwork excessively large.
+
+Do not make six-person artwork unreadably small.
+
+Every incomplete row uses its own row count.
+
+Examples:
+
+7 people:
+6 + centered 1
+
+10 people:
+6 + centered 4
+
+11 people:
+6 + centered 5
+
+12 people:
+6 + 6
+
+The trailing row must not inherit the card size of the previous six-person row.
+
+Use row-size classes or equivalent data-driven responsive CSS.
+
+Never hardcode layout by Staff name.
+
+32.9 Section behavior
+
+Preserve the existing authoritative Staff sections and order.
+
+Do not duplicate Staff records.
+
+Do not create another Staff Page.
+
+Do not alter a person's group solely because of the SVG filename.
+
+The admin remains responsible for structured Staff information.
+
+The frontend uses that information for ordering, grouping, accessibility, and asset assignment even though only the artwork itself is visible inside each Staff card.
+
+32.10 Verification
+
+Before reporting completion, verify:
+
+Admin still displays Name.
+Admin still displays Position.
+Admin still displays Section / Group.
+Admin still displays Alt Text.
+Admin still provides image selection/replacement controls.
+Admin preview identifies the assigned artwork.
+
+Public Staff cards display image only.
+Public Staff cards do not duplicate Name.
+Public Staff cards do not duplicate Position.
+Metadata remains stored.
+Accessible alt text remains meaningful.
+
+Every supplied SVG is mapped to the correct person.
+
+No SVG is assigned based solely on its numeric filename.
+
+No artwork is cropped.
+
+No row exceeds six Staff cards on desktop.
+
+Card size progressively decreases from one-person rows through six-person rows.
+
+Incomplete rows remain centered.
+
+Tablet/mobile layouts remain usable without horizontal overflow.

@@ -62,10 +62,68 @@ function cp_page_divider_size_choices()
     ];
 }
 
+define('CP_STAFF_ARTWORK_DIR', 'assets/images/staff/');
+
 /**
- * One staff card. Placeholder rendering (no attachment_id) is handled at
- * render time, never stored as a fake attachment - see
- * cp_render_staff_portrait().
+ * Trusted Staff artwork shipped inside the plugin (assets/images/staff/),
+ * keyed by its file slug, e.g. "maryiel-n-jimenez" => URL. These are
+ * complete, pre-inspected static cards (portrait + name + position baked
+ * in) - referenced by key only, so a saved Staff record can never point at
+ * an arbitrary browser-supplied path, and WordPress's own SVG upload
+ * restrictions stay untouched.
+ */
+function cp_staff_bundled_artwork()
+{
+    static $artwork = null;
+    if (null !== $artwork) {
+        return $artwork;
+    }
+
+    $artwork = [];
+    $files = glob(cp_path(CP_STAFF_ARTWORK_DIR . '*.svg'));
+    foreach (is_array($files) ? $files : [] as $file) {
+        $key = basename($file, '.svg');
+        if (preg_match('/^[a-z0-9-]+$/', $key)) {
+            $artwork[$key] = cp_url(CP_STAFF_ARTWORK_DIR . $key . '.svg');
+        }
+    }
+    ksort($artwork);
+
+    return $artwork;
+}
+
+function cp_staff_bundled_artwork_url($key)
+{
+    $artwork = cp_staff_bundled_artwork();
+    return is_string($key) && isset($artwork[$key]) ? $artwork[$key] : '';
+}
+
+/**
+ * Default/fallback alt text built from the structured record ("Maryiel N.
+ * Jimenez, Editor-in-Chief") - the public card is image-only, so this is
+ * what carries the person's identity for assistive technology.
+ */
+function cp_staff_default_alt($name, $position)
+{
+    $name = trim((string) $name);
+    $position = trim((string) $position);
+    return '' !== $position ? $name . ', ' . $position : $name;
+}
+
+function cp_staff_member_alt($member)
+{
+    $alt = isset($member['alt']) ? trim((string) $member['alt']) : '';
+    if ('' !== $alt) {
+        return $alt;
+    }
+
+    return cp_staff_default_alt(isset($member['name']) ? $member['name'] : '', isset($member['position']) ? $member['position'] : '');
+}
+
+/**
+ * One staff card. Image resolution (uploaded attachment -> bundled artwork
+ * -> placeholder) happens at render time, never stored as a fake
+ * attachment - see cp_render_staff_portrait().
  */
 function cp_sanitize_staff_member($member, $index)
 {
@@ -77,10 +135,15 @@ function cp_sanitize_staff_member($member, $index)
     $position = sanitize_text_field(cp_page_block_value($member, 'position'));
     $group = sanitize_text_field(cp_page_block_value($member, 'group'));
     $attachment_id = absint(cp_page_block_value($member, 'attachment_id'));
+    $bundled = sanitize_key(cp_page_block_value($member, 'bundled'));
     $alt = sanitize_text_field(cp_page_block_value($member, 'alt'));
 
     if ($attachment_id && !wp_attachment_is_image($attachment_id)) {
         $attachment_id = 0;
+    }
+
+    if ('' === cp_staff_bundled_artwork_url($bundled)) {
+        $bundled = '';
     }
 
     if ('' === $name) {
@@ -92,7 +155,8 @@ function cp_sanitize_staff_member($member, $index)
         'position' => $position,
         'group' => $group,
         'attachment_id' => $attachment_id,
-        'alt' => '' !== $alt ? $alt : $name,
+        'bundled' => $bundled,
+        'alt' => '' !== $alt ? $alt : cp_staff_default_alt($name, $position),
     ];
 }
 
@@ -377,14 +441,25 @@ function cp_render_page_staff_member_editor($member, $index)
 {
     $member = is_array($member) ? $member : [];
     $attachment_id = isset($member['attachment_id']) ? absint($member['attachment_id']) : 0;
-    $preview_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'thumbnail') : '';
+    $bundled = isset($member['bundled']) ? (string) $member['bundled'] : '';
+    $attachment_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'medium') : '';
+    $bundled_url = cp_staff_bundled_artwork_url($bundled);
+    $preview_url = $attachment_url ? $attachment_url : $bundled_url;
+    if ($attachment_url) {
+        $source_label = __('Uploaded image', 'client-portal');
+    } elseif ($bundled_url) {
+        $source_label = __('Bundled artwork', 'client-portal');
+    } else {
+        $source_label = __('Placeholder', 'client-portal');
+    }
     ?>
     <div class="cp-staff-editor-card" data-cp-staff-person>
         <div class="cp-staff-editor-portrait">
             <div class="cp-staff-editor-portrait-preview" data-cp-staff-portrait-preview<?php if (!$preview_url) : ?> data-empty<?php endif; ?>>
-                <?php if ($preview_url) : ?><img src="<?php echo esc_url($preview_url); ?>" alt=""><?php else : ?><?php echo wp_kses_post(cp_render_staff_portrait_placeholder()); ?><?php endif; ?>
+                <?php if ($preview_url) : ?><img src="<?php echo esc_url($preview_url); ?>" alt="" loading="lazy" decoding="async"><?php else : ?><?php echo cp_render_staff_portrait_placeholder(); // Static trusted markup. ?><?php endif; ?>
             </div>
-            <input type="hidden" data-cp-staff-field="attachment_id" value="<?php echo esc_attr($attachment_id); ?>">
+            <small class="cp-staff-editor-source" data-cp-staff-source><?php echo esc_html($source_label); ?></small>
+            <input type="hidden" data-cp-staff-field="attachment_id" value="<?php echo esc_attr($attachment_id); ?>"<?php if ($attachment_url) : ?> data-preview-url="<?php echo esc_url($attachment_url); ?>"<?php endif; ?>>
             <div class="cp-staff-editor-portrait-actions">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-cp-staff-select-portrait><?php esc_html_e('Upload / Select', 'client-portal'); ?></button>
                 <button type="button" class="btn btn-sm btn-outline-danger" data-cp-staff-remove-portrait<?php if (!$attachment_id) : ?> hidden<?php endif; ?>><?php esc_html_e('Remove', 'client-portal'); ?></button>
@@ -396,6 +471,16 @@ function cp_render_page_staff_member_editor($member, $index)
                 <div class="col-md-6"><label class="form-label"><?php esc_html_e('Position', 'client-portal'); ?></label><input class="form-control form-control-sm" data-cp-staff-field="position" value="<?php echo esc_attr(isset($member['position']) ? $member['position'] : ''); ?>"></div>
                 <div class="col-md-6"><label class="form-label"><?php esc_html_e('Section / Group', 'client-portal'); ?></label><input class="form-control form-control-sm" data-cp-staff-field="group" value="<?php echo esc_attr(isset($member['group']) ? $member['group'] : ''); ?>" placeholder="<?php esc_attr_e('e.g. Editorial Board', 'client-portal'); ?>"></div>
                 <div class="col-md-6"><label class="form-label"><?php esc_html_e('Alt text', 'client-portal'); ?></label><input class="form-control form-control-sm" data-cp-staff-field="alt" value="<?php echo esc_attr(isset($member['alt']) ? $member['alt'] : ''); ?>"></div>
+                <div class="col-md-6">
+                    <label class="form-label"><?php esc_html_e('Bundled Artwork', 'client-portal'); ?></label>
+                    <select class="form-select form-select-sm" data-cp-staff-field="bundled">
+                        <option value=""><?php esc_html_e('None', 'client-portal'); ?></option>
+                        <?php foreach (array_keys(cp_staff_bundled_artwork()) as $artwork_key) : ?>
+                            <option value="<?php echo esc_attr($artwork_key); ?>" <?php selected($bundled, $artwork_key); ?>><?php echo esc_html($artwork_key . '.svg'); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text"><?php esc_html_e('Used when no uploaded image is selected.', 'client-portal'); ?></div>
+                </div>
             </div>
         </div>
         <div class="cp-staff-editor-actions">
@@ -412,42 +497,67 @@ function cp_render_page_staff_member_editor($member, $index)
 /* -------------------------------------------------------------------- */
 
 /**
- * A neutral, decorative person-silhouette placeholder - never a stock
- * photo - shown whenever a staff card has no portrait attachment yet. The
- * name/position text beside it already labels the card, so the icon is
- * marked aria-hidden rather than duplicated for screen readers.
+ * A neutral person-silhouette placeholder - never a stock photo - for a
+ * staff card with neither an uploaded image nor bundled artwork. Static,
+ * trusted markup: callers echo it directly (wp_kses_post() would strip the
+ * <svg>). The icon itself is decorative; on the public card the wrapper
+ * gets role="img" + the person's alt text instead (see
+ * cp_render_staff_portrait()).
  */
 function cp_render_staff_portrait_placeholder()
 {
     return '<span class="cp-staff-portrait-placeholder" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5Zm0 2c-4.42 0-8 2.24-8 5v2h16v-2c0-2.76-3.58-5-8-5Z"/></svg></span>';
 }
 
+/**
+ * The complete public Staff card visual, image only (CLAUDE.md 32.3/32.5):
+ * administrator-selected attachment, then bundled trusted artwork, then the
+ * neutral placeholder. Every branch carries the person's identity via alt
+ * text / aria-label, since no visible name/position is printed beside it.
+ * All dynamic values are escaped here; the result is echoed as-is.
+ */
 function cp_render_staff_portrait($member)
 {
+    $alt = cp_staff_member_alt($member);
     $attachment_id = isset($member['attachment_id']) ? absint($member['attachment_id']) : 0;
 
     if ($attachment_id) {
         $image = wp_get_attachment_image(
             $attachment_id,
-            'medium',
+            'large',
             false,
-            ['class' => 'cp-staff-portrait-image', 'alt' => esc_attr(isset($member['alt']) ? $member['alt'] : '')]
+            [
+                'class' => 'cp-staff-artwork-image',
+                'alt' => $alt,
+                'loading' => 'lazy',
+                'decoding' => 'async',
+                'sizes' => '(max-width: 640px) 90vw, 360px',
+            ]
         );
         if ($image) {
             return $image;
         }
     }
 
-    return cp_render_staff_portrait_placeholder();
+    $bundled_url = cp_staff_bundled_artwork_url(isset($member['bundled']) ? $member['bundled'] : '');
+    if ('' !== $bundled_url) {
+        // Natural 1:1 size of the supplied cards (viewBox 224.88 x 225,
+        // exported at 300 x 300) so the browser reserves the right box
+        // before the file arrives - CSS scales it, never crops it.
+        return '<img class="cp-staff-artwork-image" src="' . esc_url($bundled_url) . '" alt="' . esc_attr($alt) . '" width="300" height="300" loading="lazy" decoding="async">';
+    }
+
+    return '<span class="cp-staff-placeholder-card" role="img" aria-label="' . esc_attr($alt) . '">' . cp_render_staff_portrait_placeholder() . '</span>';
 }
 
 /**
  * Renders one staff section (a name/group of people, e.g. "Editorial
- * Board") as rows of up to six cards, the last incomplete row centered -
- * see assets/css/frontend-pages.css .cp-staff-row for how the row-level
- * centering/enlarging is actually achieved responsively. Grouping and row
- * chunking are entirely data-driven from the saved people list; nothing
- * here is hardcoded to specific names or counts.
+ * Board") as rows of up to six cards, the last incomplete row centered.
+ * Each row carries its own cp-staff-row-{N} class so card size follows
+ * THAT row's count (fewer people = larger cards) - see
+ * assets/css/frontend-pages.css. Grouping and row chunking are entirely
+ * data-driven from the saved people list; nothing here is hardcoded to
+ * specific names or counts.
  */
 function cp_render_staff_section($group_label, $people)
 {
@@ -475,11 +585,8 @@ function cp_render_staff_section($group_label, $people)
             ?>
             <div class="<?php echo esc_attr(implode(' ', $row_classes)); ?>">
                 <?php foreach ($row as $member) : ?>
-                    <div class="cp-staff-card">
-                        <div class="cp-staff-portrait"><?php echo wp_kses_post(cp_render_staff_portrait($member)); ?></div>
-                        <strong class="cp-staff-name"><?php echo esc_html($member['name']); ?></strong>
-                        <?php if (!empty($member['position'])) : ?><span class="cp-staff-position"><?php echo esc_html($member['position']); ?></span><?php endif; ?>
-                    </div>
+                    <?php // Image-only by design: name/position stay in the record (alt text, admin), not printed again under artwork that already shows them. ?>
+                    <div class="cp-staff-card"><?php echo cp_render_staff_portrait($member); // Escaped inside cp_render_staff_portrait(). ?></div>
                 <?php endforeach; ?>
             </div>
         <?php endforeach; ?>

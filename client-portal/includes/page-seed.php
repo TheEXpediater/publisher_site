@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
  * rather than on every admin_init.
  */
 
-define('CP_PAGES_SEED_VERSION', 2);
+define('CP_PAGES_SEED_VERSION', 3);
 define('CP_PAGES_SEED_OPTION', 'cp_pages_seed_version');
 
 function cp_maybe_run_page_seed()
@@ -47,6 +47,7 @@ function cp_run_page_seed()
 
     cp_seed_join_page();
     cp_seed_staff_page();
+    cp_seed_connect_staff_artwork();
 }
 
 /**
@@ -204,45 +205,46 @@ function cp_seed_join_page()
  * The authoritative staff roster (MASTERLIST WITH PORTRAITS OF ENTENG.docx,
  * cross-referenced against CLAUDE.md 11.1's explicit grouping - the docx
  * itself is an ungrouped flat name/position table with no conflicting
- * grouping of its own, so CLAUDE.md's grouping is used as-is). No
- * portraits are seeded (none were supplied) - every card renders with the
- * neutral placeholder in cp_render_staff_portrait() until an administrator
- * uploads a real one through the Page Builder.
+ * grouping of its own, so CLAUDE.md's grouping is used as-is). The third
+ * value is the person's bundled complete-artwork key
+ * (assets/images/staff/{key}.svg), mapped by visually verifying each
+ * supplied card's own printed name - never its numeric source filename.
+ * An administrator-uploaded image still takes precedence at render time.
  */
 function cp_seed_staff_roster()
 {
     $roster = [
         'Editorial Board' => [
-            ['Maryiel N. Jimenez', 'Editor-in-Chief'],
-            ['Cyra Joyce G. Aguilar', 'Associate Editor - Internal Affairs'],
-            ['Jan Nicole A. Mallari', 'Associate Editor - External Affairs'],
-            ['Paullete Irys G. De Leon', 'Managing Editor'],
+            ['Maryiel N. Jimenez', 'Editor-in-Chief', 'maryiel-n-jimenez'],
+            ['Cyra Joyce G. Aguilar', 'Associate Editor - Internal Affairs', 'cyra-joyce-g-aguilar'],
+            ['Jan Nicole A. Mallari', 'Associate Editor - External Affairs', 'jan-nicole-a-mallari'],
+            ['Paullete Irys G. De Leon', 'Managing Editor', 'paullete-irys-g-de-leon'],
         ],
         'Editorial Staff' => [
-            ['Alexa G. Soriano', 'Senior Editor'],
-            ['Angel Bethany T. Timbol', 'Senior Layout Editor'],
-            ['Sean Naegel V. Beltran', 'Junior Layout Editor'],
-            ['Merella Jesmine I. Gumabon', 'Literary Editor'],
-            ['Razel Iommi Q. Tiongson', 'Head Cartoonist'],
-            ['Boris Sebastian C. Lontabo', 'Head Photojournalist'],
-            ['Mikaella C. de Leon', 'Executive Secretary'],
-            ['Samantha C. Ruelo', 'Events Manager'],
-            ['Margareth Lois R. Moleño', 'Circulation Manager'],
-            ['Shelyca Franshane M. Simeon', 'Online Content Manager'],
-            ['Kristine Charsi T. Lusanez', 'Online Content Manager'],
+            ['Alexa G. Soriano', 'Senior Editor', 'alexa-g-soriano'],
+            ['Angel Bethany T. Timbol', 'Senior Layout Editor', 'angel-bethany-t-timbol'],
+            ['Sean Naegel V. Beltran', 'Junior Layout Editor', 'sean-naegel-v-beltran'],
+            ['Merella Jesmine I. Gumabon', 'Literary Editor', 'merella-jesmine-i-gumabon'],
+            ['Razel Iommi Q. Tiongson', 'Head Cartoonist', 'razel-iommi-q-tiongson'],
+            ['Boris Sebastian C. Lontabo', 'Head Photojournalist', 'boris-sebastian-c-lontabo'],
+            ['Mikaella C. de Leon', 'Executive Secretary', 'mikaella-c-de-leon'],
+            ['Samantha C. Ruelo', 'Events Manager', 'samantha-c-ruelo'],
+            ['Margareth Lois R. Moleño', 'Circulation Manager', 'margareth-lois-r-moleno'],
+            ['Shelyca Franshane M. Simeon', 'Online Content Manager', 'shelyca-franshane-m-simeon'],
+            ['Kristine Charsi T. Lusanez', 'Online Content Manager', 'kristine-charsi-t-lusanez'],
         ],
         'Reportorial Staff' => [
-            ['Rinka Akisha M. Muldong', 'Reportorial Staff'],
-            ['Pauleene P. Cabigting', 'Reportorial Staff'],
-            ['Hydelyn Mae C. De Roxas', 'Reportorial Staff'],
-            ['Allison Louise T. Dulatre', 'Reportorial Staff'],
-            ['Eugene P. Lee', 'Reportorial Staff'],
-            ['Yzabel Euri O. Enriquez', 'Reportorial Staff'],
-            ['Marizz O. Estrella', 'Reportorial Staff'],
-            ['Shannon Beatriz P. Dela Vega', 'Reportorial Staff'],
-            ['Juliana Cloe S. Cosme', 'Reportorial Staff'],
-            ['Keona Alexis M. Arceo', 'Reportorial Staff'],
-            ['Ferdina Faye M. Bacani', 'Reportorial Staff'],
+            ['Rinka Akisha M. Muldong', 'Reportorial Staff', 'rinka-akisha-m-muldong'],
+            ['Pauleene P. Cabigting', 'Reportorial Staff', 'pauleene-p-cabigting'],
+            ['Hydelyn Mae C. De Roxas', 'Reportorial Staff', 'hydelyn-mae-c-de-roxas'],
+            ['Allison Louise T. Dulatre', 'Reportorial Staff', 'allison-louise-t-dulatre'],
+            ['Eugene P. Lee', 'Reportorial Staff', 'eugene-p-lee'],
+            ['Yzabel Euri O. Enriquez', 'Reportorial Staff', 'yzabel-euri-o-enriquez'],
+            ['Marizz O. Estrella', 'Reportorial Staff', 'marizz-o-estrella'],
+            ['Shannon Beatriz P. Dela Vega', 'Reportorial Staff', 'shannon-beatriz-p-dela-vega'],
+            ['Juliana Cloe S. Cosme', 'Reportorial Staff', 'juliana-cloe-s-cosme'],
+            ['Keona Alexis M. Arceo', 'Reportorial Staff', 'keona-alexis-m-arceo'],
+            ['Ferdina Faye M. Bacani', 'Reportorial Staff', 'ferdina-faye-m-bacani'],
         ],
     ];
 
@@ -254,12 +256,90 @@ function cp_seed_staff_roster()
                 'position' => $member[1],
                 'group' => $group,
                 'attachment_id' => 0,
-                'alt' => $member[0],
+                'bundled' => $member[2],
+                'alt' => cp_staff_default_alt($member[0], $member[1]),
             ];
         }
     }
 
     return $people;
+}
+
+/**
+ * Person identity key for matching a saved Staff record to its bundled
+ * artwork: accent/case/whitespace-insensitive full name. Never the array
+ * index, so reordering or adding people can't shift artwork onto the
+ * wrong person.
+ */
+function cp_seed_staff_identity_key($name)
+{
+    $name = strtolower(remove_accents(trim((string) $name)));
+    return (string) preg_replace('/\s+/', ' ', $name);
+}
+
+/**
+ * Seed v3: connects the supplied complete Staff artwork
+ * (assets/images/staff/) to the already-existing Staff records on
+ * managed Pages. Per person, matched by identity:
+ * - fills "bundled" only when it is still empty (an admin's own choice,
+ *   including an uploaded attachment, which outranks it anyway, is kept);
+ * - upgrades alt text only when it is still the old auto-default (exactly
+ *   the name, or empty) to "Name, Position" - custom alt text is kept.
+ * Never adds/removes people or Pages; writes only when something changed,
+ * so a repeat run is a no-op.
+ */
+function cp_seed_connect_staff_artwork()
+{
+    $artwork_by_identity = [];
+    foreach (cp_seed_staff_roster() as $seed_member) {
+        $artwork_by_identity[cp_seed_staff_identity_key($seed_member['name'])] = $seed_member['bundled'];
+    }
+
+    $page_ids = get_posts([
+        'post_type' => 'page',
+        'post_status' => 'any',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_key' => CP_PAGE_MANAGED_META,
+        'meta_value' => '1',
+        'no_found_rows' => true,
+    ]);
+
+    foreach ($page_ids as $page_id) {
+        $blocks = get_post_meta($page_id, CP_PAGE_BLOCKS_META, true);
+        if (!is_array($blocks)) {
+            continue;
+        }
+
+        $changed = false;
+        foreach ($blocks as $block_index => $block) {
+            if (!is_array($block) || !isset($block['type'], $block['people']) || 'staff_grid' !== $block['type'] || !is_array($block['people'])) {
+                continue;
+            }
+            foreach ($block['people'] as $person_index => $person) {
+                if (!is_array($person) || empty($person['name'])) {
+                    continue;
+                }
+                $identity = cp_seed_staff_identity_key($person['name']);
+
+                if (empty($person['bundled']) && isset($artwork_by_identity[$identity]) && '' !== cp_staff_bundled_artwork_url($artwork_by_identity[$identity])) {
+                    $blocks[$block_index]['people'][$person_index]['bundled'] = $artwork_by_identity[$identity];
+                    $changed = true;
+                }
+
+                $alt = isset($person['alt']) ? trim((string) $person['alt']) : '';
+                $position = isset($person['position']) ? $person['position'] : '';
+                if (('' === $alt || $alt === trim((string) $person['name'])) && '' !== trim((string) $position)) {
+                    $blocks[$block_index]['people'][$person_index]['alt'] = cp_staff_default_alt($person['name'], $position);
+                    $changed = true;
+                }
+            }
+        }
+
+        if ($changed) {
+            cp_save_page_blocks($page_id, $blocks);
+        }
+    }
 }
 
 function cp_seed_staff_page()

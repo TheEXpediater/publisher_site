@@ -144,8 +144,18 @@ h6.cp-page-heading-block {
 
 /* ---- Staff Grid ---- */
 
+/*
+ * Each Staff card is complete supplied artwork (portrait + printed name and
+ * position) or an uploaded image - shown whole, image only (CLAUDE.md 32).
+ * The grid breaks out of the 860px reading column into a wider centered
+ * band (never wider than the viewport minus a gutter) so a six-card row
+ * stays legible; text blocks on the page keep their reading width.
+ */
 .cp-staff-grid {
-    margin-top: 8px;
+    --cp-staff-band: min(1280px, calc(100vw - 48px));
+    --cp-staff-gap: 18px;
+    width: var(--cp-staff-band);
+    margin: 8px 0 0 calc(50% - var(--cp-staff-band) / 2);
 }
 
 .cp-staff-section {
@@ -157,81 +167,70 @@ h6.cp-page-heading-block {
     font-size: 22px;
     color: var(--enterprise-brand);
     text-align: center;
-    margin: 0 0 28px;
+    margin: 0 auto 28px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--enterprise-soft-line);
+    max-width: 860px;
 }
 
 /*
- * Row sizing rule (CLAUDE.md 11.3): 1-3 people keep a normal, capped card
- * width and center as a group rather than stretching; 4-6 people use an
- * even CSS Grid that fills the section width, so the cards themselves
- * enlarge as the row gets fuller. Never more than 6 columns. Which
- * behavior applies is decided purely by how many cards ended up in a row
- * (assigned server-side via array_chunk() in cp_render_staff_section()),
- * not by any hardcoded name/position.
+ * Row sizing (CLAUDE.md 32.8): rows of at most 6 come from array_chunk() in
+ * cp_render_staff_section(), each tagged cp-staff-row-{N} with ITS OWN
+ * count, so a trailing partial row never inherits the full row's size.
+ * --cp-staff-card is the preferred card width (fewer people = larger),
+ * --cp-staff-cols the maximum cards per line. The row's max-width holds
+ * exactly that many cards (so it wraps there), a card takes the smaller of
+ * its preferred width and its share of the line (so it shrinks rather than
+ * overflowing), and centered flex lines keep partial rows centered.
  */
 .cp-staff-row {
+    --cp-staff-cols: 1;
+    --cp-staff-card: 360px;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 28px;
-    margin-bottom: 32px;
+    gap: var(--cp-staff-gap);
+    max-width: calc(var(--cp-staff-cols) * var(--cp-staff-card) + (var(--cp-staff-cols) - 1) * var(--cp-staff-gap));
+    margin: 0 auto var(--cp-staff-gap);
 }
 
-.cp-staff-row-4,
-.cp-staff-row-5,
-.cp-staff-row-6 {
-    display: grid;
-    gap: 24px;
-}
-
-.cp-staff-row-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.cp-staff-row-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.cp-staff-row-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-
-.cp-staff-row-1 .cp-staff-card,
-.cp-staff-row-2 .cp-staff-card,
-.cp-staff-row-3 .cp-staff-card {
-    flex: 0 0 auto;
-    width: 190px;
-}
-
-.cp-staff-row-4 .cp-staff-card,
-.cp-staff-row-5 .cp-staff-card,
-.cp-staff-row-6 .cp-staff-card {
-    width: 100%;
-}
+.cp-staff-row-1 { --cp-staff-cols: 1; --cp-staff-card: 360px; }
+.cp-staff-row-2 { --cp-staff-cols: 2; --cp-staff-card: 330px; }
+.cp-staff-row-3 { --cp-staff-cols: 3; --cp-staff-card: 300px; }
+.cp-staff-row-4 { --cp-staff-cols: 4; --cp-staff-card: 270px; }
+.cp-staff-row-5 { --cp-staff-cols: 5; --cp-staff-card: 236px; }
+.cp-staff-row-6 { --cp-staff-cols: 6; --cp-staff-card: 200px; }
 
 .cp-staff-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    flex: 0 0 auto;
+    width: min(var(--cp-staff-card), calc((100% - (var(--cp-staff-cols) - 1) * var(--cp-staff-gap)) / var(--cp-staff-cols)));
+    min-width: 0;
 }
 
-.cp-staff-portrait {
+/* Natural aspect ratio from the image's own width/height - scaled, never
+   cropped, never circular. */
+.cp-staff-card .cp-staff-artwork-image {
+    display: block;
     width: 100%;
-    max-width: 160px;
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--enterprise-faint);
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12), 0 8px 20px rgba(16, 24, 40, 0.08);
+}
+
+.cp-staff-placeholder-card {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
-}
-
-.cp-staff-portrait-image {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    aspect-ratio: 1 / 1;
+    background: var(--enterprise-faint);
+    border: 1px solid var(--enterprise-soft-line);
 }
 
 .cp-staff-portrait-placeholder {
-    width: 55%;
-    height: 55%;
+    width: 45%;
+    height: 45%;
     display: flex;
 }
 
@@ -241,29 +240,34 @@ h6.cp-page-heading-block {
     fill: var(--enterprise-line);
 }
 
-.cp-staff-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--enterprise-ink);
-    line-height: 1.3;
-}
-
-.cp-staff-position {
-    font-size: 12px;
-    color: var(--enterprise-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-top: 2px;
-}
-
-@media (max-width: 900px) {
+/* Tablet: wide rows wrap into balanced lines instead of shrinking cards
+   until the printed names become unreadable. */
+@media (max-width: 1024px) {
+    .cp-staff-row-4 { --cp-staff-cols: 2; --cp-staff-card: 300px; }
     .cp-staff-row-5,
-    .cp-staff-row-6 {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .cp-staff-row-6 { --cp-staff-cols: 3; --cp-staff-card: 280px; }
+}
+
+@media (max-width: 640px) {
+    .cp-staff-grid {
+        --cp-staff-band: calc(100vw - 32px);
+        --cp-staff-gap: 14px;
     }
-    .cp-staff-row-4 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    .cp-staff-row-2,
+    .cp-staff-row-3,
+    .cp-staff-row-4,
+    .cp-staff-row-5,
+    .cp-staff-row-6 { --cp-staff-cols: 2; --cp-staff-card: 280px; }
+}
+
+/* Narrow phones: one complete card per line keeps the embedded text legible. */
+@media (max-width: 400px) {
+    .cp-staff-row-1,
+    .cp-staff-row-2,
+    .cp-staff-row-3,
+    .cp-staff-row-4,
+    .cp-staff-row-5,
+    .cp-staff-row-6 { --cp-staff-cols: 1; --cp-staff-card: 320px; }
 }
 
 @media (max-width: 560px) {
@@ -272,15 +276,5 @@ h6.cp-page-heading-block {
     }
     h1.cp-page-heading-block {
         font-size: 30px;
-    }
-    .cp-staff-row-4,
-    .cp-staff-row-5,
-    .cp-staff-row-6 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .cp-staff-row-1 .cp-staff-card,
-    .cp-staff-row-2 .cp-staff-card,
-    .cp-staff-row-3 .cp-staff-card {
-        width: 140px;
     }
 }
