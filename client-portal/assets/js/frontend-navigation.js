@@ -85,14 +85,49 @@
     }
 
     function initNavigation() {
-        var nav = document.getElementById('cp-primary-navigation');
-        if (!nav) {
-            return;
-        }
+        // Astra's Header Builder renders this exact markup into two
+        // separate slots at once (theme_location "primary" and
+        // "mobile_menu" - see cp_replace_primary_wp_nav_menu(),
+        // includes/frontend-navigation.php) that it CSS-toggles by
+        // viewport width rather than ever having only one in the DOM;
+        // both need the About Us dropdown wiring, each fully independent
+        // since their element IDs no longer collide
+        // (cp_render_primary_navigation_markup() gives each instance its
+        // own id prefix).
+        var navs = document.querySelectorAll('.cp-primary-nav');
+        navs.forEach(function (nav) {
+            /*
+             * The copy of this nav rendered inside Astra's own native
+             * mobile-menu slot (.ast-builder-menu-mobile) must NEVER
+             * receive its own internal collapse/toggle state: Astra's own
+             * outer hamburger (#masthead .main-header-menu-toggle) already
+             * has a complete, working open/close system for that slot
+             * (astraNavMenuToggle() in Astra's frontend.js), and this
+             * instance's own is-collapsible/is-open mechanism was only
+             * ever meant for the "primary" desktop-row instance's own
+             * (effectively unreachable in practice, since Astra's own
+             * mobile breakpoint takes over first - see the 782px CSS tier
+             * further down this file) minimal-JS fallback. Adding
+             * is-collapsible here made THIS instance's menu list start
+             * hidden behind its OWN internal toggle button too - a nested
+             * second "MENU" trigger inside the drawer Astra's own
+             * hamburger had just opened, requiring two taps to ever see a
+             * nav link. Skipping it here means the CSS rules gated behind
+             * .is-collapsible (assets/css/frontend-navigation.css) simply
+             * never match for this instance, regardless of viewport width
+             * or CSS specificity - the ancestor-scoped ".ast-builder-menu-mobile
+             * .cp-primary-nav-toggle { display: none }" rule already in
+             * that file is kept only as a defensive second layer.
+             */
+            if (nav.closest('.ast-builder-menu-mobile')) {
+                initAboutDropdown(nav);
+                return;
+            }
 
-        nav.classList.add('is-collapsible');
-        initAboutDropdown(nav);
-        initMobileToggle(nav);
+            nav.classList.add('is-collapsible');
+            initAboutDropdown(nav);
+            initMobileToggle(nav);
+        });
     }
 
     if ('loading' === document.readyState) {

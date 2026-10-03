@@ -275,6 +275,98 @@ function cp_process_category_admin_actions()
     }
 }
 
+/**
+ * WordPress core silently refuses to delete whichever category is
+ * currently configured as the site's default (get_option('default_category')) -
+ * wp_delete_term() just returns 0 (not a WP_Error) in that case, regardless
+ * of the term's actual article count or this plugin's own Active/Inactive
+ * status. This is WordPress's own unrelated guarantee that a fallback
+ * category always exists for new posts, not a rule this plugin enforces -
+ * live-confirmed as the actual, sole reason a genuinely empty category
+ * ("New", term_id 1, WordPress's own original default "Uncategorized"
+ * term, since renamed) could not be deleted from the Portal. Portal-only
+ * accounts never see the native Settings -> Writing screen where an
+ * administrator would normally change this (per this plugin's own access
+ * model), so a delete attempt against the current default category
+ * reassigns the site's default to a different existing category first -
+ * never a newly created one, never a hardcoded name - so the delete can
+ * then proceed normally. No-ops (returns true immediately) for every
+ * other category, which is by far the common case.
+ */
+function cp_reassign_default_category_away_from($term_id)
+{
+    $term_id = absint($term_id);
+    if (absint(get_option('default_category')) !== $term_id) {
+        return true;
+    }
+
+    $candidates = get_terms([
+        'taxonomy' => 'category',
+        'hide_empty' => false,
+        'exclude' => [$term_id],
+    ]);
+
+    if (is_wp_error($candidates) || empty($candidates)) {
+        // No other category exists to fall back to - refuse rather than
+        // leave the site with an invalid default_category option.
+        return false;
+    }
+
+    // Prefer the most-used still-Active category as the new sitewide
+    // default (the least surprising choice for new posts going forward);
+    // fall back to any other existing category if none are Active rather
+    // than leaving the site without a valid default at all.
+    usort($candidates, static function ($a, $b) {
+        return $b->count - $a->count;
+    });
+
+    $new_default = null;
+    foreach ($candidates as $candidate) {
+        if (cp_category_is_active($candidate)) {
+            $new_default = $candidate;
+            break;
+        }
+    }
+    if (!$new_default instanceof WP_Term) {
+        $new_default = $candidates[0];
+    }
+
+    update_option('default_category', $new_default->term_id);
+
+    return absint(get_option('default_category')) !== $term_id;
+}
+
+/**
+ * Whether a category term currently has ANY article relationship, in ANY
+ * post status (published, draft, pending, private, future, or trashed -
+ * a trashed article's relationship row is not cleaned up until the trash
+ * is actually emptied, so it still counts as a genuine current
+ * association). Queries wp_term_relationships directly rather than
+ * trusting $term->count, which - per WordPress's own default
+ * update_count_callback for the "category" taxonomy - only ever counts
+ * PUBLISHED posts, so a category holding only draft/private/trashed
+ * articles would misreport as "0" and appear safe to delete when it is
+ * not. Active/Inactive status (this plugin's own term meta) never factors
+ * into this - it controls public visibility only, never deletability.
+ */
+function cp_category_has_any_article_relationship($term_id)
+{
+    $term = get_term(absint($term_id), 'category');
+    if (!$term instanceof WP_Term) {
+        return false;
+    }
+
+    global $wpdb;
+    $count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->term_relationships} tr
+         INNER JOIN {$wpdb->posts} p ON p.ID = tr.object_id
+         WHERE tr.term_taxonomy_id = %d AND p.post_type = 'post'",
+        $term->term_taxonomy_id
+    ));
+
+    return absint($count) > 0;
+}
+
 function cp_handle_category_request()
 {
     $action = sanitize_key(cp_get_value('action'));
@@ -295,6 +387,16 @@ function cp_handle_category_request()
         }
 
         return $term;
+    }
+
+    if (cp_category_has_any_article_relationship($category_id)) {
+        cp_set_temporary_notice('danger', __('This category still has articles associated with it and cannot be deleted. Remove or reassign those articles first.', 'client-portal'));
+        cp_redirect('cp-categories', cp_category_page_args($category_page));
+    }
+
+    if (!cp_reassign_default_category_away_from($category_id)) {
+        cp_set_temporary_notice('danger', __('This category could not be deleted because no other category exists to become the site\'s default. Create another category first.', 'client-portal'));
+        cp_redirect('cp-categories', cp_category_page_args($category_page));
     }
 
     $result = wp_delete_term($category_id, 'category');

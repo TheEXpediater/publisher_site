@@ -191,8 +191,20 @@ function cp_nav_item_is_current($type, $term_id = 0)
     return $active['type'] === $type && absint($active['term_id']) === absint($term_id);
 }
 
-function cp_render_primary_navigation_markup()
+/**
+ * $instance_id lets this exact markup be rendered more than once on the
+ * same page (Astra's Header Builder renders a separate "mobile_menu"
+ * theme_location row alongside "primary" - both exist in the DOM at once,
+ * CSS-toggled by viewport width, not PHP-toggled - see
+ * cp_replace_primary_wp_nav_menu() below) without producing duplicate
+ * element IDs; the shared .cp-primary-nav* classes (which both CSS and
+ * assets/js/frontend-navigation.js key off) stay identical either way.
+ */
+function cp_render_primary_navigation_markup($instance_id = 'cp-primary-navigation')
 {
+    $instance_id = $instance_id ? sanitize_html_class($instance_id) : 'cp-primary-navigation';
+    $menu_id = $instance_id . '-menu';
+    $about_menu_id = $instance_id . '-about-menu';
     $about_us_visible = cp_about_us_is_publicly_visible();
     $categories = cp_get_primary_navigation_categories();
     $visible_categories = array_slice($categories, 0, CP_NAV_MAX_VISIBLE_CATEGORIES);
@@ -221,19 +233,19 @@ function cp_render_primary_navigation_markup()
 
     ob_start();
     ?>
-    <nav id="cp-primary-navigation" class="cp-primary-nav" aria-label="<?php esc_attr_e('Primary', 'client-portal'); ?>">
+    <nav id="<?php echo esc_attr($instance_id); ?>" class="cp-primary-nav" aria-label="<?php esc_attr_e('Primary', 'client-portal'); ?>">
         <div class="cp-primary-nav-inner">
             <button
                 type="button"
                 class="cp-primary-nav-toggle"
                 aria-expanded="false"
-                aria-controls="cp-primary-nav-menu"
+                aria-controls="<?php echo esc_attr($menu_id); ?>"
             >
                 <span class="cp-primary-nav-toggle-bars" aria-hidden="true"></span>
                 <span class="cp-primary-nav-toggle-label"><?php esc_html_e('Menu', 'client-portal'); ?></span>
             </button>
 
-            <ul id="cp-primary-nav-menu" class="cp-primary-nav-menu">
+            <ul id="<?php echo esc_attr($menu_id); ?>" class="cp-primary-nav-menu">
                 <?php foreach ($visible_categories as $category) : ?>
                     <?php
                     $category_url = cp_get_category_page_url($category);
@@ -259,12 +271,12 @@ function cp_render_primary_navigation_markup()
                             type="button"
                             class="cp-primary-nav-about-toggle<?php echo $has_active_overflow_child ? ' has-active-child' : ''; ?>"
                             aria-expanded="false"
-                            aria-controls="cp-primary-nav-about-menu"
+                            aria-controls="<?php echo esc_attr($about_menu_id); ?>"
                             aria-label="<?php echo $has_active_overflow_child ? esc_attr__('Show more sections (current section inside)', 'client-portal') : esc_attr__('Show more sections', 'client-portal'); ?>"
                         >
                             <span aria-hidden="true"></span>
                         </button>
-                        <div id="cp-primary-nav-about-menu" class="cp-primary-nav-about-menu">
+                        <div id="<?php echo esc_attr($about_menu_id); ?>" class="cp-primary-nav-about-menu">
                             <?php if (!empty($about_pages)) : ?>
                                 <div class="cp-primary-nav-about-group">
                                     <ul>
@@ -354,25 +366,59 @@ function cp_render_footer_navigation_markup()
 }
 
 /**
- * Replace the theme's primary and footer navigation output at the
+ * Replace the theme's primary, mobile, and footer navigation output at the
  * WordPress core level. Astra (both its classic header markup and the
  * modern Header/Footer Builder) renders the site's main menu via
- * wp_nav_menu() with theme_location 'primary' (astra_register_menu_locations())
- * and its footer "Menu" builder component via theme_location 'footer_menu'
- * (class-astra-footer-menu-component.php) - see includes/nav-menu.php's
- * cp_ensure_footer_menu_location_assigned() for why the footer location
- * needs a menu assigned before Astra will even call wp_nav_menu() for it.
- * Short-circuiting wp_nav_menu() here via pre_wp_nav_menu replaces exactly
- * those two calls - and only those calls - with no theme files touched, so
- * Astra's surrounding header/branding/footer markup is untouched and no
- * second navigation is introduced.
+ * wp_nav_menu() with theme_location 'primary' (astra_register_menu_locations()),
+ * a SEPARATE small-screen row via theme_location 'mobile_menu'
+ * (class-astra-mobile-menu-component.php - rendered into its own
+ * .ast-builder-menu-mobile block that coexists in the DOM alongside the
+ * "primary" block at all times, CSS-toggled by viewport width rather than
+ * ever being two different PHP code paths), and its footer "Menu" builder
+ * component via theme_location 'footer_menu' (class-astra-footer-menu-component.php)
+ * - see includes/nav-menu.php's cp_ensure_footer_menu_location_assigned()
+ * and cp_ensure_mobile_menu_location_assigned() for why those two
+ * locations need a menu assigned before Astra will even call wp_nav_menu()
+ * for them at all. Short-circuiting wp_nav_menu() here via pre_wp_nav_menu
+ * replaces exactly those three calls - and only those calls - with no
+ * theme files touched, so Astra's surrounding header/branding/footer
+ * markup is untouched and no second navigation SYSTEM is introduced (the
+ * mobile row renders the identical cp_render_primary_navigation_markup()
+ * output, with its own element IDs so both copies validate as markup at
+ * once - this is one navigation, shown through two of Astra's slots, not
+ * two navigations to keep in sync).
  */
 function cp_replace_primary_wp_nav_menu($output, $args)
 {
     $theme_location = (is_object($args) && isset($args->theme_location)) ? $args->theme_location : '';
 
     if ('primary' === $theme_location) {
-        return cp_render_primary_navigation_markup();
+        return cp_render_primary_navigation_markup('cp-primary-navigation');
+    }
+
+    if ('mobile_menu' === $theme_location) {
+        /*
+         * Astra's own mobile-menu click handler (astraNavMenuToggle(),
+         * wp-content/themes/astra/assets/js/frontend.js on this install)
+         * looks for an element matching "#masthead > #ast-mobile-header
+         * .main-header-bar-navigation" to toggle visible/hidden - that
+         * class normally comes from wp_nav_menu()'s own 'container_class'
+         * argument (class-astra-mobile-menu-component.php passes
+         * container_class => 'main-header-bar-navigation'), but
+         * pre_wp_nav_menu short-circuits wp_nav_menu() entirely, skipping
+         * its container-wrapping step along with everything else - so
+         * that class never existed in this plugin's own output. Astra's
+         * handler found nothing, silently no-opped (an early
+         * "typeof === undefined" guard returns before touching any
+         * class/state), and the tap appeared to do nothing at all. Wrapping
+         * the output in that one required class - purely a hook for
+         * Astra's own existing JS, not a new interaction system - is all
+         * that was missing; everything else that JS already does (toggling
+         * .ast-main-header-nav-open on <body>, which is what actually
+         * reveals .ast-mobile-header-content per Astra's own CSS) then
+         * works unmodified.
+         */
+        return '<div class="main-header-bar-navigation">' . cp_render_primary_navigation_markup('cp-primary-navigation-mobile') . '</div>';
     }
 
     if ('footer_menu' === $theme_location) {

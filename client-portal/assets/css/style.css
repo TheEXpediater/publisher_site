@@ -220,18 +220,20 @@ body.cp-portal-only-shell .cp-app .cp-toast-region { top: 18px; }
 .cp-app .cp-log-detail-list > :nth-last-child(-n+2) { border-bottom: 0; }
 .cp-app .cp-log-empty-detail { margin: 0; padding: 18px; border: 1px dashed #d0d5dd; border-radius: 10px; color: var(--cp-muted); text-align: center; }
 
+/*
+ * This 1080px breakpoint is for unrelated content-area grids only
+ * (filter/log filter forms going 2-column before they eventually go
+ * 1-column at 782px below) - NOT the admin sidebar. The sidebar's own
+ * drawer/hamburger behavior used to also switch on at this same 1080px
+ * query, which is what caused it to replace the persistent left sidebar
+ * with a hidden drawer on completely normal laptop/desktop widths (any
+ * browser window <=1080px wide, which is most laptops unless maximized on
+ * a large display) - that regression is fixed below by moving the
+ * sidebar's own drawer behavior to the genuinely-small 782px breakpoint
+ * (matching WordPress's own admin-bar/mobile breakpoint, already used
+ * elsewhere in this file) instead of sharing this one.
+ */
 @media (max-width: 1080px) {
-    .cp-app .cp-sidebar-collapse-toggle { display: none; }
-    .cp-app.cp-sidebar-collapsed .cp-sidebar { width: 272px; flex-basis: 272px; padding: 28px 20px; }
-    .cp-app.cp-sidebar-collapsed .cp-brand-copy, .cp-app.cp-sidebar-collapsed .cp-nav-label, .cp-app.cp-sidebar-collapsed .cp-nav-link span, .cp-app.cp-sidebar-collapsed .cp-sidebar-foot span { display: block; }
-    .cp-app.cp-sidebar-collapsed .cp-sidebar-nav { justify-items: stretch; }
-    .cp-app.cp-sidebar-collapsed .cp-nav-link { width: auto; height: auto; justify-content: flex-start; gap: 13px; padding: 12px 14px; }
-    .cp-app.cp-sidebar-collapsed .cp-nav-link i { width: 20px; font-size: 17px; }
-    .cp-app.cp-sidebar-collapsed .cp-sidebar-foot { justify-content: flex-start; padding: 16px 12px 0; }
-    .cp-app .cp-sidebar { position: fixed; top: 32px; bottom: 0; left: 0; height: auto; transform: translateX(-100%); transition: transform .22s ease; }
-    .cp-app.cp-sidebar-open .cp-sidebar { transform: translateX(0); }
-    .cp-app .cp-sidebar-close, .cp-app .cp-menu-toggle { display: inline-flex; }
-    .cp-app.cp-sidebar-open .cp-mobile-backdrop { position: fixed; inset: 32px 0 0; display: block; background: rgba(16,24,40,.48); z-index: 1040; }
     .cp-app .cp-filter-grid { grid-template-columns: 1fr 1fr; }
     .cp-app .cp-log-filter-grid { grid-template-columns: 1fr 1fr; }
 }
@@ -256,6 +258,26 @@ body.cp-portal-only-shell .cp-app .cp-toast-region { top: 18px; }
     .cp-app .cp-log-detail-list dd { border-bottom: 1px solid var(--cp-border); }
     .cp-app .cp-toast-region { top: calc(46px + 12px); right: 12px; left: 12px; width: auto; }
     .cp-app .cp-table-pagination { justify-content: flex-start; padding: 16px; }
+
+    /*
+     * The admin sidebar's ONLY responsive transformation: below this
+     * genuinely-small width it becomes a slide-in drawer opened by the
+     * hamburger (.cp-menu-toggle, wired in assets/js/app.js). Above this
+     * width (every normal laptop/desktop/tablet-landscape size) the base
+     * .cp-sidebar rule earlier in this file applies unmodified - sticky,
+     * always visible, never hidden behind a toggle.
+     */
+    .cp-app .cp-sidebar-collapse-toggle { display: none; }
+    .cp-app.cp-sidebar-collapsed .cp-sidebar { width: 272px; flex-basis: 272px; padding: 28px 20px; }
+    .cp-app.cp-sidebar-collapsed .cp-brand-copy, .cp-app.cp-sidebar-collapsed .cp-nav-label, .cp-app.cp-sidebar-collapsed .cp-nav-link span, .cp-app.cp-sidebar-collapsed .cp-sidebar-foot span { display: block; }
+    .cp-app.cp-sidebar-collapsed .cp-sidebar-nav { justify-items: stretch; }
+    .cp-app.cp-sidebar-collapsed .cp-nav-link { width: auto; height: auto; justify-content: flex-start; gap: 13px; padding: 12px 14px; }
+    .cp-app.cp-sidebar-collapsed .cp-nav-link i { width: 20px; font-size: 17px; }
+    .cp-app.cp-sidebar-collapsed .cp-sidebar-foot { justify-content: flex-start; padding: 16px 12px 0; }
+    .cp-app .cp-sidebar { position: fixed; top: 46px; bottom: 0; left: 0; height: auto; transform: translateX(-100%); transition: transform .22s ease; }
+    .cp-app.cp-sidebar-open .cp-sidebar { transform: translateX(0); }
+    .cp-app .cp-sidebar-close, .cp-app .cp-menu-toggle { display: inline-flex; }
+    .cp-app.cp-sidebar-open .cp-mobile-backdrop { position: fixed; inset: 46px 0 0; display: block; background: rgba(16,24,40,.48); z-index: 1040; }
 }
 
 @media (max-width: 520px) {
@@ -272,14 +294,12 @@ body.cp-portal-only-shell .cp-app .cp-toast-region { top: 18px; }
     }
 }
 
-@media (max-width: 1080px) {
-    body.cp-portal-only-shell .cp-app .cp-sidebar { top: 0; }
-    body.cp-portal-only-shell .cp-app.cp-sidebar-open .cp-mobile-backdrop { inset: 0; }
-}
-
 @media (max-width: 782px) {
     body.cp-portal-only-shell #wpbody-content > .cp-app { margin-left: 0; }
     body.cp-portal-only-shell .cp-app .cp-sidebar { top: 0; }
     body.cp-portal-only-shell .cp-app .cp-topbar { top: 0; }
     body.cp-portal-only-shell .cp-app .cp-toast-region { top: 12px; }
+    /* The portal-only shell has no WP admin bar, so its drawer backdrop
+       (see the sidebar drawer rules above) needs no top offset. */
+    body.cp-portal-only-shell .cp-app.cp-sidebar-open .cp-mobile-backdrop { inset: 0; }
 }

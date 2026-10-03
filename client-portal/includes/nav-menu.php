@@ -380,3 +380,68 @@ function cp_release_footer_menu_location_on_deactivate()
     unset($locations['footer_menu']);
     set_theme_mod('nav_menu_locations', $locations);
 }
+
+/**
+ * Same placeholder-menu-assignment need as cp_ensure_footer_menu_location_assigned()
+ * above, for Astra's separate small-screen header row (theme_location
+ * "mobile_menu" - class-astra-mobile-menu-component.php). Without a real
+ * WP nav menu assigned there, Astra's has_nav_menu('mobile_menu') check
+ * never calls wp_nav_menu() at all, so cp_replace_primary_wp_nav_menu()
+ * never gets a chance to intercept it - Astra instead silently falls back
+ * to a raw wp_page_menu() listing of every published Page (which is what
+ * was actually rendering to real phones: an unstyled, flat list with no
+ * About Us submenu, entirely unrelated to this plugin's own carefully
+ * styled/accessible mobile treatment of cp_render_primary_navigation_markup(),
+ * which was reachable in the DOM but never used for this slot). This
+ * placeholder's items are likewise never rendered - the whole output is
+ * replaced - so its own item list permanently stays empty.
+ */
+function cp_ensure_mobile_menu_location_assigned()
+{
+    if (!current_theme_supports('menus')) {
+        return;
+    }
+
+    $registered_locations = get_registered_nav_menus();
+    if (!isset($registered_locations['mobile_menu'])) {
+        return;
+    }
+
+    $locations = get_nav_menu_locations();
+    if (!empty($locations['mobile_menu']) && get_term($locations['mobile_menu'], 'nav_menu') instanceof WP_Term) {
+        return;
+    }
+
+    $menu_name = __('Publisher Portal Mobile (auto-managed)', 'client-portal');
+    $existing_menu = wp_get_nav_menu_object($menu_name);
+    $menu_id = $existing_menu instanceof WP_Term ? $existing_menu->term_id : wp_create_nav_menu($menu_name);
+
+    if (is_wp_error($menu_id) || !$menu_id) {
+        return;
+    }
+
+    $locations['mobile_menu'] = $menu_id;
+    set_theme_mod('nav_menu_locations', $locations);
+}
+add_action('after_setup_theme', 'cp_ensure_mobile_menu_location_assigned', 20);
+
+/**
+ * Mirrors cp_release_footer_menu_location_on_deactivate() for the
+ * "mobile_menu" location's own auto-managed placeholder.
+ */
+function cp_release_mobile_menu_location_on_deactivate()
+{
+    $menu_name = __('Publisher Portal Mobile (auto-managed)', 'client-portal');
+    $placeholder_menu = wp_get_nav_menu_object($menu_name);
+    if (!$placeholder_menu instanceof WP_Term) {
+        return;
+    }
+
+    $locations = get_nav_menu_locations();
+    if (empty($locations['mobile_menu']) || absint($locations['mobile_menu']) !== absint($placeholder_menu->term_id)) {
+        return;
+    }
+
+    unset($locations['mobile_menu']);
+    set_theme_mod('nav_menu_locations', $locations);
+}

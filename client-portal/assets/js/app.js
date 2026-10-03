@@ -192,8 +192,12 @@
     function initSidebarCollapse(app) {
         var toggle = app.querySelector('[data-cp-sidebar-collapse]');
         var storageKey = 'cpPortalSidebarCollapsed';
+        // Must stay the inverse of style.css's sidebar-drawer breakpoint
+        // (currently max-width: 782px) - this decides whether the
+        // desktop-only "collapse sidebar to icons" preference is honored,
+        // vs. the sidebar being in its small-screen drawer mode instead.
         var isDesktop = function () {
-            return window.matchMedia('(min-width: 1081px)').matches;
+            return window.matchMedia('(min-width: 783px)').matches;
         };
 
         if (!toggle) {

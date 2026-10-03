@@ -14,13 +14,6 @@ function cp_get_analytics_data()
         'published' => $stats['published'],
         'drafts' => $stats['drafts'],
         'categories' => $stats['categories'],
-        'latest_posts' => get_posts([
-            'post_type' => 'post',
-            'posts_per_page' => 5,
-            'post_status' => current_user_can('edit_posts') ? ['publish', 'draft', 'private'] : ['publish'],
-            'orderby' => 'date',
-            'order' => 'DESC',
-        ]),
     ];
 }
 

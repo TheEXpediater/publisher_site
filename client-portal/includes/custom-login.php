@@ -25,6 +25,7 @@ function cp_activate_plugin()
 function cp_deactivate_plugin()
 {
     cp_release_footer_menu_location_on_deactivate();
+    cp_release_mobile_menu_location_on_deactivate();
     flush_rewrite_rules();
 }
 

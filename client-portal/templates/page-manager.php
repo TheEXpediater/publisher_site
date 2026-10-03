@@ -40,16 +40,6 @@ $about_nav_editor_data = wp_json_encode([
         <p><?php esc_html_e('Manage standalone institutional pages such as About Us, Staff, and Join the Publication.', 'client-portal'); ?></p>
     </div>
     <div class="cp-page-heading-actions">
-        <button
-            type="button"
-            class="btn btn-outline-secondary cp-icon-only-btn"
-            data-bs-toggle="modal"
-            data-bs-target="#cp-about-nav-modal"
-            aria-label="<?php esc_attr_e('About Us Navigation Settings', 'client-portal'); ?>"
-            title="<?php esc_attr_e('About Us Navigation Settings', 'client-portal'); ?>"
-        >
-            <i class="bi bi-gear-fill" aria-hidden="true"></i>
-        </button>
         <a class="btn btn-outline-secondary" href="<?php echo esc_url(cp_admin_url('cp-categories')); ?>">
             <i class="bi bi-arrow-left" aria-hidden="true"></i>
             <?php esc_html_e('Back to Categories', 'client-portal'); ?>
@@ -69,6 +59,16 @@ $about_nav_editor_data = wp_json_encode([
             <h3><?php esc_html_e('Managed Pages', 'client-portal'); ?></h3>
             <p><?php echo esc_html(sprintf(_n('%s page', '%s pages', count($pages), 'client-portal'), number_format_i18n(count($pages)))); ?></p>
         </div>
+        <button
+            type="button"
+            class="btn btn-outline-secondary cp-icon-only-btn"
+            data-bs-toggle="modal"
+            data-bs-target="#cp-about-nav-modal"
+            aria-label="<?php esc_attr_e('About Us Navigation Settings', 'client-portal'); ?>"
+            title="<?php esc_attr_e('About Us Navigation Settings', 'client-portal'); ?>"
+        >
+            <i class="bi bi-gear-fill" aria-hidden="true"></i>
+        </button>
     </div>
 
     <div class="table-responsive">

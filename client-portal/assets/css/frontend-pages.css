@@ -86,22 +86,52 @@ h6.cp-page-heading-block {
     letter-spacing: 0.06em;
     font-size: 13px;
     text-decoration: none;
-    transition: opacity 140ms ease;
+    transition: opacity 140ms ease, box-shadow 140ms ease;
 }
 
 .cp-page-cta:hover {
     opacity: 0.85;
 }
 
-.cp-page-cta-primary {
-    background: var(--enterprise-brand);
-    color: #fff;
+/*
+ * Explicit :link/:visited/:hover/:focus/:active coverage, and a slightly
+ * more specific selector (element + two classes, .cp-page-button-block
+ * ancestor) than a bare ".cp-page-cta-primary" would give - a defensive
+ * margin against Astra's own generic anchor-color rules (a{color:...},
+ * .entry-content wraps this since it renders through the_content()) and
+ * the browser's own default :visited link color, neither of which should
+ * ever be allowed to compete with this specific button's own color again.
+ * Scoped to this exact class combination only - never a global "a" rule.
+ */
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary:link,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary:visited,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary:hover,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary:focus,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary:active {
+    background-color: var(--enterprise-brand);
+    color: #ffffff;
 }
 
-.cp-page-cta-outline {
-    background: transparent;
+.cp-page-button-block a.cp-page-cta.cp-page-cta-primary:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline:link,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline:visited,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline:hover,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline:focus,
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline:active {
+    background-color: transparent;
     color: var(--enterprise-brand);
     border: 2px solid var(--enterprise-brand);
+}
+
+.cp-page-button-block a.cp-page-cta.cp-page-cta-outline:focus-visible {
+    outline: 2px solid var(--enterprise-brand);
+    outline-offset: 2px;
 }
 
 .cp-page-divider-block {
