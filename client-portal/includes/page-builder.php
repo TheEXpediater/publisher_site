@@ -31,18 +31,58 @@ function cp_page_is_managed($post)
     return $post instanceof WP_Post && '1' === get_post_meta($post->ID, CP_PAGE_MANAGED_META, true);
 }
 
+/**
+ * The one list of Page block types: label, Bootstrap icon, and the short
+ * description shown in the Add Block / Insert Block choosers.
+ */
+function cp_page_block_types()
+{
+    return [
+        'heading' => ['label' => __('Heading', 'client-portal'), 'icon' => 'bi-type-h1', 'description' => __('Add a section title', 'client-portal')],
+        'richtext' => ['label' => __('Rich Text', 'client-portal'), 'icon' => 'bi-text-paragraph', 'description' => __('Write paragraphs, links, and lists', 'client-portal')],
+        'image' => ['label' => __('Image', 'client-portal'), 'icon' => 'bi-image', 'description' => __('Add an image from the Media Library', 'client-portal')],
+        'staff_grid' => ['label' => __('Staff Grid', 'client-portal'), 'icon' => 'bi-people', 'description' => __('Add and manage publication staff', 'client-portal')],
+        'button' => ['label' => __('Button / CTA', 'client-portal'), 'icon' => 'bi-hand-index', 'description' => __('Add a clickable call-to-action', 'client-portal')],
+        'divider' => ['label' => __('Divider / Spacer', 'client-portal'), 'icon' => 'bi-distribute-vertical', 'description' => __('Separate page sections', 'client-portal')],
+    ];
+}
+
 function cp_page_block_label($type)
 {
-    $labels = [
-        'heading' => __('Heading', 'client-portal'),
-        'richtext' => __('Rich Text', 'client-portal'),
-        'image' => __('Image', 'client-portal'),
-        'staff_grid' => __('Staff Grid', 'client-portal'),
-        'button' => __('Button / CTA', 'client-portal'),
-        'divider' => __('Divider / Spacer', 'client-portal'),
+    $types = cp_page_block_types();
+    return isset($types[$type]) ? $types[$type]['label'] : __('Content Block', 'client-portal');
+}
+
+/**
+ * Empty starting data for a newly inserted block - also what the editor's
+ * client-side <template> copies are rendered from (templates/page-builder.php).
+ */
+function cp_page_default_block($type)
+{
+    $defaults = [
+        'heading' => ['type' => 'heading', 'level' => 2, 'content' => ''],
+        'richtext' => ['type' => 'richtext', 'content' => ''],
+        'image' => ['type' => 'image', 'attachment_id' => 0, 'alt' => '', 'caption' => ''],
+        'staff_grid' => ['type' => 'staff_grid', 'people' => []],
+        'button' => ['type' => 'button', 'label' => '', 'url' => '', 'style' => 'primary'],
+        'divider' => ['type' => 'divider', 'size' => 'medium'],
     ];
 
-    return isset($labels[$type]) ? $labels[$type] : __('Content Block', 'client-portal');
+    return isset($defaults[$type]) ? $defaults[$type] : $defaults['richtext'];
+}
+
+/**
+ * Heading alignment is a whitelisted block attribute (rendered as the same
+ * cp-align-* class the rich-text sanitizer already allows), not markup inside
+ * the heading - heading HTML stays inline-only (cp_rich_heading_allowed_html()).
+ */
+function cp_page_heading_align_choices()
+{
+    return [
+        'left' => __('Left', 'client-portal'),
+        'center' => __('Center', 'client-portal'),
+        'right' => __('Right', 'client-portal'),
+    ];
 }
 
 function cp_page_button_style_choices()
@@ -187,7 +227,14 @@ function cp_sanitize_page_blocks($blocks, $require_content = true)
             if ($level < 1 || $level > 6 || ($require_content && !cp_rich_heading_has_content($content))) {
                 return cp_article_block_error(sprintf(__('Heading block %d is incomplete.', 'client-portal'), $index + 1));
             }
-            $sanitized[] = ['type' => 'heading', 'level' => $level, 'content' => $content];
+            $heading = ['type' => 'heading', 'level' => $level, 'content' => $content];
+            // Stored only when chosen, so headings saved before alignment
+            // existed keep their exact shape (and their level's default).
+            $align = sanitize_key(cp_page_block_value($block, 'align'));
+            if (isset(cp_page_heading_align_choices()[$align])) {
+                $heading['align'] = $align;
+            }
+            $sanitized[] = $heading;
             continue;
         }
 
@@ -309,19 +356,54 @@ function cp_save_page_blocks($post_id, $blocks)
 /* Admin block editor rendering                                          */
 /* -------------------------------------------------------------------- */
 
-function cp_render_page_block_editor($block, $index)
+/**
+ * Icon-only block toolbar button: tooltip + accessible name from one label.
+ */
+function cp_render_page_block_icon_button($attribute, $icon, $label, $extra_class = '')
 {
+    printf(
+        '<button type="button" class="cp-icon-button%1$s" %2$s title="%3$s" aria-label="%3$s"><i class="bi %4$s" aria-hidden="true"></i></button>',
+        $extra_class ? ' ' . esc_attr($extra_class) : '',
+        $attribute, // Static data-* attribute string from the callers below.
+        esc_attr($label),
+        esc_attr($icon)
+    );
+}
+
+/**
+ * One block in the Page Builder canvas. $index < 0 renders an unnumbered
+ * copy for the client-side <template> (new blocks); $block_id lets that
+ * template carry a placeholder the script swaps for a unique ID.
+ */
+function cp_render_page_block_editor($block, $index, $block_id = '')
+{
+    $types = cp_page_block_types();
     $type = isset($block['type']) ? sanitize_key($block['type']) : 'richtext';
-    $block_id = 'cp-page-block-' . absint($index) . '-' . wp_rand(1000, 9999);
+    $type = isset($types[$type]) ? $type : 'richtext';
+    if ('' === $block_id) {
+        $block_id = 'cp-page-block-' . absint($index) . '-' . wp_rand(1000, 9999);
+    }
+    $is_text = in_array($type, ['heading', 'richtext'], true);
     ?>
     <article class="cp-builder-block" data-cp-block data-block-type="<?php echo esc_attr($type); ?>">
-        <div class="cp-builder-block-head">
-            <div class="cp-builder-block-title"><span class="cp-block-number"><?php echo esc_html($index + 1); ?></span><div><strong><?php echo esc_html(cp_page_block_label($type)); ?></strong><small><?php esc_html_e('Page block', 'client-portal'); ?></small></div></div>
-            <div class="cp-builder-block-actions">
-                <button type="button" class="cp-icon-button" data-cp-move-up title="<?php esc_attr_e('Move Up', 'client-portal'); ?>"><i class="bi bi-arrow-up"></i></button>
-                <button type="button" class="cp-icon-button" data-cp-move-down title="<?php esc_attr_e('Move Down', 'client-portal'); ?>"><i class="bi bi-arrow-down"></i></button>
-                <button type="button" class="cp-icon-button" data-cp-duplicate title="<?php esc_attr_e('Duplicate', 'client-portal'); ?>"><i class="bi bi-copy"></i></button>
-                <button type="button" class="cp-icon-button cp-icon-button-danger" data-cp-remove title="<?php esc_attr_e('Remove', 'client-portal'); ?>"><i class="bi bi-trash"></i></button>
+        <div class="cp-builder-block-head" data-cp-block-chrome>
+            <div class="cp-builder-block-title">
+                <span class="cp-block-drag-handle" data-cp-drag-handle title="<?php esc_attr_e('Drag to reorder', 'client-portal'); ?>" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                <span class="cp-block-number"><?php echo $index >= 0 ? esc_html($index + 1) : ''; ?></span>
+                <span class="cp-block-type-icon" aria-hidden="true"><i class="bi <?php echo esc_attr($types[$type]['icon']); ?>"></i></span>
+                <div><strong><?php echo esc_html($types[$type]['label']); ?></strong><small><?php echo esc_html($types[$type]['description']); ?></small></div>
+            </div>
+            <div class="cp-builder-block-actions" role="group" aria-label="<?php esc_attr_e('Block actions', 'client-portal'); ?>">
+                <?php
+                cp_render_page_block_icon_button('data-cp-move-up', 'bi-arrow-up', __('Move Up', 'client-portal'));
+                cp_render_page_block_icon_button('data-cp-move-down', 'bi-arrow-down', __('Move Down', 'client-portal'));
+                cp_render_page_block_icon_button('data-cp-duplicate', 'bi-copy', __('Duplicate', 'client-portal'));
+                if ($is_text) {
+                    cp_render_page_block_icon_button('data-cp-fullscreen', 'bi-arrows-fullscreen', __('Full Screen', 'client-portal'));
+                }
+                cp_render_page_block_icon_button('data-cp-block-menu-toggle aria-haspopup="menu" aria-expanded="false"', 'bi-three-dots', __('More actions', 'client-portal'));
+                cp_render_page_block_icon_button('data-cp-remove', 'bi-trash', __('Delete', 'client-portal'), 'cp-icon-button-danger');
+                ?>
             </div>
         </div>
         <div class="cp-builder-block-body">
@@ -341,12 +423,36 @@ function cp_render_page_block_editor($block, $index)
             }
             ?>
         </div>
+        <button type="button" class="cp-block-insert-below" data-cp-insert-below title="<?php esc_attr_e('Insert block below', 'client-portal'); ?>" aria-label="<?php esc_attr_e('Insert block below', 'client-portal'); ?>"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
     </article>
     <?php
 }
 
+/**
+ * Block-type buttons for the Add Block panel and the Insert Block chooser:
+ * icon + name + short description.
+ */
+function cp_render_page_block_choices()
+{
+    foreach (cp_page_block_types() as $type => $info) {
+        printf(
+            '<button type="button" class="cp-block-choice" data-cp-add-type="%1$s"><i class="bi %2$s" aria-hidden="true"></i><span><strong>%3$s</strong><small>%4$s</small></span></button>',
+            esc_attr($type),
+            esc_attr($info['icon']),
+            esc_html($info['label']),
+            esc_html($info['description'])
+        );
+    }
+}
+
+/**
+ * Heading text is edited visually (TinyMCE, see assets/js/page-builder.js);
+ * the level select is the semantic H1-H6 and the hidden align field is set
+ * by the editor's own alignment buttons.
+ */
 function cp_render_page_heading_editor_fields($block, $block_id)
 {
+    $align = isset($block['align']) && isset(cp_page_heading_align_choices()[$block['align']]) ? $block['align'] : '';
     ?>
     <div class="cp-heading-field">
         <div class="cp-heading-level-bar">
@@ -356,9 +462,11 @@ function cp_render_page_heading_editor_fields($block, $block_id)
                     <option value="<?php echo esc_attr($level); ?>" <?php selected(isset($block['level']) ? $block['level'] : 2, $level); ?>><?php echo esc_html('H' . $level); ?></option>
                 <?php endfor; ?>
             </select>
+            <span><?php esc_html_e('H1 is the page title; use H2 for main sections and H3 for subsections.', 'client-portal'); ?></span>
         </div>
+        <input type="hidden" data-cp-field="align" value="<?php echo esc_attr($align); ?>">
         <label class="form-label cp-visually-hidden-label" for="<?php echo esc_attr($block_id); ?>-content"><?php esc_html_e('Heading text', 'client-portal'); ?></label>
-        <textarea class="form-control cp-heading-editor" id="<?php echo esc_attr($block_id); ?>-content" data-cp-field="content" data-cp-heading-editor rows="3"><?php echo esc_textarea(isset($block['content']) ? $block['content'] : ''); ?></textarea>
+        <textarea class="form-control cp-heading-editor" id="<?php echo esc_attr($block_id); ?>-content" data-cp-field="content" data-cp-heading-editor rows="2"><?php echo esc_textarea(isset($block['content']) ? $block['content'] : ''); ?></textarea>
     </div>
     <?php
 }
@@ -368,7 +476,7 @@ function cp_render_page_richtext_editor_fields($block, $block_id)
     ?>
     <div class="cp-paragraph-field">
         <label class="form-label" for="<?php echo esc_attr($block_id); ?>-content"><?php esc_html_e('Content', 'client-portal'); ?></label>
-        <textarea class="form-control cp-paragraph-editor" id="<?php echo esc_attr($block_id); ?>-content" data-cp-field="content" data-cp-paragraph-editor rows="6"><?php echo esc_textarea(isset($block['content']) ? $block['content'] : ''); ?></textarea>
+        <textarea class="form-control cp-paragraph-editor" id="<?php echo esc_attr($block_id); ?>-content" data-cp-field="content" data-cp-paragraph-editor rows="8"><?php echo esc_textarea(isset($block['content']) ? $block['content'] : ''); ?></textarea>
     </div>
     <?php
 }
@@ -376,27 +484,34 @@ function cp_render_page_richtext_editor_fields($block, $block_id)
 function cp_render_page_image_editor_fields($block, $block_id)
 {
     $attachment_id = isset($block['attachment_id']) ? absint($block['attachment_id']) : 0;
-    $preview_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'medium') : '';
+    $preview_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'medium_large') : '';
     ?>
     <input type="hidden" data-cp-field="attachment_id" value="<?php echo esc_attr($attachment_id); ?>">
-    <div class="cp-image-picker">
-        <button type="button" class="btn btn-outline-primary" data-cp-select-image><i class="bi bi-images"></i> <?php esc_html_e('Select Image', 'client-portal'); ?></button>
-        <div class="cp-image-preview" data-cp-image-preview<?php if (!$preview_url) : ?> hidden<?php endif; ?>><?php if ($preview_url) : ?><img src="<?php echo esc_url($preview_url); ?>" alt=""><?php endif; ?></div>
+    <div class="cp-page-image-field">
+        <div class="cp-page-image-stage">
+            <div class="cp-image-preview" data-cp-image-preview<?php if (!$preview_url) : ?> hidden<?php endif; ?>><?php if ($preview_url) : ?><img src="<?php echo esc_url($preview_url); ?>" alt=""><?php endif; ?></div>
+            <div class="cp-page-image-empty" data-cp-image-empty<?php if ($preview_url) : ?> hidden<?php endif; ?>><i class="bi bi-image" aria-hidden="true"></i><span><?php esc_html_e('No image selected yet', 'client-portal'); ?></span></div>
+        </div>
+        <div class="cp-page-image-actions">
+            <button type="button" class="btn btn-outline-primary btn-sm" data-cp-select-image><i class="bi bi-images" aria-hidden="true"></i> <span data-cp-select-image-label><?php echo $preview_url ? esc_html__('Replace Image', 'client-portal') : esc_html__('Select Image', 'client-portal'); ?></span></button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-cp-remove-image<?php if (!$attachment_id) : ?> hidden<?php endif; ?>><i class="bi bi-x-lg" aria-hidden="true"></i> <?php esc_html_e('Remove', 'client-portal'); ?></button>
+        </div>
     </div>
     <div class="row g-3 mt-1">
-        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-alt"><?php esc_html_e('Alt text', 'client-portal'); ?></label><input class="form-control" id="<?php echo esc_attr($block_id); ?>-alt" data-cp-field="alt" value="<?php echo esc_attr(isset($block['alt']) ? $block['alt'] : ''); ?>"></div>
-        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-caption"><?php esc_html_e('Caption (optional)', 'client-portal'); ?></label><input class="form-control" id="<?php echo esc_attr($block_id); ?>-caption" data-cp-field="caption" value="<?php echo esc_attr(isset($block['caption']) ? $block['caption'] : ''); ?>"></div>
+        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-alt"><?php esc_html_e('Alt text', 'client-portal'); ?></label><input class="form-control" id="<?php echo esc_attr($block_id); ?>-alt" data-cp-field="alt" value="<?php echo esc_attr(isset($block['alt']) ? $block['alt'] : ''); ?>"><div class="form-text"><?php esc_html_e('Describe the image for visitors who cannot see it.', 'client-portal'); ?></div></div>
+        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-caption"><?php esc_html_e('Caption (optional)', 'client-portal'); ?></label><input class="form-control" id="<?php echo esc_attr($block_id); ?>-caption" data-cp-field="caption" value="<?php echo esc_attr(isset($block['caption']) ? $block['caption'] : ''); ?>"><div class="form-text"><?php esc_html_e('Shown under the image on the page.', 'client-portal'); ?></div></div>
     </div>
     <?php
 }
 
 function cp_render_page_button_editor_fields($block, $block_id)
 {
-    $style = isset($block['style']) ? $block['style'] : 'primary';
+    $style = isset($block['style']) && isset(cp_page_button_style_choices()[$block['style']]) ? $block['style'] : 'primary';
+    $label = isset($block['label']) ? $block['label'] : '';
     ?>
     <div class="row g-3">
-        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-label"><?php esc_html_e('Button Label', 'client-portal'); ?></label><input class="form-control" id="<?php echo esc_attr($block_id); ?>-label" data-cp-field="label" value="<?php echo esc_attr(isset($block['label']) ? $block['label'] : ''); ?>"></div>
-        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-url"><?php esc_html_e('Link URL', 'client-portal'); ?></label><input type="url" class="form-control" id="<?php echo esc_attr($block_id); ?>-url" data-cp-field="url" value="<?php echo esc_attr(isset($block['url']) ? $block['url'] : ''); ?>" placeholder="https://"></div>
+        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-label"><?php esc_html_e('Button Label', 'client-portal'); ?></label><input class="form-control" id="<?php echo esc_attr($block_id); ?>-label" data-cp-field="label" value="<?php echo esc_attr($label); ?>" placeholder="<?php esc_attr_e('e.g. Join the Publication', 'client-portal'); ?>"></div>
+        <div class="col-md-6"><label class="form-label" for="<?php echo esc_attr($block_id); ?>-url"><?php esc_html_e('Link URL', 'client-portal'); ?></label><input type="url" class="form-control" id="<?php echo esc_attr($block_id); ?>-url" data-cp-field="url" value="<?php echo esc_attr(isset($block['url']) ? $block['url'] : ''); ?>" placeholder="https://" inputmode="url"><div class="form-text"><?php esc_html_e('Paste the full web address, starting with https:// (for example a Google Form or another page on this site). Opens in a new tab.', 'client-portal'); ?></div></div>
         <div class="col-md-6">
             <label class="form-label" for="<?php echo esc_attr($block_id); ?>-style"><?php esc_html_e('Style', 'client-portal'); ?></label>
             <select class="form-select" id="<?php echo esc_attr($block_id); ?>-style" data-cp-field="style">
@@ -405,20 +520,34 @@ function cp_render_page_button_editor_fields($block, $block_id)
                 <?php endforeach; ?>
             </select>
         </div>
+        <div class="col-md-6">
+            <span class="form-label d-block"><?php esc_html_e('Preview', 'client-portal'); ?></span>
+            <div class="cp-page-button-preview"><span class="cp-page-button-preview-cta is-<?php echo esc_attr($style); ?>" data-cp-button-preview data-placeholder="<?php esc_attr_e('Button label', 'client-portal'); ?>"><?php echo esc_html('' !== $label ? $label : __('Button label', 'client-portal')); ?></span></div>
+        </div>
     </div>
     <?php
 }
 
+/**
+ * Spacer size as a visual Small/Medium/Large choice; the hidden field is
+ * what gets serialized.
+ */
 function cp_render_page_divider_editor_fields($block, $block_id)
 {
-    $size = isset($block['size']) ? $block['size'] : 'medium';
+    $size = isset($block['size']) && isset(cp_page_divider_size_choices()[$block['size']]) ? $block['size'] : 'medium';
     ?>
-    <label class="form-label" for="<?php echo esc_attr($block_id); ?>-size"><?php esc_html_e('Spacing', 'client-portal'); ?></label>
-    <select class="form-select" id="<?php echo esc_attr($block_id); ?>-size" data-cp-field="size">
-        <?php foreach (cp_page_divider_size_choices() as $size_key => $size_label) : ?>
-            <option value="<?php echo esc_attr($size_key); ?>" <?php selected($size, $size_key); ?>><?php echo esc_html($size_label); ?></option>
-        <?php endforeach; ?>
-    </select>
+    <input type="hidden" data-cp-field="size" value="<?php echo esc_attr($size); ?>">
+    <div class="cp-divider-options" role="group" aria-labelledby="<?php echo esc_attr($block_id); ?>-size-label">
+        <span class="form-label" id="<?php echo esc_attr($block_id); ?>-size-label"><?php esc_html_e('Spacing', 'client-portal'); ?></span>
+        <div class="cp-divider-choices">
+            <?php foreach (cp_page_divider_size_choices() as $size_key => $size_label) : ?>
+                <button type="button" class="cp-divider-choice" data-cp-divider-size="<?php echo esc_attr($size_key); ?>" aria-pressed="<?php echo $size_key === $size ? 'true' : 'false'; ?>">
+                    <span class="cp-divider-sample cp-divider-sample-<?php echo esc_attr($size_key); ?>" aria-hidden="true"></span>
+                    <span><?php echo esc_html($size_label); ?></span>
+                </button>
+            <?php endforeach; ?>
+        </div>
+    </div>
     <?php
 }
 
@@ -629,7 +758,11 @@ function cp_render_page_block($block)
     if ('heading' === $type) {
         $level = isset($block['level']) ? max(1, min(6, absint($block['level']))) : 2;
         $content = wp_kses_post(isset($block['content']) ? $block['content'] : '');
-        return '<h' . $level . ' class="cp-page-heading-block">' . $content . '</h' . $level . '>';
+        $classes = 'cp-page-heading-block';
+        if (isset($block['align']) && isset(cp_page_heading_align_choices()[$block['align']])) {
+            $classes .= ' cp-align-' . $block['align'];
+        }
+        return '<h' . $level . ' class="' . esc_attr($classes) . '">' . $content . '</h' . $level . '>';
     }
 
     if ('richtext' === $type) {

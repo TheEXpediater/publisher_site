@@ -55,6 +55,16 @@ h6.cp-page-heading-block {
     color: var(--enterprise-brand);
 }
 
+/* Alignment chosen in the Page Builder: the same whitelisted cp-align-*
+   classes the rich-text sanitizer allows, plus the heading block's own
+   align attribute (includes/page-builder.php). */
+.cp-page-heading-block.cp-align-left,
+.cp-page-richtext-block .cp-align-left { text-align: left; }
+.cp-page-heading-block.cp-align-center,
+.cp-page-richtext-block .cp-align-center { text-align: center; }
+.cp-page-heading-block.cp-align-right,
+.cp-page-richtext-block .cp-align-right { text-align: right; }
+
 .cp-page-image-block {
     margin: 0 0 28px;
     text-align: center;

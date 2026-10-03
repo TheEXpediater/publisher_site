@@ -91,14 +91,9 @@ $is_about_parent = !empty($page_data['is_about_us_parent']);
                 <?php foreach ($blocks as $index => $block) : cp_render_page_block_editor($block, $index); endforeach; ?>
             </div>
             <div class="cp-add-block" data-cp-add-block>
-                <button type="button" class="cp-add-block-trigger" data-cp-add-toggle><span class="cp-add-block-plus"><i class="bi bi-plus-lg"></i></span><strong><?php esc_html_e('+ Add Block', 'client-portal'); ?></strong><small><?php esc_html_e('Choose content type to insert', 'client-portal'); ?></small></button>
-                <div class="cp-add-block-options" data-cp-add-options>
-                    <button type="button" data-cp-add-type="heading"><i class="bi bi-type-h1"></i><span><?php esc_html_e('Heading', 'client-portal'); ?></span></button>
-                    <button type="button" data-cp-add-type="richtext"><i class="bi bi-text-paragraph"></i><span><?php esc_html_e('Rich Text', 'client-portal'); ?></span></button>
-                    <button type="button" data-cp-add-type="image"><i class="bi bi-image"></i><span><?php esc_html_e('Image', 'client-portal'); ?></span></button>
-                    <button type="button" data-cp-add-type="staff_grid"><i class="bi bi-people"></i><span><?php esc_html_e('Staff Grid', 'client-portal'); ?></span></button>
-                    <button type="button" data-cp-add-type="button"><i class="bi bi-link-45deg"></i><span><?php esc_html_e('Button / CTA', 'client-portal'); ?></span></button>
-                    <button type="button" data-cp-add-type="divider"><i class="bi bi-distribute-vertical"></i><span><?php esc_html_e('Divider / Spacer', 'client-portal'); ?></span></button>
+                <button type="button" class="cp-add-block-trigger" data-cp-add-toggle aria-expanded="false" aria-controls="cp-add-block-options"><span class="cp-add-block-plus" aria-hidden="true"><i class="bi bi-plus-lg"></i></span><strong><?php esc_html_e('Add Block', 'client-portal'); ?></strong><small><?php esc_html_e('Choose a content type to add at the end of the page', 'client-portal'); ?></small></button>
+                <div class="cp-add-block-options" id="cp-add-block-options" data-cp-add-options role="group" aria-label="<?php esc_attr_e('Block types', 'client-portal'); ?>">
+                    <?php cp_render_page_block_choices(); ?>
                 </div>
             </div>
         </div>
@@ -118,3 +113,31 @@ $is_about_parent = !empty($page_data['is_about_us_parent']);
         </div>
     </div>
 </form>
+
+<div class="cp-block-chooser" data-cp-block-chooser role="dialog" aria-labelledby="cp-block-chooser-title" hidden>
+    <div class="cp-block-chooser-head">
+        <strong id="cp-block-chooser-title" data-cp-chooser-title><?php esc_html_e('Insert block', 'client-portal'); ?></strong>
+        <button type="button" class="cp-icon-button" data-cp-chooser-close title="<?php esc_attr_e('Close', 'client-portal'); ?>" aria-label="<?php esc_attr_e('Close', 'client-portal'); ?>"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+    <div class="cp-block-chooser-options"><?php cp_render_page_block_choices(); ?></div>
+</div>
+
+<div class="cp-block-menu" data-cp-block-menu role="menu" aria-label="<?php esc_attr_e('Block actions', 'client-portal'); ?>" hidden>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="focus"><i class="bi bi-cursor-text" aria-hidden="true"></i><span><?php esc_html_e('Edit / Focus', 'client-portal'); ?></span></button>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="fullscreen"><i class="bi bi-arrows-fullscreen" aria-hidden="true"></i><span data-cp-menu-fullscreen-label><?php esc_html_e('Full Screen', 'client-portal'); ?></span></button>
+    <div class="cp-block-menu-separator" role="separator"></div>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="insert-above"><i class="bi bi-arrow-bar-up" aria-hidden="true"></i><span><?php esc_html_e('Insert Block Above', 'client-portal'); ?></span></button>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="insert-below"><i class="bi bi-arrow-bar-down" aria-hidden="true"></i><span><?php esc_html_e('Insert Block Below', 'client-portal'); ?></span></button>
+    <div class="cp-block-menu-separator" role="separator"></div>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="duplicate"><i class="bi bi-copy" aria-hidden="true"></i><span><?php esc_html_e('Duplicate', 'client-portal'); ?></span></button>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="move-up"><i class="bi bi-arrow-up" aria-hidden="true"></i><span><?php esc_html_e('Move Up', 'client-portal'); ?></span></button>
+    <button type="button" role="menuitem" tabindex="-1" data-cp-menu-action="move-down"><i class="bi bi-arrow-down" aria-hidden="true"></i><span><?php esc_html_e('Move Down', 'client-portal'); ?></span></button>
+    <div class="cp-block-menu-separator" role="separator"></div>
+    <button type="button" role="menuitem" tabindex="-1" class="is-danger" data-cp-menu-action="delete"><i class="bi bi-trash" aria-hidden="true"></i><span><?php esc_html_e('Delete', 'client-portal'); ?></span></button>
+</div>
+
+<?php // Blank copies of each block (and of one Staff card) rendered by the same PHP as saved blocks, so blocks added in the browser match them exactly. ?>
+<?php foreach (array_keys(cp_page_block_types()) as $template_type) : ?>
+<template data-cp-block-template="<?php echo esc_attr($template_type); ?>"><?php cp_render_page_block_editor(cp_page_default_block($template_type), -1, '__CPID__'); ?></template>
+<?php endforeach; ?>
+<template data-cp-staff-person-template><?php cp_render_page_staff_member_editor([], 0); ?></template>

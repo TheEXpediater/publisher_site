@@ -1,4 +1,4 @@
-Enterprise1979 Publisher Portal 3.9.6
+Enterprise1979 Publisher Portal 3.9.7
 
 WordPress owner account
 enterpriseenteng@gmail.com
@@ -249,3 +249,15 @@ Version 3.8.5 single-article alignment refinement:
 - Fixes the Staff placeholder silhouette never appearing: wp_kses_post() was stripping its inline SVG, which left an empty circle.
 - Seed v3 (idempotent): links each existing Staff record to its artwork by accent- and case-insensitive name, filling only an empty artwork reference, and upgrades alt text only where it was still the old name-only default. No people or Pages are added, removed, or reordered.
 - No changes to the login limiter, navigation, categories, articles, users, analytics, or other Page Builder blocks.
+
+3.9.7 Managed Page Builder editor repair
+- Fixes Heading and Rich Text blocks showing raw HTML (for example "<p>...</p>") in plain textareas. Root cause: assets/js/page-builder.js passed its TinyMCE options to wp.editor.initialize() as a flat object, but WordPress only starts TinyMCE when they are nested under a "tinymce" key (wp-admin/js/editor.js: "if ( window.tinymce && settings.tinymce )"), so no editor was ever created. The settings now use the same {mediaButtons, quicktags, tinymce} shape as the Article Builder.
+- Fixes + Add Block doing nothing. Root cause: the shared builder CSS only shows the block list when its container has the cp-add-block-open class, but the Page Builder toggled the hidden attribute instead. It now toggles that class (with aria-expanded).
+- Visual editing: Rich Text has Font Family, Font Size, Bold, Italic, Underline, Strikethrough, Text Color (fixed publication palette), Clear Formatting, alignment, bulleted/numbered lists, Link/Unlink, and Undo/Redo. Headings keep H1-H6 and add Font Family, Font Size, Bold, Italic, Underline, alignment, and Undo/Redo. Fonts reuse the Article Builder whitelist; the editors accept only the HTML the existing sanitizers keep. Heading alignment is stored as a whitelisted block attribute and rendered as a cp-align-* class; Rich Text alignment uses the cp-align-* classes the sanitizer already allows (styled on the public page in frontend-pages.css).
+- Block insertion: Add Block and a new Insert Block chooser show icon, name, and description for each type. Blocks can be inserted below any block (small + on its bottom edge) or above/below from the block menu. New blocks are copies of server-rendered templates, so they match saved blocks exactly.
+- Block toolbar: Move Up, Move Down, Duplicate, Full Screen (Heading/Rich Text), More, and Delete, with tooltips and accessible labels. Delete asks for confirmation. Dragging now starts only from the grip handle, so text in block fields stays selectable.
+- Context menu: right-clicking a block's header opens Edit / Focus, Full Screen, Insert Above/Below, Duplicate, Move Up/Down, and Delete. Escape and clicking outside close it, arrow keys move between items, and Tab leaves it. The same menu opens from the More button for keyboard and touch users. Right-click inside text fields and the editor is not intercepted.
+- Editor lifecycle: each editor has a unique ID and is never initialized twice. Content is synced back before save, duplication, moves, drags, and deletion; moved/dragged blocks have their editor removed and re-created so unsaved text is kept; deleted blocks remove their editor. If the editor cannot load, the block shows a visible notice and stays editable.
+- Image, Button, and Divider blocks: image preview with Select/Replace and Remove; a live button preview and clearer URL help; Divider spacing as Small/Medium/Large choices.
+- Existing pages are compatible without migration: About Us, Join the Publication, and Staff load into the visual editor and, saved without changes, store byte-identical block data and render identical public HTML.
+- No changes to the Staff public rendering, Article Builder, categories, navigation, login limiter, or authentication.

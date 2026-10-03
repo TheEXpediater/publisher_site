@@ -1031,7 +1031,25 @@ function cp_enqueue_admin_assets()
         wp_enqueue_script('cp-page-builder', cp_url('assets/js/page-builder.js'), ['cp-app', 'media-editor', 'wp-editor'], cp_asset_version('assets/js/page-builder.js'), true);
         // Trusted bundled Staff artwork (key => URL) so Staff cards added
         // client-side get the same Bundled Artwork choices as saved ones.
-        wp_localize_script('cp-page-builder', 'cpPageBuilder', ['staffArtwork' => cp_staff_bundled_artwork()]);
+        wp_localize_script('cp-page-builder', 'cpPageBuilder', [
+            'staffArtwork' => cp_staff_bundled_artwork(),
+            'strings' => [
+                'editorFailed' => __('The visual editor could not load, so this block is showing its underlying HTML. Your saved content is safe. Reload the page to try again, or edit carefully below.', 'client-portal'),
+                'mediaUnavailable' => __('The Media Library is unavailable on this page. Reload the page and try again.', 'client-portal'),
+                'deleteTitle' => __('Delete Block', 'client-portal'),
+                'deleteMessage' => __('Remove this block from the page? The change is only kept if you save the page.', 'client-portal'),
+                'deleteLabel' => __('Delete Block', 'client-portal'),
+                'fullScreen' => __('Full Screen', 'client-portal'),
+                'exitFullScreen' => __('Exit Full Screen', 'client-portal'),
+                'selectImage' => __('Select Image', 'client-portal'),
+                'replaceImage' => __('Replace Image', 'client-portal'),
+                'insertAbove' => __('Insert block above', 'client-portal'),
+                'insertBelow' => __('Insert block below', 'client-portal'),
+                'alignLeft' => __('Align left', 'client-portal'),
+                'alignCenter' => __('Align center', 'client-portal'),
+                'alignRight' => __('Align right', 'client-portal'),
+            ],
+        ]);
     }
 
     if ('cp-pages' === cp_current_page()) {
