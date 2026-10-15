@@ -4963,3 +4963,61 @@ Report:
 - Any remaining blockers or unverified behavior
 
 Do not claim deployment, browser verification, or visual success unless each was actually completed.
+
+35. Public Category Hero — Replace Low-Quality Wallpaper with Original High-Resolution Artwork (Current Revision)
+
+This section supersedes conflicting wallpaper-source requirements in Section 34. The existing category hero composition is correct, but the current `wallpaper-newsletter.jpg` appears blurry/low-detail when stretched across the full-width banner. The next change is to improve only the background artwork quality. Do not redesign the hero layout that is already working.
+
+35.1 Goal
+
+Create or generate a new original, high-resolution editorial background image specifically for The Enterprise's public category hero. Keep the existing centered category title/description, dark navy identity, banner dimensions, and placement. Replace the low-quality background asset with the new asset once it has been verified.
+
+35.2 Artwork direction
+
+Create a premium, editorial newspaper-inspired background that visually belongs to The Enterprise:
+
+- Deep midnight navy and indigo tones consistent with the current Enterprise website.
+- High-detail, realistic printed-paper/newspaper texture, subtle overlapping newspaper columns, fine ink/halftone details, and restrained photographic/editorial texture.
+- Broad horizontal composition suitable for a full-viewport-width banner.
+- Keep the central area behind the category title relatively calm and low-detail so white text remains immediately readable. Additional detail can sit toward the far left and right edges.
+- The appearance must be intentionally designed, not merely a stretched/cropped copy of `wallpaper-newsletter.jpg`.
+- Do not generate prominent readable words, fake headlines, gibberish typography, logos, seals, publication mastheads, watermarks, or branded marks. Do not use The ANGELITE's maroon palette or copy its artwork.
+- Use `wallpaper-newsletter.jpg` only as optional visual reference for the general newspaper/editorial subject. It must not remain the final background if its visible quality is the reason for this change.
+
+35.3 Image generation and technical quality
+
+1. Inspect the available tools in the current Claude environment for image generation. If a proper image-generation tool is available, use it to create original artwork from the design direction above.
+2. Generate at the highest practical resolution. Target at least 3840 pixels wide and around 900–1200 pixels tall, or the closest higher-quality landscape output supported by the tool. Compose it so it still looks good when cropped with `background-size: cover` into a short horizontal banner.
+3. If the image generator provides a smaller source, only upscale with a suitable local image-processing tool if available and visually inspect the result. Do not simply stretch the existing low-resolution wallpaper and call it high-resolution.
+4. Save the final image inside the correct version-controlled asset location based on the actual code owner (for example, the plugin's own assets directory if the category renderer belongs to `client-portal`). Use a descriptive filename such as `category-hero-editorial.webp` or `category-hero-editorial.jpg`. Do not guess the target path before inspecting the source architecture.
+5. Prefer an optimized WebP or high-quality JPEG suitable for web delivery, keeping visible quality high and file size reasonable. Preserve a high-resolution original in the project if the established asset workflow requires it. Do not commit temporary generation artifacts, tool logs, or huge unoptimized intermediate files.
+6. If no image-generation capability is available, do not pretend that an AI-generated image was created. Do not block the whole task automatically: use the best available local vector/design tooling to create a crisp, deliberate navy editorial background as a fallback, or clearly report the specific tool limitation if a faithful result cannot be created. Never silently fall back to the blurry existing asset as the final design.
+
+35.4 Integrate without redesigning the hero
+
+- Replace only the category hero's background asset reference and any strictly necessary asset enqueue/cache-busting details.
+- Keep the existing hero structure, its current successful position below the navigation, the dynamic WordPress category title, and the description inside the banner.
+- Retain the existing Enterprise navy overlay, but tune it only if needed to balance text contrast with the new image. Apply the overlay separately from the text so it does not wash out the title/description.
+- Preserve the current banner height and responsive behavior unless the generated image reveals a small necessary adjustment. Do not increase the hero's height just to show the artwork.
+- Keep the image decorative. Do not add alt text to a CSS background, visible content, new category-specific logic, or additional headings.
+- Do not modify the article listing, cards, queries, pagination, navigation, homepage, standalone Pages, single-article pages, footer, admin UI, Page Builder, or unrelated styling.
+
+35.5 Verification
+
+- Confirm the new asset is actually generated/created, included in the correct source/package, and loaded on the live category archive. Report its dimensions, format, file size, and source path.
+- Inspect the image at 100% scale before integrating it. Check for obvious blur, artifacts, malformed pseudo-text, unwanted logos, watermarks, or visual clutter behind the title.
+- Inspect the final banner at desktop width and mobile width. Confirm the background does not appear visibly pixelated at normal display sizes, the navy identity is preserved, and title/description remain readable.
+- Verify a cache-busting/version strategy ensures visitors do not keep seeing the old background.
+- Run relevant syntax/tests, review the diff for scope creep, and follow the full local-first baseline, backup, package, commit/push, deployment, and live-verification requirements already documented in this file.
+- Distinguish actual image generation from a vector fallback, and distinguish local screenshot verification from a real production browser check. Do not claim any step passed unless it was performed.
+
+35.6 Final report additions
+
+In addition to the reporting requirements in Section 34, report:
+
+- Whether a true image-generation tool was available and used
+- The final artwork path, dimensions, format, and file size
+- Whether the source was generated at target resolution or upscaled
+- What visual inspection was performed
+- Confirmation that only the category hero background asset/integration changed, aside from strictly necessary asset-versioning changes
+
