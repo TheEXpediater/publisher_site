@@ -259,41 +259,78 @@ body.enterprise-category-archive-page :where(
     .wp-block-post-content,
     .content-wrapper,
     .container,
-    .ast-container
+    .ast-container,
+    .e-con,
+    .e-con-inner
 ):has(.enterprise-category-archive) {
     margin-top: 0 !important;
     padding-top: 0 !important;
     min-height: 0 !important;
 }
 
-.enterprise-category-archive {
-    padding-top: 40px;
+/*
+ * Category archive hero: a single full-width wallpaper banner directly under
+ * the site navigation. The archive section and its theme/Elementor wrappers
+ * are boxed, so the hero breaks out to the viewport width (100vw); the content
+ * wrapper clips the few pixels a desktop scrollbar adds to 100vw.
+ */
+body.enterprise-category-archive-page #content:has(.enterprise-category-archive) {
+    overflow-x: clip;
+}
+
+.enterprise-publication.enterprise-category-archive:has(> .enterprise-category-hero) {
+    padding-top: 0;
 }
 
 .enterprise-category-hero {
-    margin-bottom: 42px;
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    max-width: none;
+    min-height: 168px;
+    margin: 0 calc(50% - 50vw) 42px;
+    padding: 30px 24px;
+    color: #ffffff;
+    background: var(--enterprise-brand) url("../images/wallpaper-newsletter.jpg") center / cover no-repeat;
+    text-align: center;
+}
+
+/* Navy overlay sits between the wallpaper and the copy, so it dims only the image. */
+.enterprise-category-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(0, 0, 41, .86);
+    background: color-mix(in srgb, var(--enterprise-brand) 86%, transparent);
 }
 
 .enterprise-category-hero-copy {
-    max-width: 900px;
-    padding: 24px 0 0;
+    width: 100%;
+    max-width: 860px;
 }
 
 .enterprise-category-hero-copy h1 {
     margin: 0;
-    color: var(--enterprise-brand);
+    color: #ffffff;
     font-family: var(--enterprise-serif);
     font-size: 42px;
     font-weight: 700;
-    line-height: 1.18;
+    letter-spacing: .04em;
+    line-height: 1.15;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
 }
 
 .enterprise-category-hero-copy p {
-    max-width: 760px;
-    margin: 16px 0 0;
-    color: var(--enterprise-muted);
+    max-width: 780px;
+    margin: 12px auto 0;
+    color: rgba(255, 255, 255, .9);
     font-size: 15px;
-    line-height: 1.75;
+    line-height: 1.7;
 }
 
 .enterprise-maintenance-notice {
@@ -1748,6 +1785,11 @@ body.enterprise-category-archive-page :where(
         font-size: 28px;
     }
 
+    .enterprise-category-hero {
+        min-height: 140px;
+        padding: 26px 20px;
+    }
+
     .enterprise-post-item,
     .enterprise-latest-lead {
         grid-template-columns: 1fr;
@@ -1859,6 +1901,16 @@ body.enterprise-category-archive-page :where(
     .enterprise-section-heading h2,
     .enterprise-search-header h2 {
         font-size: 24px;
+    }
+
+    .enterprise-category-hero {
+        min-height: 120px;
+        padding: 24px 16px;
+    }
+
+    .enterprise-category-hero-copy p {
+        font-size: 14px;
+        line-height: 1.65;
     }
 
     .enterprise-single-deck,

@@ -1,4 +1,4 @@
-Enterprise1979 Publisher Portal 3.9.7
+Enterprise1979 Publisher Portal 3.9.8
 
 WordPress owner account
 enterpriseenteng@gmail.com
@@ -261,3 +261,11 @@ Version 3.8.5 single-article alignment refinement:
 - Image, Button, and Divider blocks: image preview with Select/Replace and Remove; a live button preview and clearer URL help; Divider spacing as Small/Medium/Large choices.
 - Existing pages are compatible without migration: About Us, Join the Publication, and Staff load into the visual editor and, saved without changes, store byte-identical block data and render identical public HTML.
 - No changes to the Staff public rendering, Article Builder, categories, navigation, login limiter, or authentication.
+
+3.9.8 Category archive wallpaper hero
+- Replaces the stacked public category header (navy name strip, "Enterprise1979 Publication" eyebrow, large duplicate category title, and the description on the white background below it) with one full-width hero banner directly under the site navigation and directly above the article list. The category name now appears exactly once, and the term description sits centered inside the banner under it. A category with no description shows only the centered title.
+- The title and description still come from the current WordPress category term, so every category Page uses the same template with nothing hardcoded per category. Uppercase is CSS only; saved term names are unchanged.
+- The banner uses the bundled assets/images/wallpaper-newsletter.jpg (moved into the plugin; it did not exist in the Media Library or uploads) under a ::before overlay of the existing --enterprise-brand navy at 86%, so the wallpaper stays subtly visible and the white text is never faded. About 168px tall on desktop when the copy fits, and it grows with longer descriptions and on phones instead of clipping.
+- The hero is boxed inside the category Page's Elementor container, so it breaks out to the viewport width (100vw), and the content wrapper clips the few pixels a desktop scrollbar adds, so there is no horizontal scrolling. The existing category-page wrapper reset now also covers Elementor's container top padding, so the hero sits flush under the navigation.
+- The inactive-category maintenance notice uses the same hero (title only), via the shared cp_render_category_archive_hero() in includes/frontend-shortcodes.php.
+- No changes to the global header/navigation, category article cards, queries, pagination, sorting, homepage, single articles, search, standalone Pages, Staff, About Us, Page Builder, login, or analytics.

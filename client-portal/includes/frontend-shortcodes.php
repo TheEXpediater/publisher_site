@@ -1133,18 +1133,30 @@ function cp_render_other_stories($current_post_id)
     return ob_get_clean();
 }
 
+/*
+ * Public category archive hero: one full-width wallpaper banner holding the
+ * category name (rendered exactly once) and, only when there is one, its
+ * description. Shared by the article archive and the inactive-category
+ * maintenance notice so every category Page keeps the same header.
+ */
+function cp_render_category_archive_hero($category_name, $description = '')
+{
+    ?>
+    <header class="enterprise-category-hero">
+        <div class="enterprise-category-hero-copy">
+            <h1><?php echo esc_html($category_name); ?></h1>
+            <?php if ('' !== $description) : ?><p><?php echo nl2br(esc_html($description)); ?></p><?php endif; ?>
+        </div>
+    </header>
+    <?php
+}
+
 function cp_render_category_maintenance_notice($category_name)
 {
     ob_start();
     ?>
     <section class="enterprise-publication enterprise-category-archive enterprise-category-maintenance">
-        <header class="enterprise-category-hero">
-            <div class="enterprise-section-bar"><span><?php echo esc_html($category_name); ?></span></div>
-            <div class="enterprise-category-hero-copy">
-                <span class="enterprise-section-kicker"><?php esc_html_e('Enterprise1979 Publication', 'client-portal'); ?></span>
-                <h1><?php echo esc_html($category_name); ?></h1>
-            </div>
-        </header>
+        <?php cp_render_category_archive_hero($category_name); ?>
         <div class="enterprise-maintenance-notice">
             <h2><?php esc_html_e('Category Temporarily Unavailable', 'client-portal'); ?></h2>
             <p><?php esc_html_e('This section is currently under maintenance. Please check back later.', 'client-portal'); ?></p>
@@ -1225,14 +1237,7 @@ function cp_category_posts_shortcode($attributes)
     ?>
     <section class="enterprise-publication enterprise-category-archive">
         <?php if ($show_header) : ?>
-            <header class="enterprise-category-hero">
-                <div class="enterprise-section-bar"><span><?php echo esc_html($category_name); ?></span></div>
-                <div class="enterprise-category-hero-copy">
-                    <span class="enterprise-section-kicker"><?php esc_html_e('Enterprise1979 Publication', 'client-portal'); ?></span>
-                    <h1><?php echo esc_html($category_name); ?></h1>
-                    <?php if ($subtitle) : ?><p><?php echo nl2br(esc_html($subtitle)); ?></p><?php endif; ?>
-                </div>
-            </header>
+            <?php cp_render_category_archive_hero($category_name, $subtitle); ?>
         <?php endif; ?>
 
         <div class="enterprise-post-list-wrap">
