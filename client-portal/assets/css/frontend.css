@@ -294,7 +294,7 @@ body.enterprise-category-archive-page #content:has(.enterprise-category-archive)
     margin: 0 calc(50% - 50vw) 42px;
     padding: 30px 24px;
     color: #ffffff;
-    background: var(--enterprise-brand) url("../images/wallpaper-newsletter.jpg") center / cover no-repeat;
+    background: var(--enterprise-brand) url("../images/category-hero-editorial.webp") center / cover no-repeat;
     text-align: center;
 }
 
@@ -304,8 +304,8 @@ body.enterprise-category-archive-page #content:has(.enterprise-category-archive)
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: rgba(0, 0, 41, .86);
-    background: color-mix(in srgb, var(--enterprise-brand) 86%, transparent);
+    background: rgba(0, 0, 41, .45);
+    background: color-mix(in srgb, var(--enterprise-brand) 45%, transparent);
 }
 
 .enterprise-category-hero-copy {

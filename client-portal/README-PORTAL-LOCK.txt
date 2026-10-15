@@ -1,4 +1,4 @@
-Enterprise1979 Publisher Portal 3.9.8
+Enterprise1979 Publisher Portal 3.9.9
 
 WordPress owner account
 enterpriseenteng@gmail.com
@@ -269,3 +269,10 @@ Version 3.8.5 single-article alignment refinement:
 - The hero is boxed inside the category Page's Elementor container, so it breaks out to the viewport width (100vw), and the content wrapper clips the few pixels a desktop scrollbar adds, so there is no horizontal scrolling. The existing category-page wrapper reset now also covers Elementor's container top padding, so the hero sits flush under the navigation.
 - The inactive-category maintenance notice uses the same hero (title only), via the shared cp_render_category_archive_hero() in includes/frontend-shortcodes.php.
 - No changes to the global header/navigation, category article cards, queries, pagination, sorting, homepage, single articles, search, standalone Pages, Staff, About Us, Page Builder, login, or analytics.
+
+3.9.9 Category hero high-resolution artwork
+- Replaces the category hero wallpaper, a 1080x1920 portrait photo that looked soft once stretched across a full-width banner, with original artwork made for The Enterprise: assets/images/category-hero-editorial.webp (3840x1080 WebP). It shows overlapping newspaper sheets in midnight navy and indigo, with fine printed-column texture, halftone pictures, rules, fold creases, and paper grain. It has no readable words, headlines, logos, or marks. The centre behind the title is deliberately calm and the detail sits toward the left and right edges.
+- The source is 3840px wide, so standard and 2x desktop screens only ever scale it down and 4K shows it at 1:1. It is never enlarged at common widths.
+- The navy overlay above the image (still a separate ::before layer under the text) goes from 86% to 45% of --enterprise-brand, because the new artwork is already navy and 86% hid its detail. The title and description still measure at least 12:1 contrast against the brightest background pixels behind them.
+- The new filename gives a new image URL and frontend.css keeps its file-modified-time version, so browsers fetch the new background instead of a cached old one. The old wallpaper-newsletter.jpg is no longer referenced and is removed from the plugin package.
+- No changes to the hero markup, layout, height, responsive rules, dynamic category title/description, navigation, article listings, or any other page.
