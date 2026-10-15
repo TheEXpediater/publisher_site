@@ -1,2432 +1,4965 @@
 CLAUDE.md — The Enterprise 1979 WordPress Plugin Engineering Rules
 
-0. Authority, Role, and Current Production Context
+
+
+0\. Authority, Role, and Current Production Context
+
+
 
 You are the senior WordPress plugin engineer responsible for maintaining and extending the production site:
 
-Site: https://theenterprise1979.news/
 
-Publisher login: https://theenterprise1979.news/publisher-login/
 
-Native WordPress login: https://theenterprise1979.news/wp-login.php
+Site: https\://theenterprise1979.news/
+
+
+
+Publisher login: https\://theenterprise1979.news/publisher-login/
+
+
+
+Native WordPress login: https\://theenterprise1979.news/wp-login.php
+
+
 
 Existing custom application plugin: client-portal
 
+
+
 Current known live release before this task: 3.8.14
+
+
 
 SSH alias already configured on the developer PC: enterprise-live
 
+
+
 Authorized live SSH command: ssh enterprise-live
 
-Hostinger WordPress root: ~/domains/theenterprise1979.news/public_html
 
-Live plugin path: ~/domains/theenterprise1979.news/public_html/wp-content/plugins/client-portal
+
+Hostinger WordPress root: \~/domains/theenterprise1979.news/public_html
+
+
+
+Live plugin path: \~/domains/theenterprise1979.news/public_html/wp-content/plugins/client-portal
+
+
 
 The custom plugin remains the application layer. WordPress remains the runtime/content platform and Astra/theme infrastructure remains the surrounding shell where already appropriate.
 
+
+
 This task is a feature expansion of the existing client-portal plugin, not permission to create a second competing plugin, a replacement theme, a new framework, or a new CMS.
+
+
 
 The project instructions in this file are authoritative. Newer sections in this file supersede older requirements that conflict with them.
 
-1. Engineering Conduct
+
+
+1\. Engineering Conduct
+
+
 
 1.1 Think before coding
 
+
+
 Before changing implementation:
+
+
 
 Read this CLAUDE.md.
 
+
+
 Inspect the repository root.
+
+
 
 Locate the active extracted client-portal/ directory.
 
+
+
 Locate the latest root-level client-portal.zip or current valid plugin ZIP.
+
+
 
 Compare the extracted plugin, ZIP, and current source before editing.
 
+
+
 Identify only the files involved in:
+
+
 
 Categories admin
 
+
+
 Page management
+
+
 
 frontend navigation
 
+
+
 About Us dropdown
+
+
 
 frontend Page rendering
 
+
+
 Article Builder patterns that can be reused
+
+
 
 image/media handling
 
+
+
 plugin bootstrap/enqueues
+
+
 
 deployment/versioning
 
+
+
 Verify the live SSH connection with a harmless read-only command before relying on it.
+
+
 
 Do not deeply scan unrelated code.
 
+
+
 1.2 Surgical changes
+
+
 
 Do not:
 
+
+
 modify WordPress core
+
+
 
 rewrite the whole plugin
 
+
+
 create a second independent page/category/menu system
+
+
 
 create a new theme
 
+
+
 add React/Vue or another frontend framework
+
+
 
 introduce a custom database table unless direct inspection proves WordPress posts/meta/options cannot satisfy the requirement
 
+
+
 refactor unrelated authentication, analytics, article CRUD, user management, or login security
+
+
 
 break the working 3.8.14 login limiter
 
+
+
 hardcode the current category names into navigation logic
+
+
 
 copy The ANGELITE's proprietary code, artwork, or branding assets
 
+
+
 Prefer:
+
+
 
 WordPress page posts
 
+
+
 WordPress taxonomy terms
+
+
 
 post meta/options
 
+
+
 current plugin helpers
+
+
 
 current Article Builder UI patterns
 
+
+
 current modal/confirmation patterns
+
+
 
 WordPress Media Library / attachment IDs where suitable
 
+
+
 existing theme/plugin hooks
+
+
 
 accessible semantic markup
 
+
+
 small reusable helpers
+
+
 
 1.3 Goal-driven execution
 
+
+
 Every feature requires a concrete verification condition.
+
+
 
 Do not say "implemented" because code exists. Verify the actual data flow, generated markup, syntax, packaged ZIP, and—where authorized—live behavior.
 
-2. Source of Truth and Version Discipline
+
+
+2\. Source of Truth and Version Discipline
+
+
 
 Before implementation:
 
+
+
 Inspect the current repository plugin version.
+
+
 
 Inspect the latest root ZIP.
 
+
+
 Inspect the live plugin version over SSH.
+
+
 
 Determine the true current source of truth.
 
+
+
 Do not overwrite newer source with an older ZIP.
+
+
 
 Known live version at the time these requirements were written is 3.8.14, but verify rather than assume.
 
+
+
 This feature set is large enough to justify a minor feature release if the project is still following semantic-style versioning. If current source is exactly 3.8.14, prefer 3.9.0 unless the repository's established release convention clearly requires another patch release.
+
+
 
 Synchronize the final version across:
 
+
+
 plugin header
+
+
 
 CP_VERSION
 
+
+
 changelog / README-PORTAL-LOCK.txt
+
+
 
 packaged ZIP
 
-3. Safe Local → Package → Live Workflow
+
+
+3\. Safe Local → Package → Live Workflow
+
+
 
 Implementation order:
 
+
+
 LOCAL REPOSITORY
-    ↓
+
+    ↓
+
 implement
-    ↓
+
+    ↓
+
 static validation / PHP lint where available
-    ↓
+
+    ↓
+
 rebuild client-portal.zip
-    ↓
+
+    ↓
+
 extract + diff against working plugin
-    ↓
+
+    ↓
+
 SSH read-only live preflight
-    ↓
+
+    ↓
+
 backup live plugin + relevant DB state
-    ↓
+
+    ↓
+
 deploy intended plugin build
-    ↓
+
+    ↓
+
 verify live version/checksums
-    ↓
+
+    ↓
+
 run controlled live verification
+
+
 
 Do not use production as the first editing workspace unless a production-only diagnostic requires it.
 
+
+
 Before live deployment:
+
+
 
 make a timestamped backup of the live plugin
 
+
+
 if the task will create/update real WordPress Pages or migration options, use WP-CLI to make a reasonable database backup if WP-CLI is available
+
+
 
 never expose DB credentials, salts, passwords, SSH private keys, cookies, or authentication tokens in reports
 
+
+
 SSH is already authorized through:
 
+
+
 ssh enterprise-live
+
+
 
 Expected WordPress root:
 
-~/domains/theenterprise1979.news/public_html
+
+
+\~/domains/theenterprise1979.news/public_html
+
+
 
 Verify this location every session.
 
-4. New Information Architecture: Categories vs Pages
+
+
+4\. New Information Architecture: Categories vs Pages
+
+
 
 This task introduces a clear separation:
 
+
+
 CATEGORIES
-= editorial/article classifications
-= WordPress `category` taxonomy
-= News, Literary, Features, Archives, etc.
+
+\= editorial/article classifications
+
+\= WordPress \`category\` taxonomy
+
+\= News, Literary, Features, Archives, etc.
+
+
 
 PAGES
-= standalone institutional/publication content
-= WordPress `page` posts
-= Home, About Us, Staff, Join the Publication, future Mailbag, etc.
+
+\= standalone institutional/publication content
+
+\= WordPress \`page\` posts
+
+\= Home, About Us, Staff, Join the Publication, future Mailbag, etc.
+
+
 
 About Us is a Page, not a Category.
 
+
+
 The Categories table must not invent or show an "About Us" category.
+
+
 
 Do not create an About Us taxonomy term.
 
+
+
 Do not store Pages in the category taxonomy.
+
+
 
 Do not create a parallel custom page database when WordPress page posts are appropriate.
 
-5. Categories Admin: New Pages Entry Point
+
+
+5\. Categories Admin: New Pages Entry Point
+
+
 
 The existing Categories screen remains the main category-management view.
 
+
+
 In the action area near the existing controls, provide this clear hierarchy:
 
-[ View Menu ]   [ Pages ]   [ Add Category ]
+
+
+[ View Menu ]   [ Pages ]   [ Add Category ]
+
+
 
 Pages opens the new Page Manager experience.
 
+
+
 When viewing Pages, provide an obvious:
+
+
 
 ← Back to Categories
 
+
+
 Only users with the site's administrator-level page-management capability may access or mutate the Pages feature.
+
+
 
 Prefer capability checks such as the existing project admin capability or manage_options/appropriate WordPress capability rather than checking a literal role-name string.
 
+
+
 Unauthorized users must:
+
+
 
 not see the Pages management control
 
+
+
 not be able to invoke save/delete AJAX/actions directly
+
+
 
 receive a proper authorization failure if they attempt the endpoint manually
 
+
+
 Do not weaken existing category permissions.
 
-6. Page Manager
+
+
+6\. Page Manager
+
+
 
 6.1 Page list
 
+
+
 The Page Manager must manage real WordPress Pages.
+
+
 
 The table should contain at minimum:
 
+
+
 Page
+
 Status
+
 Link / View
+
 Actions
+
+
 
 Expected behavior:
 
+
+
 Page
+
+
 
 Display the real current WordPress post_title.
 
+
+
 Status
+
+
 
 Portal UX can present:
 
+
+
 Active
+
 Inactive
+
+
 
 Map those safely to WordPress statuses, preferably:
 
+
+
 Active → publish
+
+
 
 Inactive → draft
 
+
+
 Do not invent another independent active-status database unless required.
+
+
 
 Link / View
 
+
+
 Show a compact View or Preview action.
+
+
 
 The actual URL should be available:
 
+
+
 as a clickable link
+
+
 
 and/or via tooltip/secondary text on hover/focus
 
+
+
 Do not display extremely long URLs as the main table content.
+
+
 
 Actions
 
+
+
 For normal managed Pages:
 
+
+
 Edit
+
 Delete
+
+
 
 Prefer WordPress Trash (wp_trash_post) rather than immediate permanent deletion.
 
+
+
 Require confirmation before deletion.
+
+
 
 6.2 Home Page is first
 
+
+
 The first row must be the actual site's Home Page.
+
+
 
 Home is a protected system Page.
 
+
+
 Do not allow the portal to delete the site Home Page.
+
+
 
 If the current homepage is not a normal editable Page, do not force-convert it just to satisfy this table. Show the real homepage entry and provide:
 
+
+
 View
+
+
 
 only safe Edit functionality that matches the existing homepage architecture
 
+
+
 Do not destroy the current article-driven homepage.
+
+
 
 6.3 About Us parent Page
 
+
+
 About Us must be a real WordPress Page and the fixed navigation parent.
+
+
 
 It should be visible in the Page Manager.
 
+
+
 Treat it as a protected navigation parent:
+
+
 
 editable
 
+
+
 viewable
+
+
 
 not casually deletable while it is the configured About parent
 
+
+
 If deletion is ever allowed, require a safe reassignment/migration first. Do not leave navigation with a broken parent URL.
+
+
 
 6.4 Managed child Pages
 
+
+
 Pages created through this new Page Manager—except system pages such as Home—should be eligible to appear in the About Us dropdown.
+
+
 
 Examples:
 
+
+
 Staff
+
+
 
 Join the Publication
 
+
+
 Mailbag
+
+
 
 History
 
+
+
 future institutional/publication pages
+
+
 
 Store page identity/order by WordPress Page ID, not copied titles.
 
+
+
 Renaming a Page must automatically update its menu label.
 
-7. Add Page
+
+
+7\. Add Page
+
+
 
 Provide:
 
-+ Add Page
+
+
+\+ Add Page
+
+
 
 The create form must include at minimum:
 
+
+
 Page Name / Title
 
+
+
 URL Slug
+
+
 
 Status: Active / Inactive
 
+
+
 Page Builder content
+
+
 
 Example concept:
 
+
+
 Page Name: Mailbag
+
 Slug: mailbag
 
+
+
 Generated URL:
-https://theenterprise1979.news/mailbag/
+
+https\://theenterprise1979.news/mailbag/
+
+
 
 Do not ask the administrator to manually type the entire internal site URL.
 
+
+
 Generate it from the site URL + sanitized WordPress slug.
+
+
 
 Allow the slug to be edited deliberately, but:
 
+
+
 sanitize it with WordPress APIs
+
+
 
 prevent invalid/reserved values
 
+
+
 handle collisions
+
+
 
 show the final permalink preview
 
+
+
 External URLs belong in Button/CTA elements, not in the Page's internal permalink field.
 
-8. Page Builder: Flexible but Controlled
+
+
+8\. Page Builder: Flexible but Controlled
+
+
 
 The administrator should not need Elementor for About/Staff/Join pages.
 
+
+
 Create a plugin-owned Page Builder that visually and behaviorally reuses the existing Article Builder patterns wherever practical.
+
+
 
 The experience should feel like a simple Canva-style element editor while remaining a normal WordPress application.
 
+
+
 8.1 Required builder behaviors
+
+
 
 add elements/blocks
 
+
+
 reorder via drag and drop
+
+
 
 keyboard-accessible Move Up / Move Down controls
 
+
+
 edit element settings
+
+
 
 duplicate where useful
 
+
+
 remove elements
 
+
+
 preview
+
+
 
 save confirmation
 
+
+
 success/error feedback
+
+
 
 local pending state until save succeeds
 
+
+
 responsive frontend rendering
+
+
 
 Do not require pixel-coordinate freeform canvas positioning.
 
+
+
 This should be a structured content builder, not a full graphic-design engine.
+
+
 
 8.2 Core element types
 
+
+
 Implement the smallest useful set:
 
+
+
 Heading
+
+
 
 Rich Text / Paragraph
 
+
+
 Image
+
+
 
 Staff Grid
 
+
+
 Button / CTA
 
+
+
 Divider / Spacer
+
+
 
 If the existing Article Builder already has safe reusable typography or rich-text controls, reuse those rather than implementing a second editor stack.
 
+
+
 8.3 Typography
+
+
 
 Reuse the existing whitelisted font family/font-size system where suitable.
 
+
+
 Do not persist arbitrary raw CSS from users.
+
+
 
 Sanitize:
 
+
+
 font
+
+
 
 size
 
+
+
 alignment
+
+
 
 URL
 
+
+
 image attachment ID
+
+
 
 alt text
 
+
+
 headings
+
+
 
 rich text according to WordPress-safe HTML rules
 
-9. Managed Page Storage and Rendering
+
+
+9\. Managed Page Storage and Rendering
+
+
 
 Prefer WordPress-native storage.
 
+
+
 Recommended architecture:
 
+
+
 WordPress Page post
-    ├── post_title
-    ├── post_name
-    ├── post_status
-    └── post meta
-          └── structured Page Builder block data
+
+    ├── post_title
+
+    ├── post_name
+
+    ├── post_status
+
+    └── post meta
+
+          └── structured Page Builder block data
+
+
 
 Use a plugin marker such as appropriate post meta to distinguish plugin-managed Pages from unrelated WordPress Pages.
 
+
+
 Do not hijack every Page on the site.
+
+
 
 Render only Pages intentionally managed by this plugin.
 
+
+
 Use the site's theme shell/header/footer while allowing the plugin to own the Page's main content.
+
+
 
 Possible implementation paths include a scoped the_content filter or another existing plugin rendering hook, but inspect the current architecture first and choose the narrowest reliable WordPress extension point.
 
+
+
 Do not break:
+
+
 
 Elementor pages elsewhere
 
+
+
 normal theme pages
+
+
 
 homepage article system
 
+
+
 WordPress editor content unrelated to this feature
 
-10. About Us Main Page — Seed from Provided Publication Content
+
+
+10\. About Us Main Page — Seed from Provided Publication Content
+
+
 
 The project includes an authoritative document named:
 
+
+
 ABOUT US - THE ENTERPRISE.docx
+
+
 
 Use its content as the source for the initial About Us / publication copy.
 
+
+
 The document contains:
+
+
 
 About the Publication
 
+
+
 mission and responsible/unbiased journalism
+
+
 
 artistic consciousness / Kapampangan culture and literature
 
+
+
 democracy, independence, free speech/expression
+
+
 
 Brief History
 
+
+
 Membership Requirements and Procedures
+
+
 
 Join the Publication CTA/link
 
+
+
 Do not silently rewrite factual publication history.
+
+
 
 Initial recommended split:
 
+
+
 /about-us/
 
+
+
 Use:
+
+
 
 ABOUT THE PUBLICATION
 
+
+
 BRIEF HISTORY
+
+
 
 Present these as a polished editorial/institutional page.
 
+
+
 Use the site's own dark navy/white visual identity.
+
+
 
 Keep content readable with generous spacing and editorial typography.
 
+
+
 /join-the-publication/
+
+
 
 Move/separate:
 
+
+
 MEMBERSHIP REQUIREMENTS AND PROCEDURES
+
+
 
 JOIN THE PUBLICATION
 
+
+
 into its own managed Page.
+
+
 
 Use the provided Google Forms link as a Button/CTA.
 
+
+
 Do not duplicate the same Join content on both pages after the split unless the user intentionally wants a short teaser on About Us.
+
+
 
 This seed operation must be idempotent:
 
+
+
 do not create duplicate About Us/Join pages every deployment
+
+
 
 identify existing managed Pages by stable Page IDs/meta/known slugs
 
+
+
 update only what is intentionally part of the migration
 
-11. Staff Page — Initial Data and Layout
+
+
+11\. Staff Page — Initial Data and Layout
+
+
 
 Create a managed Page:
 
+
+
 Staff
+
 /staff/
+
+
 
 The layout may take inspiration from:
 
-https://theangelite.net/staff/
+
+
+https\://theangelite.net/staff/
+
+
 
 but must use The Enterprise's own branding, content, markup, assets, and implementation.
 
+
+
 Do not copy The ANGELITE's source code or image assets.
+
+
 
 The reference demonstrates a publication Staff page divided into staff groups and portrait grids. Use the concept, not the copyrighted implementation.
 
+
+
 11.1 Staff data source
+
+
 
 The project includes:
 
+
+
 MASTERLIST WITH PORTRAITS OF ENTENG.docx
+
+
 
 Use the provided names and positions to seed staff cards.
 
+
+
 Current supplied roster:
+
+
 
 Editorial Board
 
+
+
 Maryiel N. Jimenez — Editor-in-Chief
+
+
 
 Cyra Joyce G. Aguilar — Associate Editor - Internal Affairs
 
+
+
 Jan Nicole A. Mallari — Associate Editor - External Affairs
+
+
 
 Paullete Irys G. De Leon — Managing Editor
 
+
+
 Editorial Staff
+
+
 
 Alexa G. Soriano — Senior Editor
 
+
+
 Angel Bethany T. Timbol — Senior Layout Editor
+
+
 
 Sean Naegel V. Beltran — Junior Layout Editor
 
+
+
 Merella Jesmine I. Gumabon — Literary Editor
+
+
 
 Razel Iommi Q. Tiongson — Head Cartoonist
 
+
+
 Boris Sebastian C. Lontabo — Head Photojournalist
+
+
 
 Mikaella C. de Leon — Executive Secretary
 
+
+
 Samantha C. Ruelo — Events Manager
+
+
 
 Margareth Lois R. Moleño — Circulation Manager
 
+
+
 Shelyca Franshane M. Simeon — Online Content Manager
+
+
 
 Kristine Charsi T. Lusanez — Online Content Manager
 
+
+
 Reportorial Staff
+
+
 
 Rinka Akisha M. Muldong — Reportorial Staff
 
+
+
 Pauleene P. Cabigting — Reportorial Staff
+
+
 
 Hydelyn Mae C. De Roxas — Reportorial Staff
 
+
+
 Allison Louise T. Dulatre — Reportorial Staff
+
+
 
 Eugene P. Lee — Reportorial Staff
 
+
+
 Yzabel Euri O. Enriquez — Reportorial Staff
+
+
 
 Marizz O. Estrella — Reportorial Staff
 
+
+
 Shannon Beatriz P. Dela Vega — Reportorial Staff
+
+
 
 Juliana Cloe S. Cosme — Reportorial Staff
 
+
+
 Keona Alexis M. Arceo — Reportorial Staff
+
+
 
 Ferdina Faye M. Bacani — Reportorial Staff
 
+
+
 Do not invent a Faculty Adviser or any missing person not present in the provided source.
+
+
 
 If the role grouping above conflicts with an explicit grouping already stored in the project, preserve the project's authoritative grouping and report the discrepancy.
 
+
+
 11.2 Portraits
+
+
 
 The user does not yet have portraits ready for the implementation.
 
+
+
 Every seeded staff member should therefore render with a clean neutral human/person placeholder.
+
+
 
 Do not use random stock photos.
 
+
+
 Each card stores:
+
+
 
 name
 
+
+
 position
+
+
 
 portrait attachment ID (nullable)
 
+
+
 image alt text
 
+
+
 ordering
+
+
 
 group/section
 
+
+
 In the Page Builder Staff Grid editor, the administrator must be able to:
+
+
 
 select a staff card
 
+
+
 upload/select portrait
+
+
 
 replace portrait
 
+
+
 remove portrait
+
+
 
 edit name
 
+
+
 edit position
+
+
 
 reorder the person
 
+
+
 move between staff sections where appropriate
+
+
 
 add a person
 
+
+
 remove a person
+
+
 
 When no portrait exists, preserve the placeholder.
 
+
+
 11.3 Staff grid: maximum six portraits per row
+
+
 
 Desktop layout rule:
 
+
+
 Maximum 6 staff cards/images per row.
+
+
 
 The grid must dynamically adapt to the number of cards in each row/section.
 
+
+
 Required behavior:
+
+
 
 6 cards → six-column full row
 
+
+
 5 cards → enlarge cards appropriately so the row uses the available staff-grid width
+
+
 
 4 cards → enlarge cards appropriately so the row uses the available staff-grid width
 
+
+
 1–3 cards → do not stretch them to huge widths; keep a reasonable card width and center the group
+
+
 
 more than 6 → create additional rows, never more than 6 cards in one row
 
+
+
 an incomplete final row must be horizontally centered
+
+
 
 The visual goal is a balanced, centered pyramid / inverted-pyramid editorial staff composition, with shorter rows centered relative to fuller rows.
 
+
+
 Do not accomplish this by hardcoding person names or exact screen coordinates.
+
+
 
 Use responsive CSS Grid/Flexbox and data-driven row composition.
 
+
+
 Tablet/mobile must reduce columns gracefully.
+
+
 
 Portraits must:
 
+
+
 have consistent aspect ratio
+
+
 
 use object-fit: cover when a real portrait exists
 
+
+
 preserve face/photo quality
+
+
 
 have consistent card height
 
+
+
 not distort images
+
+
 
 The Staff Builder preview should match the frontend layout closely.
 
-12. About Us Navigation Becomes a Page Dropdown
+
+
+12\. About Us Navigation Becomes a Page Dropdown
+
+
 
 12.1 About Us is fixed top-level Page link
 
+
+
 Header top-level navigation retains the existing maximum of 8 top-level items total:
+
+
 
 up to 7 direct Categories + ABOUT US
 
+
+
 About Us is always the final top-level item.
+
+
 
 About Us itself remains a real clickable link to the actual About Us Page.
 
+
+
 Use separate accessible dropdown-toggle behavior so opening the submenu does not destroy the About Us link.
+
+
 
 Recommended semantic structure:
 
-<li class="...">
-    <a href="/about-us/">ABOUT US</a>
-    <button aria-expanded="false" aria-controls="...">...</button>
-    <ul>...</ul>
-</li>
+
+
+\<li class="...">
+
+    \<a href="/about-us/">ABOUT US\</a>
+
+    \<button aria-expanded="false" aria-controls="...">...\</button>
+
+    \<ul>...\</ul>
+
+\</li>
+
+
 
 Do not make the parent link hover-only.
 
+
+
 12.2 Pages in About Us dropdown
+
+
 
 Every active plugin-managed child Page intended for About navigation should automatically appear in the About Us dropdown by its current Page title/order.
 
+
+
 Examples:
 
+
+
 ABOUT US
+
 ├── Staff
+
 ├── Join the Publication
+
 ├── Mailbag
+
 └── future managed Pages
+
+
 
 Home must never appear inside About Us.
 
+
+
 Inactive/draft Pages must not appear publicly.
+
+
 
 About Us itself should not appear as a duplicate child of itself.
 
+
+
 12.3 Existing overflow Categories
+
+
 
 The current site previously placed Categories beyond direct category position 7 into the About Us dropdown to preserve the 8-top-level-item rule.
 
+
+
 Do not silently delete or lose this existing behavior.
+
+
 
 If more than 7 active navigation Categories exist, keep their overflow available inside the same dropdown, but separate them semantically/visually from About Pages.
 
+
+
 Preferred model:
 
-ABOUT US ▼
-    PAGES
-      Staff
-      Join the Publication
-      ...
 
-    MORE SECTIONS
-      Category 8
-      Category 9
-      ...
+
+ABOUT US ▼
+
+    PAGES
+
+      Staff
+
+      Join the Publication
+
+      ...
+
+
+
+    MORE SECTIONS
+
+      Category 8
+
+      Category 9
+
+      ...
+
+
 
 The labels PAGES / MORE SECTIONS may be visually subtle and may be omitted if the current design communicates grouping clearly, but Pages and overflow Categories must not become one ambiguous flat data source internally.
 
+
+
 The data remains separate:
+
+
 
 Page IDs for Pages
 
+
+
 term IDs for Categories
+
+
 
 Do not create a fake About Us category to make the dropdown easier.
 
-13. Page Ordering
+
+
+13\. Page Ordering
+
+
 
 The Page Manager must support ordering of About dropdown Pages.
 
+
+
 Use stable WordPress Page IDs.
+
+
 
 Possible storage:
 
+
+
 WordPress menu_order if it cleanly fits the architecture
+
+
 
 or one small plugin option containing ordered managed Page IDs
 
+
+
 Do not persist authoritative page titles in the ordering record.
+
+
 
 On rename:
 
+
+
 order remains
+
+
 
 label automatically changes
 
+
+
 On delete/trash:
+
+
 
 remove stale ID from the About navigation order
 
+
+
 On new Page:
+
+
 
 append deterministically unless administrator reorders it
 
+
+
 Provide drag/drop plus keyboard Move Up/Move Down controls.
 
-14. Page Status and Navigation Rules
+
+
+14\. Page Status and Navigation Rules
+
+
 
 Active:
 
+
+
 post_status = publish
+
+
 
 Inactive:
 
+
+
 post_status = draft
+
+
 
 Only active Pages appear publicly in the About dropdown.
 
+
+
 Page Manager must clearly show the state.
+
+
 
 Editing an inactive Page must provide Preview where WordPress permissions allow.
 
+
+
 Changing status requires:
+
+
 
 nonce
 
+
+
 administrator capability
+
+
 
 confirmation where appropriate
 
+
+
 success/error feedback
 
-15. Page Deletion Rules
+
+
+15\. Page Deletion Rules
+
+
 
 Normal managed Page:
 
+
+
 use Trash
+
+
 
 confirm first
 
+
+
 remove from navigation automatically
+
+
 
 do not delete media attachments merely because the Page was trashed unless the project has a deliberate media-cleanup policy
 
+
+
 Protected Pages:
+
+
 
 Home: never delete from this portal
 
+
+
 About Us parent: do not allow deletion while configured as the navigation parent
+
+
 
 Staff / Join / future child pages may be trashed by an authorized administrator.
 
+
+
 If Staff is deleted and recreated, do not duplicate stale menu IDs.
 
-16. Page Builder Media Safety
+
+
+16\. Page Builder Media Safety
+
+
 
 For image elements and staff portraits:
 
+
+
 use WordPress attachment IDs
+
+
 
 validate that selected attachments are images
 
+
+
 validate MIME/type via WordPress APIs
+
+
 
 enforce nonce + capability
 
+
+
 use Media Library where practical
+
+
 
 enqueue media scripts only on the relevant portal Page Builder screen
 
+
+
 do not accept arbitrary filesystem paths from the browser
+
+
 
 do not expose server paths
 
+
+
 escape alt text
+
+
 
 provide Replace and Remove controls
 
+
+
 A missing/broken image must never fatal the page.
+
+
 
 Use a neutral placeholder for missing staff portraits.
 
-17. Frontend Visual Direction
+
+
+17\. Frontend Visual Direction
+
+
 
 The public Page templates should look native to The Enterprise site, not like Elementor defaults.
 
+
+
 Use:
+
+
 
 the existing dark navy identity
 
+
+
 white/neutral surfaces
+
+
 
 editorial serif/sans hierarchy already present in the project
 
+
+
 strong page title
+
+
 
 clean section dividers
 
+
+
 responsive spacing
+
+
 
 accessible contrast
 
+
+
 centered staff compositions
+
+
 
 restrained motion
 
+
+
 The reference site is visual inspiration only.
+
+
 
 Reference patterns observed from The ANGELITE include:
 
+
+
 About navigation containing multiple institutional pages
+
+
 
 a Staff page with sections such as Editorial Board, Editorial Staff, and Reportorial Staff
 
+
+
 standalone pages such as Mailbag and Join
+
+
 
 simple editorial page titles and content hierarchy
 
+
+
 Do not copy its CSS, PHP, images, logos, text, or exact layout measurements.
 
-18. Admin UX: Page Manager and Builder
+
+
+18\. Admin UX: Page Manager and Builder
+
+
 
 18.1 Pages table toolbar
 
+
+
 Expected:
 
-[ ← Back to Categories ]                         [ + Add Page ]
+
+
+[ ← Back to Categories ]                         [ + Add Page ]
+
+
 
 Within Categories main view:
 
-[ View Menu ]   [ Pages ]   [ Add Category ]
+
+
+[ View Menu ]   [ Pages ]   [ Add Category ]
+
+
 
 18.2 Edit Page
 
+
+
 Edit Page should open the Page Builder with:
+
+
 
 title
 
+
+
 slug/permalink preview
+
+
 
 status
 
+
+
 block canvas
+
+
 
 preview
 
+
+
 Save Changes
+
+
 
 Cancel/Back
 
+
+
 18.3 Confirmation
+
+
 
 Create:
 
+
+
 Create Page
+
 Create this page?
+
 [Cancel] [Create Page]
+
+
 
 Edit:
 
+
+
 Update Page
+
 Save these page changes?
+
 [Cancel] [Save Changes]
+
+
 
 Delete:
 
+
+
 Delete Page
+
 Move this page to Trash?
+
 [Cancel] [Delete Page]
+
+
 
 Do not reuse stale Add-mode text in Edit confirmations.
 
+
+
 18.4 Feedback
+
+
 
 Success examples:
 
+
+
 Page created successfully.
+
+
 
 Page updated successfully.
 
+
+
 Page moved to Trash.
+
+
 
 Page order updated.
 
+
+
 Failures must show a real error and must not optimistically claim success.
+
+
 
 Prevent double submission.
 
-19. Initial Seed / Migration Requirements
+
+
+19\. Initial Seed / Migration Requirements
+
+
 
 After the Page system is implemented, provide an idempotent migration/seed routine that can create or connect the initial managed Pages only when needed.
 
+
+
 Target initial set:
+
+
 
 Home — connect to existing site homepage; never duplicate
 
+
+
 About Us — real Page
+
+
 
 Staff — new managed Page
 
+
+
 Join the Publication — new managed Page
+
+
 
 Do not create Mailbag unless content is supplied or the administrator adds it.
 
+
+
 Seed About Us and Join content from ABOUT US - THE ENTERPRISE.docx.
+
+
 
 Seed Staff cards from MASTERLIST WITH PORTRAITS OF ENTENG.docx.
 
+
+
 All staff portraits initially use placeholders unless an actual supplied WordPress image/attachment is available.
+
+
 
 The seed must be safe to run twice without creating duplicates.
 
-20. Existing Category and Article Behavior Must Remain Intact
+
+
+20\. Existing Category and Article Behavior Must Remain Intact
+
+
 
 Do not break:
 
+
+
 category CRUD
+
+
 
 category rename syncing
 
+
+
 category article associations
+
+
 
 article archive/list pages
 
+
+
 article builder
+
+
 
 article publishing
 
+
+
 category frontend renderer
+
+
 
 active navigation state
 
+
+
 footer navigation
+
+
 
 menu font/order editor
 
+
+
 login limiter
+
+
 
 logout redirect
 
+
+
 password reset
+
+
 
 user avatars
 
+
+
 analytics
+
+
 
 A Page is not an Article Category.
 
+
+
 A Page should not require an Article to exist before it renders.
 
-21. Header and Footer Navigation
+
+
+21\. Header and Footer Navigation
+
+
 
 The header remains:
 
+
+
 up to 7 direct categories + ABOUT US
+
+
 
 About Us is a Page parent/dropdown.
 
+
+
 Footer remains separately configurable using the existing footer navigation model unless this implementation directly requires Page links there.
+
+
 
 Do not automatically dump every About Page into the footer unless the existing UI or explicit requirement calls for it.
 
+
+
 Footer link text must remain white as already fixed.
 
-22. Accessibility
+
+
+22\. Accessibility
+
+
 
 All new admin and frontend controls must support:
 
+
+
 keyboard navigation
+
+
 
 visible focus
 
+
+
 semantic headings
+
+
 
 real links
 
+
+
 buttons for actions/toggles
+
+
 
 aria-expanded for dropdown toggles
 
+
+
 labels for inputs
+
+
 
 accessible confirmation dialogs
 
+
+
 meaningful image alt text
+
+
 
 no hover-only essential interaction
 
+
+
 touch-friendly drag alternatives
+
+
 
 Move Up / Move Down controls for reorderable items
 
+
+
 Staff placeholder icon should be decorative if the person's name already labels the card; do not create redundant screen-reader noise.
 
-23. Security
+
+
+23\. Security
+
+
 
 All write operations require:
 
+
+
 logged-in user
+
+
 
 appropriate administrator capability
 
+
+
 nonce verification
+
+
 
 sanitization
 
+
+
 validation
+
+
 
 safe redirects
 
+
+
 escaped output
 
+
+
 Use:
+
+
 
 wp_insert_post() / wp_update_post()
 
+
+
 wp_trash_post()
+
+
 
 get_permalink()
 
+
+
 sanitize_title()
+
+
 
 esc_url()
 
+
+
 esc_html()
+
+
 
 wp_kses_post() where rich HTML is intentionally allowed
 
+
+
 attachment APIs for images
+
+
 
 Do not allow arbitrary PHP/HTML/JS execution from Page Builder blocks.
 
-No raw <script> blocks.
+
+
+No raw \<script> blocks.
+
+
 
 No arbitrary CSS injection.
 
+
+
 No iframe unless explicitly whitelisted for a future requirement.
 
-24. SSH / Hostinger Verification
+
+
+24\. SSH / Hostinger Verification
+
+
 
 At the start of implementation, confirm:
 
+
+
 ssh enterprise-live
+
+
 
 Then harmless read-only checks such as:
 
+
+
 pwd
-cd ~/domains/theenterprise1979.news/public_html
+
+cd \~/domains/theenterprise1979.news/public_html
+
 wp core version
+
 wp plugin get client-portal --field=version
+
 php -v
+
+
 
 Use the exact available WP-CLI commands; do not fail the task merely because a specific convenience command is unavailable.
 
+
+
 Before modifying production:
+
+
 
 verify exact live plugin path
 
+
+
 verify current version
+
+
 
 backup
 
+
+
 avoid printing secrets
+
+
 
 After deployment:
 
+
+
 verify version
+
+
 
 compare checksums for changed files where useful
 
+
+
 run PHP lint on changed PHP files on Hostinger if PHP CLI is available
+
+
 
 verify the plugin remains active
 
+
+
 verify frontend/admin routes respond without fatal errors
+
+
 
 Do not leave WP_DEBUG enabled simply for convenience after the task if it was enabled only for diagnostics. Determine the current intended production setting first.
 
-25. Reference Inspection
+
+
+25\. Reference Inspection
+
+
 
 Use these only as UX/content-architecture references:
 
-https://theangelite.net/staff/
 
-https://theangelite.net/mailbag/
 
-https://theangelite.net/
+https\://theangelite.net/staff/
+
+
+
+https\://theangelite.net/mailbag/
+
+
+
+https\://theangelite.net/
+
+
 
 Observe:
 
+
+
 About submenu architecture
+
+
 
 publication staff grouping
 
+
+
 centered staff portrait presentation
+
+
 
 standalone institutional pages
 
+
+
 editorial visual hierarchy
+
+
 
 Do not clone code or branded assets.
 
+
+
 The Enterprise's own supplied documents are authoritative for its factual content.
 
-26. Verification Matrix
+
+
+26\. Verification Matrix
+
+
 
 26.1 Categories / Pages separation
 
+
+
 Verify:
 
+
+
 About Us absent from category taxonomy UI
+
 Pages tab visible only to authorized admin
+
 Home listed first
+
 About Us listed as Page
+
 Staff listed as Page
+
 Join the Publication listed as Page
+
+
 
 26.2 Add Page
 
+
+
 Verify:
 
+
+
 Title sanitizes correctly
+
 Slug sanitizes correctly
+
 Generated permalink is correct
+
 Draft does not appear publicly
+
 Published Page appears where configured
+
+
 
 26.3 About dropdown
 
+
+
 Verify:
 
+
+
 Home never appears in About dropdown
+
 About parent link remains clickable
+
 Staff appears when published
+
 Join appears when published
+
 Draft Page disappears
+
 Renamed Page updates label
+
 Trashed Page disappears
+
+
 
 If >7 categories:
 
+
+
 Categories 1–7 direct
+
 About Us remains 8th top-level item
+
 Category 8+ remains accessible in overflow group
+
 About Pages remain accessible in their own group
+
+
 
 26.4 Staff layout
 
+
+
 Verify desktop source/render logic for:
 
-1 portrait  → centered, not stretched across entire width
+
+
+1 portrait  → centered, not stretched across entire width
+
 2 portraits → centered, not stretched across entire width
+
 3 portraits → centered, not stretched across entire width
+
 4 portraits → larger balanced row
+
 5 portraits → larger balanced row
+
 6 portraits → max six-column row
+
 7 portraits → 6 + centered 1
+
 10 portraits → 6 + centered/adaptive 4
+
 11 portraits → 6 + adaptive 5
+
 12 portraits → 6 + 6
+
+
 
 No row may exceed six cards.
 
+
+
 Verify responsive tablet/mobile behavior.
+
+
 
 26.5 Staff editing
 
+
+
 Verify:
+
+
 
 placeholder
 
+
+
 upload
+
+
 
 replace
 
+
+
 remove
+
+
 
 rename
 
+
+
 position edit
+
+
 
 reorder
 
+
+
 add
+
+
 
 remove person
 
+
+
 save
+
+
 
 cancel
 
+
+
 frontend matches saved state
+
+
 
 26.6 About content
 
+
+
 Verify:
+
+
 
 About the Publication content comes from supplied document
 
+
+
 Brief History is preserved
+
+
 
 Join content is separated appropriately
 
+
+
 Google Forms CTA works
+
+
 
 no factual text is silently invented
 
+
+
 26.7 Regression
+
+
 
 Verify:
 
+
+
 publisher login
+
+
 
 3-failure lockout remains functional
 
+
+
 Categories CRUD
+
+
 
 Article CRUD
 
+
+
 category frontend pages
+
+
 
 existing navigation
 
+
+
 footer
+
+
 
 user portal
 
+
+
 logout
 
-27. Validation
+
+
+27\. Validation
+
+
 
 Run available checks.
 
+
+
 Local:
 
-node --check <every changed JS file>
+
+
+node --check \<every changed JS file>
+
+
 
 If local PHP CLI exists:
 
-php -l <every changed PHP file>
+
+
+php -l \<every changed PHP file>
+
+
 
 Hostinger:
 
+
+
 php -v
-php -l <every deployed changed PHP file>
+
+php -l \<every deployed changed PHP file>
+
+
 
 Use WP-CLI for safe inspection/testing where useful.
 
+
+
 Check for:
+
+
 
 PHP fatal errors
 
+
+
 duplicate functions
+
+
 
 duplicate hooks
 
+
+
 duplicate admin screens
+
+
 
 nonce/capability gaps
 
+
+
 invalid JSON/meta parsing
+
+
 
 stale asset versioning
 
+
+
 accidental hardcoded URLs
+
+
 
 orphan Page IDs
 
+
+
 duplicate seeded Pages
 
-28. Packaging
+
+
+28\. Packaging
+
+
 
 After implementation:
+
+
 
 Delete/recreate client-portal.zip.
 
+
+
 Package only the intended plugin.
+
+
 
 No .git.
 
+
+
 No temporary backups.
+
+
 
 No debug logs.
 
+
+
 No private keys.
+
+
 
 No server config secrets.
 
+
+
 Extract ZIP into a clean temp directory.
+
+
 
 Run diff -rq against the intended working client-portal/.
 
+
+
 Expected: zero source differences.
+
+
 
 Then deploy through the established SSH workflow after backup.
 
-29. Definition of Done
+
+
+29\. Definition of Done
+
+
 
 The task is not complete until:
 
+
+
 About Us is a real Page, not a category
+
+
 
 Pages admin exists beside Categories controls
 
+
+
 only authorized admin can manage Pages
+
+
 
 Home is first and protected
 
+
+
 Page table has status/link/actions
+
+
 
 Add Page works
 
+
+
 Page Builder works
+
+
 
 About Us, Staff, and Join are created/connected idempotently
 
+
+
 Staff roster is seeded from the provided masterlist
+
+
 
 missing portraits show a human placeholder
 
+
+
 Staff Grid never exceeds six cards per row
+
+
 
 1–3 cards center without excessive stretching
 
+
+
 4–5 cards adapt larger
+
+
 
 incomplete rows center
 
+
+
 About dropdown automatically contains active managed Pages
+
+
 
 About parent remains a real link
 
+
+
 overflow Categories remain available without becoming Pages
+
+
 
 page ordering persists by IDs
 
+
+
 page rename updates menu automatically
+
+
 
 draft/trash removes Page from public dropdown
 
+
+
 article/category systems still work
+
+
 
 login limiter still works
 
+
+
 PHP/JS validation passes
+
+
 
 ZIP matches source
 
+
+
 live deployed version matches local
+
+
 
 live smoke tests pass
 
-30. Final Report Format
+
+
+30\. Final Report Format
+
+
 
 Return:
 
+
+
 PAGES + ABOUT + STAFF FEATURE RELEASE COMPLETE
 
-### Architecture
-- previous version:
-- final version:
-- local plugin path:
-- live plugin path:
-- WordPress Page storage:
-- builder storage:
-- page-order storage:
 
-### Admin Pages
-- Pages entry point:
-- capability:
-- Home behavior:
-- About behavior:
-- Add Page:
-- status mapping:
-- link/view:
-- delete/trash:
 
-### Page Builder
-- elements:
-- reorder:
-- media:
-- validation:
-- confirmation/feedback:
+**### Architecture**
 
-### About Us
-- content source:
-- About Page:
-- Join Page:
-- CTA:
-- duplicate prevention:
+\- previous version:
 
-### Staff
-- staff source:
-- staff count:
-- groups:
-- placeholders:
-- max cards per row:
-- 1–3 behavior:
-- 4–5 behavior:
-- 6 behavior:
-- responsive behavior:
-- portrait editing:
+\- final version:
 
-### Navigation
-- About is Page, not Category:
-- top-level rule:
-- managed Pages dropdown:
-- overflow Category behavior:
-- active state:
-- accessibility:
+\- local plugin path:
 
-### Security
-- capability:
-- nonces:
-- sanitization:
-- protected Pages:
-- raw HTML/JS injection prevented:
+\- live plugin path:
 
-### Validation
-- local JS:
-- local PHP:
-- Hostinger PHP:
-- WP-CLI:
-- regression checks:
-- browser/live checks actually performed:
+\- WordPress Page storage:
 
-### Packaging / Deployment
-- backup:
-- ZIP:
-- ZIP diff:
-- deployed version:
-- checksum/source match:
+\- builder storage:
 
-### Remaining Issues
+\- page-order storage:
+
+
+
+**### Admin Pages**
+
+\- Pages entry point:
+
+\- capability:
+
+\- Home behavior:
+
+\- About behavior:
+
+\- Add Page:
+
+\- status mapping:
+
+\- link/view:
+
+\- delete/trash:
+
+
+
+**### Page Builder**
+
+\- elements:
+
+\- reorder:
+
+\- media:
+
+\- validation:
+
+\- confirmation/feedback:
+
+
+
+**### About Us**
+
+\- content source:
+
+\- About Page:
+
+\- Join Page:
+
+\- CTA:
+
+\- duplicate prevention:
+
+
+
+**### Staff**
+
+\- staff source:
+
+\- staff count:
+
+\- groups:
+
+\- placeholders:
+
+\- max cards per row:
+
+\- 1–3 behavior:
+
+\- 4–5 behavior:
+
+\- 6 behavior:
+
+\- responsive behavior:
+
+\- portrait editing:
+
+
+
+**### Navigation**
+
+\- About is Page, not Category:
+
+\- top-level rule:
+
+\- managed Pages dropdown:
+
+\- overflow Category behavior:
+
+\- active state:
+
+\- accessibility:
+
+
+
+**### Security**
+
+\- capability:
+
+\- nonces:
+
+\- sanitization:
+
+\- protected Pages:
+
+\- raw HTML/JS injection prevented:
+
+
+
+**### Validation**
+
+\- local JS:
+
+\- local PHP:
+
+\- Hostinger PHP:
+
+\- WP-CLI:
+
+\- regression checks:
+
+\- browser/live checks actually performed:
+
+
+
+**### Packaging / Deployment**
+
+\- backup:
+
+\- ZIP:
+
+\- ZIP diff:
+
+\- deployed version:
+
+\- checksum/source match:
+
+
+
+**### Remaining Issues**
+
 Only list genuinely unresolved or unverified items.
+
+
 
 Do not claim a browser behavior was verified unless it was actually observed in a browser or equivalent live-render test.
 
-31. Non-Negotiable Final Constraints
+
+
+31\. Non-Negotiable Final Constraints
+
+
 
 Never:
 
+
+
 create an About Us category
+
+
 
 create duplicate WordPress Pages on repeated deployment
 
+
+
 expose SSH/private keys
+
+
 
 modify WordPress core
 
+
+
 replace the existing plugin with a new plugin
+
+
 
 replace Astra/theme unnecessarily
 
+
+
 require Elementor for these managed Pages
+
+
 
 hardcode current navigation category names
 
+
+
 store Page order by display name
+
+
 
 allow Home deletion
 
+
+
 break the 3.8.14 login limiter
+
+
 
 log passwords
 
+
+
 use spoofable proxy headers as account identity
+
+
 
 copy The ANGELITE's code/assets
 
+
+
 report success without verification
+
+
 
 Always prefer:
 
+
+
 existing plugin
+
+
 
 WordPress Pages
 
+
+
 WordPress category taxonomy
+
+
 
 stable IDs
 
+
+
 attachment IDs
+
+
 
 existing Article Builder UI patterns
 
+
+
 reusable safe helpers
+
+
 
 local-first implementation
 
+
+
 versioned ZIP
+
+
 
 SSH backup/deploy/verification
 
+
+
 accessible responsive rendering
 
-32. Staff Complete Artwork Cards — Current Requirement
+
+
+32\. Staff Complete Artwork Cards — Current Requirement
+
+
 
 This section supersedes older Staff portrait rendering requirements where they conflict.
 
+
+
 32.1 Core model
+
+
 
 Staff metadata and Staff visual presentation are separate concerns.
 
+
+
 Every Staff record must continue to preserve its structured metadata, including where applicable:
 
-- name
-- position
-- section/group
-- ordering
-- alt text
-- WordPress attachment ID
-- bundled SVG asset reference
+
+
+\- name
+
+\- position
+
+\- section/group
+
+\- ordering
+
+\- alt text
+
+\- WordPress attachment ID
+
+\- bundled SVG asset reference
+
+
 
 Do not remove this metadata merely because the supplied Staff artwork already contains visible text.
 
+
+
 The Publisher Portal admin must continue to show enough structured information for an administrator to understand exactly which artwork belongs to which person.
+
+
 
 32.2 Admin Staff editor
 
+
+
 Inside the Page Builder Staff Grid editor, each Staff member must continue to expose:
+
+
 
 Name
 
+
+
 Position
+
+
 
 Section / Group
 
+
+
 Alt Text
+
+
 
 Image / artwork preview
 
+
+
 Upload / Select image control
+
+
 
 Replace image where supported
 
+
+
 Remove image where supported
+
+
 
 Move Up / Move Down
 
+
+
 Remove person
+
+
 
 Other existing Staff editing functionality must remain intact.
 
+
+
 The administrator must be able to identify:
 
+
+
 who the person is,
+
 their position,
+
 their section,
+
 the image assigned to them,
+
 and the accessibility text associated with the image.
+
+
 
 Do not simplify the admin editor into image-only cards.
 
+
+
 The admin interface is the management interface and must retain the structured information.
+
+
 
 32.3 Public Staff page
 
+
+
 The public Staff page uses a different presentation rule.
+
+
 
 When a Staff member has a valid image/artwork:
 
+
+
 RENDER THE IMAGE ONLY.
+
+
 
 Do not render a second visible:
 
+
+
 name
+
 position
+
 section label per card
+
 caption
+
+
 
 underneath or beside the artwork.
 
+
+
 The artwork itself is the complete visible Staff card.
+
+
 
 The person's name and position remain stored metadata but are not duplicated visually on the public Staff page.
 
+
+
 Accessibility must still use the structured metadata.
+
+
 
 Example alt text:
 
+
+
 Maryiel N. Jimenez, Editor-in-Chief
+
+
 
 Do not rely only on text embedded visually inside an SVG for accessibility.
 
+
+
 32.4 Supplied SVG artwork
+
+
 
 Development source artwork currently exists in:
 
-C:\Publication\publisher_site\SBA-Staffs-about_us\
+
+
+C:\Publication\publisher_site\SBA-Staffs-about_us\\
+
+
 
 These files may have numeric filenames such as:
 
+
+
 1.svg
+
 2.svg
+
 3.svg
+
+
 
 Never infer the person from the number.
 
+
+
 Inspect each SVG and determine the person represented by the actual artwork.
+
+
 
 Use:
 
+
+
 SVG text
+
 metadata
+
 title/description
+
 labels
+
 rendered visual inspection
+
+
 
 as necessary.
 
+
+
 Create a verified mapping before assigning assets.
+
+
 
 Never knowingly assign uncertain artwork to a Staff record.
 
+
+
 The original SBA-Staffs-about_us directory remains a development/source directory and may remain ignored by Git.
+
+
 
 Production must not depend directly on that ignored directory.
 
+
+
 Trusted SVG assets required by the plugin should be copied into a version-controlled plugin-owned asset location such as:
+
+
 
 client-portal/assets/images/staff/
 
+
+
 Use descriptive production filenames after identity is confirmed.
+
+
 
 32.5 Image priority
 
+
+
 Preserve the existing administrator image-selection workflow.
+
+
 
 A Staff record may have:
 
-1. an administrator-selected WordPress image attachment,
-2. a bundled trusted Staff SVG,
-3. or a placeholder when neither exists.
+
+
+1\. an administrator-selected WordPress image attachment,
+
+2\. a bundled trusted Staff SVG,
+
+3\. or a placeholder when neither exists.
+
+
 
 Recommended frontend priority:
 
+
+
 administrator-selected image
+
 then bundled Staff SVG
+
 then neutral placeholder
+
+
 
 This allows the administrator to replace supplied artwork later without changing PHP code.
 
+
+
 Regardless of whether the visible asset is SVG, PNG, JPG, WEBP, or another approved image type, the public Staff card remains IMAGE ONLY.
+
+
 
 Do not restore visible name/position text beneath normal uploaded images.
 
+
+
 The structured metadata remains available to the admin and accessibility layer.
+
+
 
 32.6 SVG security
 
+
+
 Do not globally enable unrestricted SVG uploads.
+
+
 
 Do not weaken WordPress MIME security.
 
+
+
 Supplied trusted SVG files may be bundled as plugin-owned static assets after inspection.
+
+
 
 Reject or sanitize unexpected active SVG content such as:
 
+
+
 script
+
 foreignObject
+
 event handlers
+
 javascript URLs
+
 remote executable content
+
+
 
 Serve trusted SVG artwork through normal image rendering rather than injecting arbitrary SVG markup into page HTML.
 
+
+
 32.7 Artwork proportions
+
+
 
 Staff artwork is complete artwork, not a circular portrait.
 
+
+
 Do not force Staff artwork into:
 
+
+
 border-radius: 50%
+
 aspect-ratio: 1 / 1
+
 object-fit: cover
+
+
 
 when those rules crop or distort the artwork.
 
+
+
 Preserve the source artwork's natural aspect ratio.
+
+
 
 Use containment behavior where appropriate.
 
+
+
 Never crop the person's embedded name or position.
+
+
 
 32.8 Staff row sizing
 
+
+
 Maximum desktop row size remains six Staff members.
+
+
 
 Rows are data-driven.
 
+
+
 Visual card size depends on the number of people in THAT row.
+
+
 
 Fewer people = larger artwork.
 
+
+
 More people = smaller artwork.
+
+
 
 Required relative behavior:
 
+
+
 1 person = largest reasonable card
+
 2 people = slightly smaller
+
 3 people = smaller
+
 4 people = smaller
+
 5 people = smaller
+
 6 people = smallest desktop size
+
+
 
 Do not make one-person artwork excessively large.
 
+
+
 Do not make six-person artwork unreadably small.
+
+
 
 Every incomplete row uses its own row count.
 
+
+
 Examples:
 
+
+
 7 people:
+
 6 + centered 1
 
+
+
 10 people:
+
 6 + centered 4
 
+
+
 11 people:
+
 6 + centered 5
 
+
+
 12 people:
+
 6 + 6
+
+
 
 The trailing row must not inherit the card size of the previous six-person row.
 
+
+
 Use row-size classes or equivalent data-driven responsive CSS.
+
+
 
 Never hardcode layout by Staff name.
 
+
+
 32.9 Section behavior
+
+
 
 Preserve the existing authoritative Staff sections and order.
 
+
+
 Do not duplicate Staff records.
+
+
 
 Do not create another Staff Page.
 
+
+
 Do not alter a person's group solely because of the SVG filename.
+
+
 
 The admin remains responsible for structured Staff information.
 
+
+
 The frontend uses that information for ordering, grouping, accessibility, and asset assignment even though only the artwork itself is visible inside each Staff card.
+
+
 
 32.10 Verification
 
+
+
 Before reporting completion, verify:
 
+
+
 Admin still displays Name.
+
 Admin still displays Position.
+
 Admin still displays Section / Group.
+
 Admin still displays Alt Text.
+
 Admin still provides image selection/replacement controls.
+
 Admin preview identifies the assigned artwork.
 
+
+
 Public Staff cards display image only.
+
 Public Staff cards do not duplicate Name.
+
 Public Staff cards do not duplicate Position.
+
 Metadata remains stored.
+
 Accessible alt text remains meaningful.
+
+
 
 Every supplied SVG is mapped to the correct person.
 
+
+
 No SVG is assigned based solely on its numeric filename.
+
+
 
 No artwork is cropped.
 
+
+
 No row exceeds six Staff cards on desktop.
+
+
 
 Card size progressively decreases from one-person rows through six-person rows.
 
+
+
 Incomplete rows remain centered.
+
+
 
 Tablet/mobile layouts remain usable without horizontal overflow.
 
-33. Managed Page Builder Editing UX
+
+
+33\. Managed Page Builder Editing UX
+
+
 
 This section supersedes older Page Builder admin UX requirements where they conflict.
 
+
+
 33.1 Goal
+
+
 
 The managed Page Builder must be usable by a normal publication administrator without requiring knowledge of HTML.
 
+
+
 The administrator should edit content visually in the same general interaction model as the existing Article Builder.
+
+
 
 The Page Builder may support more block types than the Article Builder because institutional Pages contain different content, but basic text editing should feel consistent across both systems.
 
+
+
 Do not build a second independent text editor stack when the existing Article Builder/editor infrastructure can be reused.
+
+
 
 Prefer fixing and sharing existing behavior over duplicating it.
 
+
+
 33.2 No raw HTML as normal editing UI
+
+
 
 Administrators must not normally edit content such as:
 
-<p>Meet the editorial board...</p>
+
+
+\<p>Meet the editorial board...\</p>
+
+
 
 inside a plain textarea.
 
+
+
 Stored HTML may remain internally for WordPress rendering and sanitization, but the editing interface must present formatted content visually.
+
+
 
 Example:
 
+
+
 Stored:
 
-<p>Meet the editorial board, editorial staff, and reportorial staff of The Enterprise.</p>
+
+
+\<p>Meet the editorial board, editorial staff, and reportorial staff of The Enterprise.\</p>
+
+
 
 Editor displays:
 
+
+
 Meet the editorial board, editorial staff, and reportorial staff of The Enterprise.
+
+
 
 The administrator should not need to type:
 
-<p>
-<strong>
-<em>
-<a>
-<ul>
-<li>
+
+
+\<p>
+
+\<strong>
+
+\<em>
+
+\<a>
+
+\<ul>
+
+\<li>
+
+
 
 or other HTML tags manually.
 
+
+
 HTML/source editing is not the default Page Builder experience.
+
+
 
 33.3 Reuse the existing WordPress/Article Builder editor
 
+
+
 The existing Article Builder is the UX reference.
+
+
 
 Reuse the existing WordPress editor/TinyMCE infrastructure and existing safe formatting patterns where practical.
 
+
+
 Do not introduce:
 
+
+
 React
+
 Vue
+
 Gutenberg as a second embedded application
+
 another third-party page-builder framework
+
 a second unrelated rich-text library
+
+
 
 unless direct inspection proves the existing WordPress editor cannot satisfy the requirement.
 
+
+
 The Page Builder already contains editor initialization code. Diagnose and repair the actual initialization/lifecycle problem before replacing it.
+
+
 
 33.4 Rich Text block
 
+
+
 Rich Text should behave like a lightweight Google Docs style editor.
+
+
 
 Provide at minimum:
 
+
+
 Font Family
+
 Font Size
+
 Bold
+
 Italic
+
 Underline
+
 Text alignment
+
 Bulleted list
+
 Numbered list
+
 Link
+
 Unlink
+
 Undo
+
 Redo
+
+
 
 Where supported safely and already available in the Article Builder, also support:
 
+
+
 strikethrough
+
 text color
+
 clear formatting
+
+
 
 Do not add unnecessary formatting features that are difficult to sanitize or inconsistent with the public site.
 
+
+
 The user should see formatted text, not HTML markup.
+
+
 
 33.5 Heading block
 
+
+
 Heading blocks must have:
 
+
+
 Heading Level:
+
 H1
+
 H2
+
 H3
+
 H4
+
 H5
+
 H6
+
+
 
 and visual editing controls for:
 
+
+
 Font Family
+
 Font Size
+
 Bold
+
 Italic
+
 Underline
+
 Alignment
+
 Undo
+
 Redo
+
+
 
 Changing H1/H2/etc. must preserve the text content.
 
+
+
 The level selector represents semantic HTML structure.
+
+
 
 Font-size controls affect presentation but must not silently change the semantic heading level.
 
+
+
 33.6 Block system
+
+
 
 The following Page block types remain supported:
 
+
+
 Heading
+
 Rich Text
+
 Image
+
 Staff Grid
+
 Button / CTA
+
 Divider / Spacer
+
+
 
 Do not remove existing valid blocks.
 
+
+
 The Add Block control must work reliably.
+
+
 
 Selecting a block type must immediately insert a new editable block into the current Page Builder without refreshing the page.
 
+
+
 New text blocks must initialize their rich-text editor immediately.
+
+
 
 New image blocks must initialize their Media Library controls.
 
+
+
 New Staff Grid blocks must initialize their Staff controls.
+
+
 
 New Button blocks must expose label, URL, and style controls.
 
+
+
 New Divider blocks must expose spacing/divider controls.
+
+
 
 The inserted block must participate immediately in:
 
+
+
 serialization
+
 saving
+
 reordering
+
 duplication
+
 deletion
+
+
 
 33.7 Block toolbar
 
+
+
 Every content block should have a compact consistent block toolbar.
+
+
 
 Primary toolbar actions:
 
+
+
 Move Up
+
 Move Down
+
 Duplicate
+
 Delete
+
+
 
 Provide Full Screen / Focus mode where appropriate for:
 
+
+
 Heading
+
 Rich Text
+
+
 
 Do not display irrelevant actions for block types that cannot use them.
 
+
+
 Use tooltips and accessible labels.
+
+
 
 33.8 Context menu
 
+
+
 Desktop users may right-click a block to open a compact context menu.
+
+
 
 The context menu is a convenience layer, not the only way to perform actions.
 
+
+
 Suggested options:
 
+
+
 Edit / Focus
+
 Insert Block Above
+
 Insert Block Below
+
 Duplicate
+
 Move Up
+
 Move Down
+
 Delete
+
+
 
 For text blocks:
 
+
+
 Full Screen / Focus Mode
+
+
 
 Do not intercept right-click inside an active text editor if doing so would prevent normal text-selection, link, spelling, or browser/editor behavior.
 
+
+
 A safe implementation is to activate the custom context menu when right-clicking the block chrome/header rather than arbitrary text inside the editor.
+
+
 
 Touch and keyboard users must have equivalent normal buttons.
 
+
+
 Never make right-click mandatory.
+
+
 
 33.9 Add Block UX
 
-+ Add Block must be a reliable insertion control.
+
+
+\+ Add Block must be a reliable insertion control.
+
+
 
 When opened, show clear block choices with icon + name + short description.
 
+
+
 Examples:
 
+
+
 Heading
+
 Section title or heading
 
+
+
 Rich Text
+
 Paragraphs, lists, links, and formatted copy
 
+
+
 Image
+
 Media Library image with alt text
 
+
+
 Staff Grid
+
 Publication staff cards and metadata
 
+
+
 Button / CTA
+
 Clickable call-to-action
 
+
+
 Divider / Spacer
+
 Separate sections or add vertical space
+
+
 
 Allow insertion:
 
+
+
 at the bottom using the main + Add Block control
+
+
 
 and optionally:
 
+
+
 between blocks
+
 above a block
+
 below a block
+
+
 
 Do not require drag-and-drop merely to insert content at a specific location.
 
+
+
 33.10 Google Docs style interaction
+
+
 
 "Google Docs style" means:
 
+
+
 the user works with rendered content rather than markup,
+
 formatting controls are understandable,
+
 editing responds immediately,
+
 keyboard input behaves normally,
+
 undo/redo works,
+
 content is visually readable while editing,
+
 the interface avoids unnecessary technical fields.
+
+
 
 It does NOT mean cloning Google Docs or creating a full collaborative document engine.
 
+
+
 Do not add:
 
+
+
 real-time multi-user collaboration
+
 comments system
+
 revision suggestions
+
 document pagination
+
 complex freeform canvas positioning
+
+
 
 unless separately requested.
 
+
+
 33.11 Page metadata remains separate from content editing
+
+
 
 Page Details remain outside the document canvas.
 
+
+
 Keep:
 
+
+
 Page Name / Title
+
 Status
+
 URL Slug
+
 Page URL preview
+
 Show in About Us dropdown
+
+
 
 These are page-level settings.
 
+
+
 Do not mix URL/permalink configuration into Rich Text blocks.
+
+
 
 The Page Content area below them is the document/content editing workspace.
 
+
+
 33.12 Block-specific controls
+
+
 
 Keep advanced settings contextual.
 
+
+
 Image:
+
 image preview
+
 Select / Replace
+
 Remove
+
 Alt Text
+
 optional caption where currently supported
+
 alignment where safe
 
+
+
 Staff Grid:
+
 Staff image/artwork
+
 Name
+
 Position
+
 Section / Group
+
 Alt Text
+
 ordering
+
 existing Staff controls
+
+
 
 The public Staff artwork rules defined in the latest Staff section still apply.
 
+
+
 Button / CTA:
+
 Button Label
+
 Link URL
+
 Style
+
 target behavior if safely supported
 
+
+
 Divider / Spacer:
+
 spacing size
+
 divider visibility/style if supported
+
+
 
 Do not show unrelated controls globally.
 
+
+
 33.13 Progressive disclosure
+
+
 
 Avoid placing every possible setting on screen at once.
 
+
+
 Show the content itself prominently.
+
+
 
 Secondary settings may use:
 
+
+
 compact toolbar
+
 More / three-dot menu
+
 block settings popover
+
 context menu
+
+
 
 Do not hide essential functions so deeply that administrators cannot discover them.
 
+
+
 33.14 Editor lifecycle
+
+
 
 Rich-text editors must initialize correctly for:
 
+
+
 existing Heading blocks
+
 existing Rich Text blocks
+
 new Heading blocks
+
 new Rich Text blocks
+
 duplicated text blocks
+
+
 
 Before:
 
+
+
 serialization
+
 duplication
+
 movement where DOM manipulation affects editors
+
 deletion
+
 form submission
+
+
 
 synchronize editor content safely.
 
+
+
 Remove/reinitialize editor instances when required by DOM movement or duplication.
+
+
 
 Never create duplicate TinyMCE instances for one textarea.
 
+
+
 Do not allow stale editor content to overwrite current user content.
+
+
 
 33.15 Existing HTML migration
 
+
+
 Existing managed Page content containing valid stored HTML must remain compatible.
+
+
 
 When loading an existing Rich Text block:
 
-<p>Hello</p>
+
+
+\<p>Hello\</p>
+
+
 
 must appear visually as:
 
+
+
 Hello
+
+
 
 inside the editor.
 
-Do not display the literal <p> tags to normal administrators.
+
+
+Do not display the literal \<p> tags to normal administrators.
+
+
 
 Do not destroy existing valid formatting during migration.
 
+
+
 Do not blindly strip all HTML.
+
+
 
 Continue using the project's existing WordPress sanitization rules.
 
+
+
 33.16 Right-click accessibility and safety
+
+
 
 A custom context menu must:
 
+
+
 close with Escape
+
 close when clicking outside
+
 use keyboard-focusable menu items
+
 maintain visible focus
+
 not trap keyboard focus
+
 not replace essential standard toolbar controls
+
+
 
 Prefer native-feeling behavior.
 
+
+
 Keep implementation small.
+
+
 
 33.17 Failure visibility
 
+
+
 If WordPress/TinyMCE fails to initialize, do not silently degrade into a confusing raw-HTML textarea without explanation.
+
+
 
 Provide a graceful fallback.
 
+
+
 A fallback textarea should display human-readable content where safely possible and/or show a visible editor initialization error to authorized administrators.
+
+
 
 JavaScript errors must be investigated rather than hidden.
 
+
+
 33.18 Validation
+
+
 
 Verify Page Builder with:
 
+
+
 existing About Us Page
+
 existing Staff Page
+
 existing Join the Publication Page
+
 new temporary test Page where safe
+
+
 
 Test:
 
+
+
 existing Heading editor
+
 existing Rich Text editor
+
 HTML renders visually
+
 Font Family
+
 Font Size
+
 Bold
+
 Italic
+
 Underline
+
 Alignment
+
 Lists
+
 Links
+
 Undo/Redo
+
 Add Heading
+
 Add Rich Text
+
 Add Image
+
 Add Staff Grid
+
 Add Button
+
 Add Divider
+
 Duplicate
+
 Move Up
+
 Move Down
+
 Delete
+
 right-click context menu
+
 Full Screen / Focus mode
+
 Save
+
 reload
+
 saved content remains correct
+
+
 
 Do not claim browser verification unless actually performed.
 
+
+
 33.19 Deployment discipline
+
+
 
 Before changing source:
 
+
+
 verify git status
+
 verify current branch
+
 push the current clean baseline to origin/main
+
+
 
 Do not begin modifications until the pre-change baseline is safely present on the remote repository.
 
+
+
 Development remains local-first.
+
+
 
 After implementation:
 
+
+
 validate
+
 commit
+
 push final source to origin/main
+
 backup production
+
 deploy over the established SSH workflow
+
 verify production
+
+
 
 Do not use production as the primary code editor.
 
+
+
 Do not manually patch individual production PHP/JS/CSS files unless a production-only emergency diagnostic explicitly requires it.
+
+
 
 The normal flow is:
 
+
+
 verified local baseline
+
 → push baseline
+
 → local implementation
+
 → local validation
+
 → commit
+
 → push
+
 → production backup
+
 → SSH deployment
+
 → live validation
+
+
 
 33.20 Scope discipline
 
+
+
 Do not rewrite the entire Page system.
+
+
 
 Do not alter unrelated:
 
+
+
 Articles
+
 Categories
+
 Users
+
 Analytics
+
 login limiter
+
 authentication
+
 navigation
+
 Staff public SVG behavior
+
 WordPress core
+
 Astra theme
+
+
 
 Reuse existing code wherever it already solves the requirement.
 
+
+
 Fix root causes rather than layering workarounds.
+
+
+
+34. Public Category Archive Hero Header — Wallpaper Banner (Current Task)
+
+This section defines a narrowly scoped public-facing category archive UI change. It supersedes any earlier scope wording that would require inspecting or changing unrelated Page Builder, About Us, Staff, authentication, article-editor, or admin functionality for this specific task. All general security, source-of-truth, local-first, packaging, and deployment requirements still apply.
+
+34.1 Goal
+
+Redesign only the public category archive header on The Enterprise 1979 website:
+
+https://theenterprise1979.news/
+
+Visual reference:
+
+https://theangelite.net/category/entertainment/
+
+Use the supplied screenshots as the concrete visual references when available. The desired pattern is the reference site's single, full-width horizontal banner below the site navigation, with the category title and its description placed together inside the banner. Take inspiration from the composition only. Keep The Enterprise's existing brand identity and implementation; do not copy The ANGELITE's code, CSS, branding, colors, or assets.
+
+34.2 Existing issue
+
+The current Enterprise category page header displays multiple stacked title treatments before the article listings, including a small category strip, a publication eyebrow, a large category heading, and the description on the white content background. This makes the category name appear more than once and pushes the article listings farther down.
+
+Replace that stacked presentation with one cohesive category hero banner.
+
+34.3 Required public appearance
+
+- Place one full-width hero banner immediately below the existing site header/navigation and immediately before the existing category article listings.
+- Use the existing asset named `wallpaper-newsletter.jpg` as the banner wallpaper. First locate and verify the existing asset in the local project and/or WordPress Media Library/uploads. Reuse it if it already exists; do not create a duplicate or use a guessed path. If more than one copy exists, identify which one is already intended for the public publisher site and report the chosen source.
+- Layer a dark navy Enterprise-brand overlay over the wallpaper so the image remains subtly visible while the banner retains the site's original navy visual identity. Inspect the existing theme/plugin CSS and reuse the established brand color or design token where available. Do not copy the red/maroon color treatment from The ANGELITE.
+- Use a layered background/overlay, such as a pseudo-element or equivalent, so the overlay does not reduce the opacity or readability of the title and description.
+- Match the reference's general proportions: approximately 150–180 px tall on desktop when content fits, with responsive vertical padding so long descriptions and narrow screens do not clip text. Treat this as a visual target, not a fixed height that can cause overflow.
+- Center the category title and description horizontally and vertically as one content group. Render the category name only once, using the live WordPress category term name. An uppercase visual treatment may be applied with CSS, but do not alter the saved category name.
+- Render the existing WordPress category description directly under the title, inside the same hero. Keep it readable, centered, and constrained to a sensible maximum text width. Use accessible high-contrast text, typically white or the site's existing light foreground color.
+- If a category has no description, show only the title and keep it visually centered without reserving a large empty description area.
+- On mobile, allow the hero to grow naturally based on its content, preserve readable padding, and prevent clipped text or horizontal overflow.
+- Start the existing category listings directly below the banner with balanced spacing.
+
+34.4 Strict scope boundaries
+
+Change only the frontend rendering and styles required for public category archive headers, plus the necessary existing asset reference/enqueue/versioning. Inspect the current implementation before choosing the smallest reliable change. The header may be rendered by the custom `client-portal` plugin, the active theme, or an existing hook; identify the actual source before editing.
+
+Do not:
+
+- redesign the global site header or navigation;
+- change the public category article cards/listings, queries, pagination, sorting, or article content;
+- change category names, slugs, descriptions, or category/article associations in the database;
+- hardcode individual category names or descriptions;
+- change standalone WordPress Pages, the homepage, single-article pages, search results, login/publisher portal, Page Builder, Staff page, or About Us dropdown;
+- change the site-wide color palette, typography, footer, or unrelated responsive layouts;
+- add a new plugin, theme, frontend framework, or third-party page-builder dependency;
+- modify WordPress core or apply unrelated refactoring.
+
+The hero must obtain its title and description dynamically from the current WordPress category term, so the same template works for Literary, News, Features, Sports, Opinion, and other category archives without category-specific conditions.
+
+34.5 Implementation and release workflow
+
+Follow the existing local-first workflow in this file:
+
+1. Read this `CLAUDE.md`, inspect Git status/branch and the current local source, and identify the actual category archive renderer and related stylesheet/script/assets.
+2. Confirm the existing baseline and source of truth before editing. Do not overwrite newer source with an older ZIP. Preserve unrelated working-tree changes.
+3. Verify `ssh enterprise-live` and inspect the live plugin/version read-only. Do not use production as the first editing workspace.
+4. Implement the smallest maintainable change locally. Reuse existing enqueue and cache-busting/version conventions.
+5. Run available PHP lint, JavaScript syntax checks if relevant, and the project's targeted tests. Review the diff for accidental changes outside this scope.
+6. Rebuild the plugin ZIP only if the edited files are part of the packaged plugin. Extract it into a clean temporary directory and compare it with the intended source using the existing packaging rules.
+7. Before deploying, make a timestamped backup of the live plugin and any other production files that this change will replace. Do not expose credentials, tokens, cookies, salts, or private keys.
+8. Deploy through the established workflow only after local validation and required baseline/commit steps in Section 33.19. Do not manually patch production files as a shortcut.
+9. Verify the deployed version/files and confirm that the plugin remains active. Perform live visual checks when a real browser or equivalent rendering environment is available.
+
+If Git, repository access, browser validation, a suitable local environment, or the wallpaper asset is unavailable, report the exact blocker and do not claim the corresponding step passed. Do not bypass the documented workflow silently.
+
+34.6 Verification checklist
+
+Verify at minimum:
+
+- Exactly one visible category title appears in the hero.
+- The old category strip/eyebrow/duplicate-heading stack is no longer rendered on the category archive.
+- The existing term description appears inside the banner, not as a separate paragraph below it.
+- `wallpaper-newsletter.jpg` is actually used, with the Enterprise navy overlay applied above it.
+- The background remains visible but text has sufficient contrast.
+- The hero spans the page viewport width and sits between the existing navigation and article listings.
+- Article cards, category query results, links, pagination, and active navigation remain unchanged.
+- Different category terms use their own current name and description without hardcoded labels.
+- A category with no description renders cleanly.
+- Desktop and mobile layouts do not clip text or introduce horizontal scrolling.
+- A normal standalone Page and a single-article page retain their existing header/layout.
+- Relevant syntax/tests pass and the diff contains no unrelated modifications.
+- Live visual behavior is only marked verified if actually observed in a browser or equivalent live-render test.
+
+34.7 Final report
+
+Report:
+
+- Category archive renderer and files changed
+- Location/source of `wallpaper-newsletter.jpg`
+- Brand color/overlay approach
+- Confirmation that the duplicate header elements were removed only from public category archives
+- Targeted tests and responsive/live checks actually performed
+- Backup/package/deployment status
+- Any remaining blockers or unverified behavior
+
+Do not claim deployment, browser verification, or visual success unless each was actually completed.
